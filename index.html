@@ -68,7 +68,7 @@
     background: var(--sidebar); border-right: 1px solid var(--border);
     box-sizing: border-box; padding: 24px 14px;
     display: flex; flex-direction: column; justify-content: space-between;
-    position: sticky; top: 0;
+    position: sticky; top: 0; overflow-y: auto;
   }
   .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; margin-bottom: 28px; cursor: pointer; }
   .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px; flex-shrink: 0; }
@@ -102,13 +102,13 @@
   .strip { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .strip > div { flex: 1; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; }
   .strip > div + div { border-left: 1px solid var(--border); }
-  .stripval { font-weight: 800; font-size: 20px; }
+  .stripval { font-weight: 800; font-size: 20px; overflow-wrap: anywhere; }
   .striplbl { font-size: 11.5px; color: var(--gray-500); font-weight: 500; }
 
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
   .kpi-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--gray-500); }
-  .kpi-val { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+  .kpi-val { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
   .kpi-sub { font-size: 12px; font-weight: 500; color: var(--gray-500); }
 
   .panels { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; flex: 1; min-height: 0; }
@@ -131,7 +131,7 @@
   .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; }
   .formpanel.open { display: flex; }
   .formpanel.static { display: flex; max-width: 640px; }
-  .formgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 12px; font-weight: 600; color: var(--gray-700); }
   .field input, .field select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); outline: none; }
@@ -168,6 +168,45 @@
     .view { padding: 10px !important; }
     body { background: #fff; }
     .panel, .card, .kpi { box-shadow: none !important; }
+  }
+
+  /* ================= MOBILE TOPBAR (oculta en escritorio) ================= */
+  #mobileTopbar {
+    display: none; align-items: center; gap: 12px;
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0 16px; z-index: 70;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  #btnOpenSidebar { border: none; background: transparent; padding: 4px; color: var(--ink); display: flex; }
+  #sidebarOverlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 65;
+  }
+  #sidebarOverlay.show { display: block; }
+
+  /* ================= RESPONSIVO: celulares y pantallas angostas ================= */
+  @media (max-width: 860px) {
+    html, body { overflow-x: hidden; }
+    #mobileTopbar { display: flex; }
+    #sidebarOverlay.show { display: block; }
+
+    #sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; width: 78vw; max-width: 300px;
+      transform: translateX(-100%); transition: transform .22s ease; z-index: 70;
+      padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    }
+    #sidebar.open { transform: translateX(0); box-shadow: 12px 0 32px rgba(0,0,0,0.18); }
+
+    #content { width: 100%; }
+    .view { padding: 76px 18px 24px; }
+
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .panels, .two-col { grid-template-columns: 1fr !important; }
+    .formgrid { grid-template-columns: 1fr !important; }
+    .strip { flex-direction: column; }
+    .strip > div + div { border-left: none; border-top: 1px solid var(--border); }
+    .table-wrap { -webkit-overflow-scrolling: touch; }
+    table.datatable { min-width: 560px; }
   }
 </style>
 </head>
@@ -257,6 +296,15 @@
      seleccionado)
      ============================================================ -->
 <div id="appShell">
+
+  <div id="mobileTopbar">
+    <button id="btnOpenSidebar" aria-label="Abrir menú">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="brand-mark" id="mobileBrandMark" style="width:22px;height:22px;font-size:11px;">T</div>
+    <div style="font-weight:700;font-size:14px;" id="mobileBrandName">Mi Torneo</div>
+  </div>
+  <div id="sidebarOverlay"></div>
 
   <div id="sidebar">
     <div>
@@ -624,8 +672,8 @@
             </div>
           </div>
 
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Parejas inscritas por categoría (en vivo)</div>
-          <div id="v_catlist" style="flex:1;overflow:auto;"></div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Formato y estimado por categoría</div>
+          <div id="v_catlist" style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;"></div>
 
           <button class="btn btn-primary" id="btnCalcularViabilidad">Calcular Viabilidad</button>
         </div>
@@ -821,14 +869,27 @@
     document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
   }
   document.querySelectorAll('.navitem').forEach(function(btn){
-    btn.addEventListener('click', function(){ setView(btn.dataset.view); });
+    btn.addEventListener('click', function(){ setView(btn.dataset.view); closeSidebarMobile(); });
   });
   document.querySelectorAll('[data-nav]').forEach(function(btn){
     btn.addEventListener('click', function(){
       setView(btn.dataset.nav);
       if (btn.dataset.openForm) openForm(btn.dataset.openForm);
+      closeSidebarMobile();
     });
   });
+
+  // ---------- menú móvil (hamburguesa) ----------
+  function openSidebarMobile(){
+    byId('sidebar').classList.add('open');
+    byId('sidebarOverlay').classList.add('show');
+  }
+  function closeSidebarMobile(){
+    byId('sidebar').classList.remove('open');
+    byId('sidebarOverlay').classList.remove('show');
+  }
+  byId('btnOpenSidebar').addEventListener('click', openSidebarMobile);
+  byId('sidebarOverlay').addEventListener('click', closeSidebarMobile);
 
   function openForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.add('open'); }
   function closeForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.remove('open'); }
@@ -1273,35 +1334,103 @@
   byId('btnImprimirReporte').addEventListener('click', function(){ window.print(); });
 
   // ---------- render: viabilidad ----------
-  function renderViabilidadForm(){
-    var cats = categoriasConteoTorneo();
-    byId('v_catlist').innerHTML = '<div class="catlist-row" style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--gray-500);border-bottom:1px solid var(--border);"><span>Categoría</span><span style="text-align:right;">Parejas</span><span></span><span></span></div>' +
-      (cats.length ? cats.map(function(c){
-        return '<div class="catlist-row"><span style="font-weight:600;">'+esc(c.nombre)+'</span><span class="num">'+c.parejas+'</span><span></span><span></span></div>';
-      }).join('') : '<div class="muted" style="padding:12px 0;">Este torneo aún no tiene inscripciones.</div>');
+  // Cada categoría guarda su propia configuración de formato dentro del
+  // propio documento de la categoría (viabFormato, viabParejas, viabGrupos,
+  // viabJugadoresPorGrupo, viabPartidosElim) — así queda guardada entre
+  // visitas y no depende de inscripciones reales, es un estimado tuyo.
+  function inscritosHoy(categoriaId){
+    return inscripciones.filter(function(i){ return i.categoriaId === categoriaId && i.estadoIns !== 'CANCELADA'; }).length;
   }
-  function categoriasConteoTorneo(){
-    var byCat = {};
-    inscripciones.forEach(function(i){
-      if (i.estadoIns === 'CANCELADA') return;
-      byCat[i.categoriaId] = byCat[i.categoriaId] || {nombre: i.categoriaNombre, parejas: 0};
-      byCat[i.categoriaId].parejas++;
+  function partidosRoundRobin(n){ return n>1 ? (n*(n-1))/2 : 0; }
+  function computeCategoriaPartidos(cat){
+    if (cat.viabFormato === 'GRUPOS') {
+      var grupos = cat.viabGrupos || 0;
+      var jpg = cat.viabJugadoresPorGrupo || 0;
+      var elim = cat.viabPartidosElim || 0;
+      var parejas = grupos * jpg;
+      var partidosGrupos = grupos * partidosRoundRobin(jpg);
+      return { parejas: parejas, partidos: partidosGrupos + elim, partidosGrupos: partidosGrupos, partidosElim: elim };
+    }
+    var parejas = cat.viabParejas || 0;
+    return { parejas: parejas, partidos: Math.max(parejas - 1, 0), partidosGrupos: 0, partidosElim: Math.max(parejas-1,0) };
+  }
+  function categoriasParaViabilidad(){
+    return categorias.map(function(c){
+      var r = computeCategoriaPartidos(c);
+      return { id: c.id, nombre: c.nombre, parejas: r.parejas, partidos: r.partidos };
     });
-    return Object.keys(byCat).map(function(k){ return byCat[k]; });
   }
+
+  function renderViabilidadForm(){
+    if (!categorias.length){
+      byId('v_catlist').innerHTML = '<div class="muted" style="padding:12px 0;">Crea categorías primero (modo administrador → Inscripciones → Categorías).</div>';
+      return;
+    }
+    byId('v_catlist').innerHTML = categorias.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}).map(function(c){
+      var esGrupos = c.viabFormato === 'GRUPOS';
+      var hoy = inscritosHoy(c.id);
+      var r = computeCategoriaPartidos(c);
+      return '<div class="card" style="padding:14px 16px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+          '<span style="font-weight:700;font-size:13.5px;">'+esc(c.nombre)+'</span>' +
+          '<span class="muted" style="font-size:11px;">'+(hoy?('hoy: '+hoy+' inscritas'):'sin inscripciones aún')+' · '+r.partidos+' partido(s)</span>' +
+        '</div>' +
+        '<div class="formgrid" style="gap:8px;margin-bottom:'+(esGrupos?'8px':'0')+';">' +
+          '<div class="field"><label style="font-size:11px;">Formato</label>' +
+          '<select data-viab-formato="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;">' +
+            '<option value="DIRECTA"'+(!esGrupos?' selected':'')+'>Eliminación directa</option>' +
+            '<option value="GRUPOS"'+(esGrupos?' selected':'')+'>Grupos + Eliminación</option>' +
+          '</select></div>' +
+          (esGrupos ? '' :
+            '<div class="field"><label style="font-size:11px;">Parejas estimadas</label>' +
+            '<input type="number" data-viab-parejas="'+c.id+'" value="'+(c.viabParejas||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>') +
+        '</div>' +
+        (esGrupos ?
+          '<div class="formgrid" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;">' +
+            '<div class="field"><label style="font-size:11px;">Núm. grupos</label>' +
+            '<input type="number" data-viab-grupos="'+c.id+'" value="'+(c.viabGrupos||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
+            '<div class="field"><label style="font-size:11px;">Parejas / grupo</label>' +
+            '<input type="number" data-viab-jpg="'+c.id+'" value="'+(c.viabJugadoresPorGrupo||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
+            '<div class="field"><label style="font-size:11px;">Partidos elim.</label>' +
+            '<input type="number" data-viab-elim="'+c.id+'" value="'+(c.viabPartidosElim||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
+          '</div>' +
+          '<div class="muted" style="font-size:11px;margin-top:8px;">'+r.parejas+' parejas estimadas · '+r.partidosGrupos+' partido(s) de grupos + '+r.partidosElim+' de eliminación</div>'
+          : '') +
+        '</div>';
+    }).join('');
+
+    document.querySelectorAll('[data-viab-formato]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        torneoRef.collection('categorias').doc(sel.dataset.viabFormato).update({ viabFormato: sel.value })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    ['viab-parejas','viab-grupos','viab-jpg','viab-elim'].forEach(function(attr){
+      var campo = { 'viab-parejas':'viabParejas', 'viab-grupos':'viabGrupos', 'viab-jpg':'viabJugadoresPorGrupo', 'viab-elim':'viabPartidosElim' }[attr];
+      document.querySelectorAll('[data-'+attr+']').forEach(function(inp){
+        inp.addEventListener('change', function(){
+          var val = parseInt(inp.value, 10) || 0;
+          var id = inp.dataset[attr.replace(/-([a-z])/g, function(_,c){return c.toUpperCase();})];
+          var upd = {}; upd[campo] = val;
+          torneoRef.collection('categorias').doc(id).update(upd)
+            .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        });
+      });
+    });
+  }
+
   function calcularViabilidad(){
     var dias = parseFloat(byId('v_dias').value) || 0;
     var horasDia = parseFloat(byId('v_horas').value) || 0;
     var canchas = parseFloat(byId('v_canchas').value) || 0;
     var duracionMin = parseFloat(byId('v_duracion').value) || 0;
-    var cats = categoriasConteoTorneo();
+    var cats = categoriasParaViabilidad();
 
     var totalPartidos = 0, totalHoras = 0;
     var rows = cats.map(function(c){
-      var partidos = Math.max(c.parejas - 1, 0);
-      var horas = partidos * duracionMin / 60;
-      totalPartidos += partidos; totalHoras += horas;
-      return {nombre:c.nombre, parejas:c.parejas, partidos:partidos, horas:horas};
+      var horas = c.partidos * duracionMin / 60;
+      totalPartidos += c.partidos; totalHoras += horas;
+      return {nombre:c.nombre, parejas:c.parejas, partidos:c.partidos, horas:horas};
     });
 
     var horasDisponibles = dias * horasDia * canchas;
@@ -1330,7 +1459,7 @@
     byId('v_catBody').innerHTML = rows.length ? rows.map(function(r){
       return '<tr><td style="font-weight:600;">'+esc(r.nombre)+'</td><td class="num muted">'+r.parejas+'</td><td class="num">'+r.partidos+'</td><td class="num">'+r.horas.toFixed(1)+'h</td></tr>';
     }).join('') + '<tr style="background:var(--gray-200);"><td style="font-weight:700;">Total</td><td class="num" style="font-weight:700;">'+cats.reduce(function(s,c){return s+c.parejas;},0)+'</td><td class="num" style="font-weight:700;">'+totalPartidos+'</td><td class="num" style="font-weight:700;">'+totalHoras.toFixed(1)+'h</td></tr>'
-      : '<tr class="empty-row"><td colspan="4">Registra inscripciones para poder calcular.</td></tr>';
+      : '<tr class="empty-row"><td colspan="4">Crea categorías para poder calcular.</td></tr>';
   }
   byId('btnCalcularViabilidad').addEventListener('click', calcularViabilidad);
 
@@ -1646,6 +1775,8 @@
   function applyBrand(name){
     byId('brandName').textContent = name;
     byId('brandMark').textContent = (name || 'T').trim().charAt(0).toUpperCase();
+    byId('mobileBrandName').textContent = name;
+    byId('mobileBrandMark').textContent = (name || 'T').trim().charAt(0).toUpperCase();
     document.title = name + ' · CourtOS';
   }
 
