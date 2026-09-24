@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CourtOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     FIREBASE SDK (compat, para poder usarlo con <script> normal
+     sin necesidad de bundler / npm / build step)
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root {
+    box-sizing: border-box;
+    --bg:#FFFFFF; --sidebar:#FBFBFA; --ink:#191919; --gray-700:#43413C; --gray-500:#787569;
+    --gray-200:#F1F0EC; --border:#E9E8E3;
+    --green-bg:#DBEDDB; --green-tx:#2F7C31; --amber-bg:#FDECC8; --amber-tx:#9F6702;
+    --red-bg:#FFE2DD; --red-tx:#C4554D; --blue-bg:#DCE9F9; --blue-tx:#2A5D95;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select { font-family: inherit; }
+
+  /* ================= AUTH SCREEN ================= */
+  #authScreen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--sidebar); padding: 24px;
+  }
+  .auth-card { width: 100%; max-width: 380px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
+  .auth-logo { display: flex; align-items: center; gap: 9px; justify-content: center; margin-bottom: 4px; }
+  .auth-logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 14px; }
+  .auth-logo-name { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+  .auth-tabs { display: flex; background: var(--gray-200); border-radius: 9px; padding: 3px; gap: 2px; }
+  .auth-tab { flex: 1; text-align: center; font-weight: 600; font-size: 13px; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); }
+  .auth-tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(24,24,15,0.08); }
+  .auth-field { display: flex; flex-direction: column; gap: 5px; }
+  .auth-field label { font-size: 12.5px; font-weight: 600; color: var(--gray-700); }
+  .auth-field input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
+  .auth-field input:focus { border-color: var(--ink); }
+  .auth-btn { font-weight: 700; font-size: 14px; padding: 11px; border-radius: 8px; border: none; background: var(--ink); color: #fff; }
+  .auth-btn:disabled { opacity: .5; }
+  .auth-error { font-size: 12.5px; color: var(--red-tx); background: var(--red-bg); border-radius: 8px; padding: 9px 12px; display: none; }
+  .auth-error.show { display: block; }
+  .auth-form { display: none; flex-direction: column; gap: 14px; }
+  .auth-form.active { display: flex; }
+  .setup-banner { max-width: 480px; background: var(--amber-bg); color: #7A5001; border-radius: 12px; padding: 18px 20px; font-size: 13.5px; line-height: 1.6; }
+  .setup-banner code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+
+  /* ================= APP SHELL ================= */
+  #appShell { display: none; }
+  #appShell.active { display: flex; }
+  #sidebar {
+    width: 236px; min-width: 236px; height: 100vh;
+    background: var(--sidebar); border-right: 1px solid var(--border);
+    box-sizing: border-box; padding: 24px 14px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: sticky; top: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; margin-bottom: 28px; cursor: pointer; }
+  .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px; flex-shrink: 0; }
+  .brand-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand-edit-hint { font-size: 9px; color: var(--gray-500); margin-left: auto; flex-shrink: 0; }
+  nav.navlist { display: flex; flex-direction: column; gap: 1px; }
+  .navitem {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px;
+    font-weight: 500; font-size: 13.5px; color: var(--gray-700); border: none; background: transparent;
+    width: 100%; text-align: left;
+  }
+  .navitem svg { flex-shrink: 0; }
+  .navitem.active { background: var(--gray-200); font-weight: 600; color: var(--ink); }
+  .sidebar-foot { display: flex; flex-direction: column; gap: 2px; }
+  .user-chip { display: flex; align-items: center; gap: 9px; padding: 10px; margin-top: 8px; border-top: 1px solid var(--border); }
+  .user-avatar { width: 26px; height: 26px; border-radius: 999px; background: var(--gray-200); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: var(--gray-700); }
+  .logout-btn { border: none; background: transparent; color: var(--gray-500); font-size: 11px; font-weight: 600; padding: 0; margin-left: auto; }
+
+  #content { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+  .view { padding: 40px 48px; display: none; flex-direction: column; gap: 18px; min-height: 100%; }
+  .view.active { display: flex; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .page-title { font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+  .page-sub { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+  .actions { display: flex; gap: 8px; }
+
+  .btn { font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--ink); }
+  .btn-primary { border: none; background: var(--ink); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; }
+  .strip { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .strip > div { flex: 1; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; }
+  .strip > div + div { border-left: 1px solid var(--border); }
+  .stripval { font-weight: 800; font-size: 20px; }
+  .striplbl { font-size: 11.5px; color: var(--gray-500); font-weight: 500; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .kpi-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--gray-500); }
+  .kpi-val { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+  .kpi-sub { font-size: 12px; font-weight: 500; color: var(--gray-500); }
+
+  .panels { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; flex: 1; min-height: 0; }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; overflow: auto; }
+  .panel-title { font-weight: 700; font-size: 15px; }
+  .row-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .row-item:last-child { border-bottom: none; }
+
+  .chip { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+
+  table.datatable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.datatable thead th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-500); padding: 12px 24px; background: var(--gray-200); border-bottom: 1px solid var(--border); }
+  table.datatable tbody td { padding: 12px 24px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.datatable tbody tr:last-child td { border-bottom: none; }
+  .table-wrap { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--gray-500); }
+  .empty-row td { text-align: center; padding: 40px; color: var(--gray-500); }
+
+  select.filter-select { font-weight: 600; font-size: 13px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--ink); }
+
+  .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; }
+  .formpanel.open { display: flex; }
+  .formgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--gray-700); }
+  .field input, .field select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); outline: none; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .banner { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 16px 20px; }
+  .banner-title { font-weight: 700; font-size: 14.5px; }
+  .banner-sub { font-size: 12.5px; margin-top: 1px; }
+
+  .accounts-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .account-card { flex: 1; min-width: 160px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; }
+
+  .tabs { display: inline-flex; align-items: center; background: var(--gray-200); border-radius: 9px; padding: 3px; gap: 2px; width: fit-content; }
+  .tab-btn { font-weight: 500; font-size: 12.5px; padding: 7px 14px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); }
+  .tab-btn.active { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(24,24,15,0.08); }
+
+  .two-col { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 18px; flex: 1; min-height: 0; }
+  .catlist-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
+
+  .noticebar { display: none; align-items: center; gap: 10px; background: var(--amber-bg); color: var(--amber-tx); border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .noticebar.show { display: flex; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     PANTALLA DE AUTENTICACIÓN
+     ============================================================ -->
+<div id="authScreen">
+
+  <div id="setupBanner" class="setup-banner" style="display:none;">
+    <strong>⚙️ Falta configurar Firebase.</strong><br><br>
+    Abre este archivo HTML en un editor de texto, busca el bloque
+    <code>const firebaseConfig = { ... }</code> cerca del final del archivo,
+    y reemplázalo con la configuración de tu propio proyecto de Firebase
+    (Consola de Firebase → Configuración del proyecto → Tus apps → SDK de Firebase).
+  </div>
+
+  <div id="authCard" class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">C</div>
+      <div class="auth-logo-name">CourtOS</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin">Iniciar sesión</button>
+      <button class="auth-tab" id="tabSignup">Crear cuenta</button>
+    </div>
+
+    <div class="auth-error" id="authError"></div>
+
+    <form class="auth-form active" id="formLogin">
+      <div class="auth-field"><label>Correo</label><input type="email" id="loginEmail" required autocomplete="email"></div>
+      <div class="auth-field"><label>Contraseña</label><input type="password" id="loginPassword" required autocomplete="current-password"></div>
+      <button type="submit" class="auth-btn" id="btnLogin">Entrar</button>
+    </form>
+
+    <form class="auth-form" id="formSignup">
+      <div class="auth-field"><label>Nombre de tu torneo / organización</label><input type="text" id="signupOrg" placeholder="Ej: TS Padel Tour" required></div>
+      <div class="auth-field"><label>Correo</label><input type="email" id="signupEmail" required autocomplete="email"></div>
+      <div class="auth-field"><label>Contraseña</label><input type="password" id="signupPassword" required autocomplete="new-password" minlength="6"></div>
+      <button type="submit" class="auth-btn" id="btnSignup">Crear cuenta</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     SELECTOR DE TORNEOS (aparece tras iniciar sesión; cada torneo
+     es un espacio de trabajo separado: sus propias paradas,
+     categorías, inscripciones y finanzas)
+     ============================================================ -->
+<div id="torneoScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--sidebar); padding:24px;">
+  <div style="width:100%; max-width:560px; display:flex; flex-direction:column; gap:18px;">
+    <div class="auth-logo"><div class="auth-logo-mark">C</div><div class="auth-logo-name">CourtOS</div></div>
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="font-weight:700; font-size:18px;">Tus torneos</div>
+      <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
+    </div>
+    <div id="torneoList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div class="card" style="padding:16px; display:flex; gap:10px; align-items:center;">
+      <input id="nuevoTorneoNombre" placeholder="Nombre del nuevo torneo" style="flex:1; border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; outline:none; font-family:inherit;">
+      <button class="btn btn-primary" id="btnCrearTorneo">+ Crear Torneo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP (se muestra solo cuando hay sesión iniciada Y un torneo
+     seleccionado)
+     ============================================================ -->
+<div id="appShell">
+
+  <div id="sidebar">
+    <div>
+      <button class="navitem" id="btnCambiarTorneo" style="color:var(--gray-500); margin-bottom:10px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 16V4M7 4 3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
+        Cambiar de Torneo
+      </button>
+      <div class="brand" id="brandBtn" title="Clic para cambiar el nombre">
+        <div class="brand-mark" id="brandMark">T</div>
+        <div class="brand-name" id="brandName">Mi Torneo</div>
+      </div>
+      <nav class="navlist" id="navlist">
+        <button class="navitem" data-view="dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
+          Dashboard
+        </button>
+        <button class="navitem" data-view="torneos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
+          Torneos
+        </button>
+        <button class="navitem" data-view="inscripciones">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8 11h8M8 15h5"/></svg>
+          Inscripciones
+        </button>
+        <button class="navitem" data-view="financiero">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>
+          Financiero
+        </button>
+        <button class="navitem" data-view="viabilidad">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 7h7M8.5 11h2M13 11h2.5M8.5 15h2M13 15h2.5"/></svg>
+          Viabilidad de Canchas
+        </button>
+      </nav>
+    </div>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;">
+          <span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="userEmail">—</span>
+          <span style="font-size:10.5px;color:var(--gray-500);">Administrador</span>
+        </div>
+        <button class="logout-btn" id="btnLogout">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <section class="view" data-view="dashboard">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Resumen general de la temporada</div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-nav="viabilidad">Calculadora de Viabilidad</button>
+          <button class="btn btn-primary" data-nav="torneos" data-open-form="parada">+ Nueva Parada</button>
+        </div>
+      </div>
+      <div class="kpi-grid" id="dashKpis"></div>
+      <div class="panels">
+        <div class="panel">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="panel-title">Próximas Paradas</div>
+            <button class="btn" style="border:none;padding:0;background:none;font-size:12.5px;" data-nav="torneos">Ver todas →</button>
+          </div>
+          <div id="dashParadas"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Actividad Reciente</div>
+          <div id="dashActividad"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TORNEOS -->
+    <section class="view" data-view="torneos">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Torneos / Paradas</div>
+          <div class="page-sub" id="torneosSub">0 paradas registradas</div>
+        </div>
+        <button class="btn btn-primary" data-toggle-form="parada">+ Nueva Parada</button>
+      </div>
+
+      <div class="formpanel" id="formParada">
+        <div class="panel-title">Nueva Parada</div>
+        <div class="formgrid">
+          <div class="field"><label>Nombre</label><input id="p_nombre" placeholder="Parada 6"></div>
+          <div class="field"><label>Ciudad</label><input id="p_ciudad" placeholder="Bucaramanga"></div>
+          <div class="field"><label>Club / Sede</label><input id="p_club" placeholder="Club Campestre"></div>
+          <div class="field"><label>Fecha inicio</label><input id="p_fechaInicio" type="date"></div>
+          <div class="field"><label>Fecha fin</label><input id="p_fechaFin" type="date"></div>
+          <div class="field"><label>Cupos totales (parejas)</label><input id="p_cupos" type="number" value="32"></div>
+          <div class="field"><label>Estado</label>
+            <select id="p_estado">
+              <option value="PLANIFICADA">Planificada</option>
+              <option value="ABIERTA">Abierta</option>
+              <option value="EN_CURSO">En curso</option>
+              <option value="FINALIZADA">Finalizada</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="parada">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarParada">Guardar Parada</button>
+        </div>
+      </div>
+
+      <div class="card table-wrap" style="flex:1;">
+        <table class="datatable">
+          <thead><tr>
+            <th>Nombre</th><th>Ciudad</th><th>Fechas</th><th>Cupos</th><th>Estado</th><th style="text-align:right">Ingresos</th>
+          </tr></thead>
+          <tbody id="torneosBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INSCRIPCIONES -->
+    <section class="view" data-view="inscripciones">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Inscripciones</div>
+          <div class="page-sub" id="insSub">0 inscripciones en la temporada</div>
+        </div>
+        <button class="btn btn-primary" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
+      </div>
+
+      <div class="formpanel" id="formInscripcion">
+        <div class="panel-title">Nueva Inscripción</div>
+        <div class="formgrid">
+          <div class="field"><label>Parada</label><select id="i_parada"></select></div>
+          <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
+          <div class="field"><label>Valor inscripción</label><input id="i_valor" readonly></div>
+          <div class="field"><label>Jugador 1</label><input id="i_j1" placeholder="Nombre completo"></div>
+          <div class="field"><label>Jugador 2</label><input id="i_j2" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <div class="field"><label>Método de pago</label>
+            <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
+          </div>
+          <div class="field"><label>Cuenta de ingreso</label><select id="i_cuenta"></select></div>
+          <div class="field"><label>Estado de pago</label>
+            <select id="i_estadoPago">
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="PARCIAL">Parcial (abono)</option>
+              <option value="APROBADO" selected>Aprobado (pagó todo)</option>
+            </select>
+          </div>
+          <div class="field"><label>Monto pagado ahora</label><input id="i_pagado" type="number" value="0"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="inscripcion">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarInscripcion">Guardar Inscripción</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="insTabs">
+        <button class="tab-btn active" data-filter="TODAS">Todas</button>
+        <button class="tab-btn" data-filter="CONFIRMADA">Confirmadas</button>
+        <button class="tab-btn" data-filter="PENDIENTE">Pendientes de pago</button>
+        <button class="tab-btn" data-filter="CANCELADA">Canceladas</button>
+      </div>
+
+      <div class="card table-wrap" style="flex:1;">
+        <table class="datatable">
+          <thead><tr>
+            <th>Pareja</th><th>Categoría</th><th>Parada</th><th style="text-align:right">Valor</th><th style="text-align:right">Pagado</th><th>Estado</th>
+          </tr></thead>
+          <tbody id="insBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FINANCIERO -->
+    <section class="view" data-view="financiero">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Financiero</div>
+          <div class="page-sub">Movimientos de toda la temporada</div>
+        </div>
+        <button class="btn btn-primary" data-toggle-form="movimiento">+ Nuevo Movimiento</button>
+      </div>
+
+      <div class="formpanel" id="formMovimiento">
+        <div class="panel-title">Nuevo Movimiento</div>
+        <div class="formgrid">
+          <div class="field"><label>Tipo</label><select id="m_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
+          <div class="field"><label>Concepto</label><input id="m_concepto" placeholder="Arriendo de canchas"></div>
+          <div class="field"><label>Categoría</label><input id="m_categoria" placeholder="Canchas / Sede"></div>
+          <div class="field"><label>Valor</label><input id="m_valor" type="number" placeholder="0"></div>
+          <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
+          <div class="field"><label>Parada (opcional)</label><select id="m_parada"><option value="">Sin parada</option></select></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="movimiento">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarMovimiento">Guardar Movimiento</button>
+        </div>
+      </div>
+
+      <div class="strip" id="finStats"></div>
+      <div class="accounts-row" id="finCuentas"></div>
+
+      <div class="tabs" id="finTabs">
+        <button class="tab-btn active" data-filter="TODOS">Todos</button>
+        <button class="tab-btn" data-filter="INGRESO">Ingresos</button>
+        <button class="tab-btn" data-filter="GASTO">Gastos</button>
+      </div>
+
+      <div class="card table-wrap" style="flex:1;">
+        <table class="datatable">
+          <thead><tr>
+            <th>Fecha</th><th>Concepto</th><th>Parada</th><th>Cuenta</th><th style="text-align:right">Valor</th>
+          </tr></thead>
+          <tbody id="finBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIABILIDAD -->
+    <section class="view" data-view="viabilidad">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Calculadora de Viabilidad de Canchas</div>
+          <div class="page-sub">¿Alcanzan las canchas y el tiempo disponible para jugar los partidos de la parada?</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card" style="padding:22px;display:flex;flex-direction:column;gap:16px;overflow:auto;">
+          <div class="field"><label>Parada a evaluar</label><select id="v_parada"></select></div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Disponibilidad</div>
+            <div class="formgrid" style="grid-template-columns:1fr 1fr;">
+              <div class="field"><label>Días de torneo</label><input id="v_dias" type="number" value="2"></div>
+              <div class="field"><label>Horas / día</label><input id="v_horas" type="number" value="10"></div>
+              <div class="field"><label>Canchas disponibles</label><input id="v_canchas" type="number" value="3"></div>
+              <div class="field"><label>Min. por partido</label><input id="v_duracion" type="number" value="75"></div>
+            </div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Parejas inscritas por categoría (en vivo)</div>
+          <div id="v_catlist" style="flex:1;overflow:auto;"></div>
+
+          <button class="btn btn-primary" id="btnCalcularViabilidad">Calcular Viabilidad</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;overflow:auto;">
+          <div class="banner" id="v_banner"></div>
+          <div class="kpi-grid" id="v_kpis" style="grid-template-columns:repeat(3,1fr);"></div>
+          <div class="card table-wrap" style="flex:1;">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;">Partidos por Categoría</div>
+            <table class="datatable">
+              <thead><tr><th>Categoría</th><th style="text-align:right">Parejas</th><th style="text-align:right">Partidos</th><th style="text-align:right">Horas cancha</th></tr></thead>
+              <tbody id="v_catBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ============================================================
+  // PASO 1 — PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
+  // Consola de Firebase → Configuración del proyecto (⚙️) →
+  // "Tus apps" → app web → "SDK de Firebase" → copia el objeto
+  // firebaseConfig y reemplaza el de abajo.
+  // ============================================================
+  var firebaseConfig = {
+    apiKey: "AIzaSyBdKlceeV0RMyIajOlvvkKjKjsVBOtcF0I",
+    authDomain: "courtos-e6762.firebaseapp.com",
+    projectId: "courtos-e6762",
+    storageBucket: "courtos-e6762.firebasestorage.app",
+    messagingSenderId: "31452491361",
+    appId: "1:31452491361:web:8196fcf96b1caed8cbc420"
+  };
+
+  var NOT_CONFIGURED = (firebaseConfig.apiKey === 'TU_API_KEY');
+  if (NOT_CONFIGURED) {
+    document.getElementById('setupBanner').style.display = 'block';
+    document.getElementById('authCard').style.display = 'none';
+  } else {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  var auth = NOT_CONFIGURED ? null : firebase.auth();
+  var fsdb = NOT_CONFIGURED ? null : firebase.firestore();
+  var userRef = null;         // fsdb.collection('users').doc(uid) — nivel de la cuenta
+  var torneoRef = null;       // userRef.collection('torneos').doc(torneoId) — espacio de trabajo activo
+  var torneoId = null;
+  var unsubTorneos = null;    // listener de la lista de torneos
+
+  // ---------- state ----------
+  var paradas = [], categorias = [], cuentas = [], inscripciones = [], movimientos = [];
+  var insFilter = 'TODAS', finFilter = 'TODOS';
+  var viabParadaId = null;
+  var unsubs = [];
+
+  // ---------- helpers ----------
+  function money(n){ n = Math.round(n||0); return (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('es-CO'); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function byId(x){ return document.getElementById(x); }
+  function fmtDate(ts){ if(!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short'}); }
+  function fmtDateFull(ts){ if(!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}); }
+
+  var ESTADO_PARADA = {
+    PLANIFICADA: {bg:'var(--amber-bg)', tx:'var(--amber-tx)', label:'Planificada'},
+    ABIERTA:     {bg:'var(--green-bg)', tx:'var(--green-tx)', label:'Abierta'},
+    EN_CURSO:    {bg:'var(--blue-bg)',  tx:'var(--blue-tx)',  label:'En curso'},
+    FINALIZADA:  {bg:'var(--gray-200)', tx:'var(--gray-700)', label:'Finalizada'},
+    CANCELADA:   {bg:'var(--red-bg)',   tx:'var(--red-tx)',   label:'Cancelada'}
+  };
+  var ESTADO_INS = {
+    CONFIRMADA: {bg:'var(--green-bg)', tx:'var(--green-tx)', label:'Confirmada'},
+    PENDIENTE:  {bg:'var(--amber-bg)', tx:'var(--amber-tx)', label:'Pendiente de pago'},
+    CANCELADA:  {bg:'var(--red-bg)',   tx:'var(--red-tx)',   label:'Cancelada'}
+  };
+  function chip(map, key){
+    var m = map[key] || {bg:'var(--gray-200)', tx:'var(--gray-700)', label:key};
+    return '<span class="chip" style="background:'+m.bg+';color:'+m.tx+';">'+esc(m.label)+'</span>';
+  }
+
+  // ---------- derived data ----------
+  function cuentaSaldo(cuentaId){
+    var s = 0;
+    movimientos.forEach(function(m){
+      if (m.cuentaId !== cuentaId) return;
+      s += (m.tipo === 'INGRESO' ? 1 : -1) * (m.valor || 0);
+    });
+    return s;
+  }
+  function paradaCuposOcupados(paradaId){
+    return inscripciones.filter(function(i){ return i.paradaId === paradaId && i.estadoIns !== 'CANCELADA'; }).length;
+  }
+  function paradaIngresos(paradaId){
+    var s = 0;
+    movimientos.forEach(function(m){ if (m.paradaId === paradaId && m.tipo === 'INGRESO') s += (m.valor||0); });
+    return s;
+  }
+  function totalIngresos(){ var s=0; movimientos.forEach(function(m){ if(m.tipo==='INGRESO') s+=(m.valor||0); }); return s; }
+  function totalGastos(){ var s=0; movimientos.forEach(function(m){ if(m.tipo==='GASTO') s+=(m.valor||0); }); return s; }
+
+  function paradaById(id){ return paradas.find(function(p){ return p.id === id; }); }
+  function categoriaById(id){ return categorias.find(function(c){ return c.id === id; }); }
+  function cuentaById(id){ return cuentas.find(function(c){ return c.id === id; }); }
+
+  // ---------- nav ----------
+  function setView(v){
+    document.querySelectorAll('.view').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
+    document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
+  }
+  document.querySelectorAll('.navitem').forEach(function(btn){
+    btn.addEventListener('click', function(){ setView(btn.dataset.view); });
+  });
+  document.querySelectorAll('[data-nav]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      setView(btn.dataset.nav);
+      if (btn.dataset.openForm) openForm(btn.dataset.openForm);
+    });
+  });
+
+  function openForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.add('open'); }
+  function closeForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.remove('open'); }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  document.querySelectorAll('[data-toggle-form]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var name = btn.dataset.toggleForm;
+      var el = byId('form' + cap(name));
+      el.classList.toggle('open');
+    });
+  });
+  document.querySelectorAll('[data-close-form]').forEach(function(btn){
+    btn.addEventListener('click', function(){ closeForm(btn.dataset.closeForm); });
+  });
+
+  document.querySelectorAll('#insTabs .tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      insFilter = btn.dataset.filter;
+      document.querySelectorAll('#insTabs .tab-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      renderInscripciones();
+    });
+  });
+  document.querySelectorAll('#finTabs .tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      finFilter = btn.dataset.filter;
+      document.querySelectorAll('#finTabs .tab-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      renderFinanciero();
+    });
+  });
+
+  // ---------- render: selects ----------
+  function fillParadaSelects(){
+    var opts = paradas.map(function(p){ return '<option value="'+p.id+'">'+esc(p.nombre)+'</option>'; }).join('');
+    ['i_parada','v_parada'].forEach(function(id){
+      var el = byId(id);
+      var prev = el.value;
+      el.innerHTML = opts || '<option value="">Sin paradas — crea una primero</option>';
+      if (prev && paradas.some(function(p){return p.id===prev;})) el.value = prev;
+    });
+    var mParada = byId('m_parada');
+    mParada.innerHTML = '<option value="">Sin parada</option>' + opts;
+  }
+  function fillCategoriaSelect(){
+    var el = byId('i_categoria');
+    var prev = el.value;
+    el.innerHTML = categorias.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' — '+money(c.valorInscripcion)+'</option>'; }).join('');
+    if (prev && categorias.some(function(c){return c.id===prev;})) el.value = prev;
+    updateValorInscripcion();
+  }
+  function fillCuentaSelects(){
+    var opts = cuentas.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' ('+money(cuentaSaldo(c.id))+')</option>'; }).join('');
+    ['i_cuenta','m_cuenta'].forEach(function(id){
+      var el = byId(id);
+      var prev = el.value;
+      el.innerHTML = opts;
+      if (prev && cuentas.some(function(c){return c.id===prev;})) el.value = prev;
+    });
+  }
+  function updateValorInscripcion(){
+    var cat = categoriaById(byId('i_categoria').value);
+    byId('i_valor').value = cat ? money(cat.valorInscripcion) : '';
+    if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = cat.valorInscripcion;
+  }
+  byId('i_categoria').addEventListener('change', updateValorInscripcion);
+  byId('i_estadoPago').addEventListener('change', function(){
+    var cat = categoriaById(byId('i_categoria').value);
+    if (this.value === 'APROBADO' && cat) byId('i_pagado').value = cat.valorInscripcion;
+    if (this.value === 'PENDIENTE') byId('i_pagado').value = 0;
+  });
+
+  // ---------- render: dashboard ----------
+  function renderDashboard(){
+    var ing = totalIngresos(), gas = totalGastos(), util = ing - gas;
+    var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
+    var parejas = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).length;
+    var paradasActivas = paradas.filter(function(p){ return p.estado === 'ABIERTA' || p.estado === 'EN_CURSO'; }).length;
+
+    byId('dashKpis').innerHTML =
+      kpiCard('Ingresos Totales', money(ing), ing>0 ? '' : 'Aún sin movimientos') +
+      kpiCard('Utilidad Neta', money(util), gas>0 ? ('Gastos: '+money(gas)) : '') +
+      kpiCard('Parejas Inscritas', String(parejas), paradasActivas+' parada(s) activa(s)') +
+      kpiCard('Saldo en Cuentas', money(saldoTotal), cuentas.length+' cuenta(s)');
+
+    var proximas = paradas.slice().sort(function(a,b){ return (a.fechaInicio||'').localeCompare(b.fechaInicio||''); }).slice(0,4);
+    byId('dashParadas').innerHTML = proximas.length ? proximas.map(function(p){
+      var e = ESTADO_PARADA[p.estado] || ESTADO_PARADA.PLANIFICADA;
+      return '<div class="row-item"><div><div style="font-weight:600;font-size:14px;">'+esc(p.nombre)+' — '+esc(p.ciudad||'')+'</div>' +
+        '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(p.club||'')+' · '+fmtDateFull(p.fechaInicio)+'</div></div>' +
+        chip(ESTADO_PARADA, p.estado) + '</div>';
+    }).join('') : '<div class="muted" style="padding:20px 0;">Aún no hay paradas creadas.</div>';
+
+    var recientes = movimientos.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,5);
+    byId('dashActividad').innerHTML = recientes.length ? recientes.map(function(m){
+      var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
+      var sign = m.tipo === 'INGRESO' ? '+' : '−';
+      return '<div class="row-item"><div><div style="font-size:13.5px;font-weight:600;">'+esc(m.concepto)+'</div>' +
+        '<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px;">'+fmtDate(m.fecha)+'</div></div>' +
+        '<div style="font-weight:700;font-size:13.5px;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</div></div>';
+    }).join('') : '<div class="muted" style="padding:20px 0;">Aún no hay movimientos registrados.</div>';
+  }
+  function kpiCard(lbl, val, sub){
+    return '<div class="kpi"><div class="kpi-lbl">'+esc(lbl)+'</div><div class="kpi-val">'+val+'</div>' + (sub?'<div class="kpi-sub">'+esc(sub)+'</div>':'') + '</div>';
+  }
+
+  // ---------- render: torneos ----------
+  function renderTorneos(){
+    byId('torneosSub').textContent = paradas.length + ' parada' + (paradas.length===1?'':'s') + ' registrada' + (paradas.length===1?'':'s');
+    if (!paradas.length){
+      byId('torneosBody').innerHTML = '<tr class="empty-row"><td colspan="6">Aún no hay paradas. Crea la primera con "+ Nueva Parada".</td></tr>';
+      return;
+    }
+    byId('torneosBody').innerHTML = paradas.slice().sort(function(a,b){ return (a.fechaInicio||'').localeCompare(b.fechaInicio||''); }).map(function(p){
+      var ocupados = paradaCuposOcupados(p.id);
+      return '<tr>' +
+        '<td style="font-weight:600;">'+esc(p.nombre)+'</td>' +
+        '<td class="muted">'+esc(p.ciudad||'—')+'</td>' +
+        '<td class="muted">'+fmtDateFull(p.fechaInicio)+(p.fechaFin?' – '+fmtDateFull(p.fechaFin):'')+'</td>' +
+        '<td>'+ocupados+' / '+(p.cuposTotales||0)+'</td>' +
+        '<td>'+chip(ESTADO_PARADA, p.estado)+'</td>' +
+        '<td class="num" style="font-weight:700;">'+money(paradaIngresos(p.id))+'</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---------- render: inscripciones ----------
+  function renderInscripciones(){
+    byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es') + ' en la temporada';
+    var list = inscripciones.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
+    if (insFilter !== 'TODAS') list = list.filter(function(i){ return i.estadoIns === insFilter; });
+    if (!list.length){
+      byId('insBody').innerHTML = '<tr class="empty-row"><td colspan="6">No hay inscripciones' + (insFilter!=='TODAS' ? ' con este filtro.' : ' todavía. Crea la primera con "+ Nueva Inscripción".') + '</td></tr>';
+      return;
+    }
+    byId('insBody').innerHTML = list.map(function(i){
+      var j2 = i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>';
+      return '<tr>' +
+        '<td style="font-weight:600;">'+esc(i.j1Nombre)+' / '+j2+'</td>' +
+        '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
+        '<td class="muted">'+esc(i.paradaNombre)+'</td>' +
+        '<td class="num">'+money(i.valor)+'</td>' +
+        '<td class="num" style="font-weight:600;color:'+(i.valorPagado>=i.valor?'var(--green-tx)':(i.valorPagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(i.valorPagado)+'</td>' +
+        '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---------- render: financiero ----------
+  function renderFinanciero(){
+    var ing = totalIngresos(), gas = totalGastos(), util = ing-gas;
+    var margen = ing>0 ? Math.round(util/ing*100) : 0;
+    var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
+    byId('finStats').innerHTML =
+      '<div><div class="stripval" style="color:var(--green-tx);">'+money(ing)+'</div><div class="striplbl">Ingresos Totales</div></div>' +
+      '<div><div class="stripval" style="color:var(--red-tx);">'+money(gas)+'</div><div class="striplbl">Gastos Totales</div></div>' +
+      '<div><div class="stripval">'+money(util)+'</div><div class="striplbl">Utilidad Neta · '+margen+'%</div></div>' +
+      '<div><div class="stripval">'+money(saldoTotal)+'</div><div class="striplbl">Saldo en Cuentas</div></div>';
+
+    byId('finCuentas').innerHTML = cuentas.map(function(c){
+      return '<div class="account-card"><span style="font-size:13px;font-weight:600;">'+esc(c.nombre)+'</span><span style="font-weight:700;font-size:14px;">'+money(cuentaSaldo(c.id))+'</span></div>';
+    }).join('') || '<div class="muted">Sin cuentas configuradas.</div>';
+
+    var list = movimientos.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
+    if (finFilter !== 'TODOS') list = list.filter(function(m){ return m.tipo === finFilter; });
+    if (!list.length){
+      byId('finBody').innerHTML = '<tr class="empty-row"><td colspan="5">No hay movimientos' + (finFilter!=='TODOS'?' con este filtro.':' todavía.') + '</td></tr>';
+      return;
+    }
+    byId('finBody').innerHTML = list.map(function(m){
+      var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
+      var sign = m.tipo === 'INGRESO' ? '+' : '−';
+      var cuenta = cuentaById(m.cuentaId);
+      return '<tr>' +
+        '<td class="muted">'+fmtDate(m.fecha)+'</td>' +
+        '<td><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+'</div></td>' +
+        '<td class="muted">'+esc(m.paradaNombre||'—')+'</td>' +
+        '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
+        '<td class="num" style="font-weight:700;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---------- render: viabilidad ----------
+  function renderViabilidadForm(){
+    if (!viabParadaId && paradas.length) viabParadaId = paradas[0].id;
+    var sel = byId('v_parada');
+    if (sel.value !== viabParadaId && viabParadaId) sel.value = viabParadaId;
+
+    var cats = categoriasConteoPorParada(viabParadaId);
+    byId('v_catlist').innerHTML = '<div class="catlist-row" style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--gray-500);border-bottom:1px solid var(--border);"><span>Categoría</span><span style="text-align:right;">Parejas</span><span></span><span></span></div>' +
+      (cats.length ? cats.map(function(c){
+        return '<div class="catlist-row"><span style="font-weight:600;">'+esc(c.nombre)+'</span><span class="num">'+c.parejas+'</span><span></span><span></span></div>';
+      }).join('') : '<div class="muted" style="padding:12px 0;">Esta parada aún no tiene inscripciones.</div>');
+  }
+  function categoriasConteoPorParada(paradaId){
+    var byCat = {};
+    inscripciones.forEach(function(i){
+      if (i.paradaId !== paradaId || i.estadoIns === 'CANCELADA') return;
+      byCat[i.categoriaId] = byCat[i.categoriaId] || {nombre: i.categoriaNombre, parejas: 0};
+      byCat[i.categoriaId].parejas++;
+    });
+    return Object.keys(byCat).map(function(k){ return byCat[k]; });
+  }
+  function calcularViabilidad(){
+    var dias = parseFloat(byId('v_dias').value) || 0;
+    var horasDia = parseFloat(byId('v_horas').value) || 0;
+    var canchas = parseFloat(byId('v_canchas').value) || 0;
+    var duracionMin = parseFloat(byId('v_duracion').value) || 0;
+    var cats = categoriasConteoPorParada(viabParadaId);
+
+    var totalPartidos = 0, totalHoras = 0;
+    var rows = cats.map(function(c){
+      var partidos = Math.max(c.parejas - 1, 0);
+      var horas = partidos * duracionMin / 60;
+      totalPartidos += partidos; totalHoras += horas;
+      return {nombre:c.nombre, parejas:c.parejas, partidos:partidos, horas:horas};
+    });
+
+    var horasDisponibles = dias * horasDia * canchas;
+    var canchasMinimas = (dias>0 && horasDia>0) ? Math.ceil(totalHoras / (dias*horasDia)) : 0;
+    var ocupacion = horasDisponibles>0 ? Math.round(totalHoras/horasDisponibles*100) : 0;
+    var margen = horasDisponibles - totalHoras;
+    var viable = totalHoras <= horasDisponibles;
+
+    byId('v_banner').style.background = viable ? 'var(--green-bg)' : 'var(--amber-bg)';
+    byId('v_banner').innerHTML =
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="'+(viable?'#2F7C31':'#9F6702')+'" stroke-width="2">' +
+      (viable ? '<path d="M20 6 9 17l-5-5"/>' : '<path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>') +
+      '</svg><div><div class="banner-title" style="color:'+(viable?'#1F5A21':'#7A5001')+';">' + (viable ? 'Proyecto viable' : 'Requiere ajustes') + '</div>' +
+      '<div class="banner-sub" style="color:'+(viable?'#2F7C31':'#9F6702')+';">' +
+      (viable ? 'Sobran '+margen.toFixed(1)+' horas de cancha con esta configuración.' : 'Faltan '+Math.abs(margen).toFixed(1)+' horas de cancha para completar los '+totalPartidos+' partidos programados.') +
+      '</div></div>';
+
+    byId('v_kpis').innerHTML =
+      kpiCard('Partidos Totales', String(totalPartidos)) +
+      kpiCard('Horas Necesarias', totalHoras.toFixed(1)+'h') +
+      kpiCard('Horas Disponibles', horasDisponibles.toFixed(1)+'h') +
+      kpiCard('Canchas Mínimas', String(canchasMinimas), canchasMinimas>canchas ? ('tienes '+canchas+' disponibles') : '') +
+      kpiCard('Ocupación Proyectada', ocupacion+'%') +
+      kpiCard('Margen', (margen>=0?'+':'')+margen.toFixed(1)+'h');
+
+    byId('v_catBody').innerHTML = rows.length ? rows.map(function(r){
+      return '<tr><td style="font-weight:600;">'+esc(r.nombre)+'</td><td class="num muted">'+r.parejas+'</td><td class="num">'+r.partidos+'</td><td class="num">'+r.horas.toFixed(1)+'h</td></tr>';
+    }).join('') + '<tr style="background:var(--gray-200);"><td style="font-weight:700;">Total</td><td class="num" style="font-weight:700;">'+cats.reduce(function(s,c){return s+c.parejas;},0)+'</td><td class="num" style="font-weight:700;">'+totalPartidos+'</td><td class="num" style="font-weight:700;">'+totalHoras.toFixed(1)+'h</td></tr>'
+      : '<tr class="empty-row"><td colspan="4">Selecciona una parada con inscripciones para calcular.</td></tr>';
+  }
+  byId('v_parada').addEventListener('change', function(){ viabParadaId = this.value; renderViabilidadForm(); calcularViabilidad(); });
+  byId('btnCalcularViabilidad').addEventListener('click', calcularViabilidad);
+
+  // ---------- render all ----------
+  function renderAll(){
+    fillParadaSelects();
+    fillCategoriaSelect();
+    fillCuentaSelects();
+    renderDashboard();
+    renderTorneos();
+    renderInscripciones();
+    renderFinanciero();
+    renderViabilidadForm();
+    calcularViabilidad();
+  }
+
+  // ---------- write actions (todas escriben bajo userRef, es decir,
+  //            en el espacio de datos privado de cada usuario) ----------
+  byId('btnGuardarParada').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var nombre = byId('p_nombre').value.trim();
+    if (!nombre) { alert('Escribe el nombre de la parada.'); return; }
+    torneoRef.collection('paradas').add({
+      nombre: nombre,
+      ciudad: byId('p_ciudad').value.trim(),
+      club: byId('p_club').value.trim(),
+      fechaInicio: byId('p_fechaInicio').value,
+      fechaFin: byId('p_fechaFin').value,
+      cuposTotales: parseInt(byId('p_cupos').value, 10) || 0,
+      estado: byId('p_estado').value,
+      creadoEn: Date.now()
+    }).then(function(){
+      ['p_nombre','p_ciudad','p_club','p_fechaInicio','p_fechaFin'].forEach(function(id){ byId(id).value = ''; });
+      byId('p_cupos').value = 32;
+      closeForm('parada');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  byId('btnGuardarInscripcion').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var paradaId = byId('i_parada').value;
+    var categoriaId = byId('i_categoria').value;
+    var j1 = byId('i_j1').value.trim();
+    var j2 = byId('i_j2').value.trim();
+    var cuentaId = byId('i_cuenta').value;
+    if (!paradaId || !categoriaId || !j1 || !cuentaId) { alert('Completa parada, categoría, jugador 1 y cuenta.'); return; }
+    var parada = paradaById(paradaId), cat = categoriaById(categoriaId);
+    var estadoPago = byId('i_estadoPago').value;
+    var pagado = parseFloat(byId('i_pagado').value) || 0;
+    var valor = cat.valorInscripcion;
+    var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE';
+
+    torneoRef.collection('inscripciones').add({
+      paradaId: paradaId, paradaNombre: parada.nombre,
+      categoriaId: categoriaId, categoriaNombre: cat.nombre,
+      j1Nombre: j1, j2Nombre: j2,
+      valor: valor, valorPagado: pagado, estadoPago: estadoPago, estadoIns: estadoIns,
+      cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
+      fecha: Date.now()
+    }).then(function(ref){
+      if (pagado > 0){
+        return torneoRef.collection('movimientos').add({
+          tipo: 'INGRESO', concepto: 'Inscripción — ' + j1 + (j2 ? ' / ' + j2 : ''),
+          categoria: 'Inscripciones', valor: pagado,
+          cuentaId: cuentaId, paradaId: paradaId, paradaNombre: parada.nombre,
+          sourceType: 'INSCRIPCION', sourceId: ref.id, fecha: Date.now()
+        });
+      }
+    }).then(function(){
+      ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
+      byId('i_pagado').value = 0;
+      closeForm('inscripcion');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  byId('btnGuardarMovimiento').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var concepto = byId('m_concepto').value.trim();
+    var valor = parseFloat(byId('m_valor').value) || 0;
+    var cuentaId = byId('m_cuenta').value;
+    if (!concepto || valor <= 0 || !cuentaId) { alert('Completa concepto, valor y cuenta.'); return; }
+    var paradaId = byId('m_parada').value;
+    var parada = paradaId ? paradaById(paradaId) : null;
+    torneoRef.collection('movimientos').add({
+      tipo: byId('m_tipo').value, concepto: concepto,
+      categoria: byId('m_categoria').value.trim(), valor: valor,
+      cuentaId: cuentaId, paradaId: paradaId || '', paradaNombre: parada ? parada.nombre : '',
+      fecha: Date.now()
+    }).then(function(){
+      byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = '';
+      closeForm('movimiento');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  // ---------- nombre del torneo activo (reemplaza "TS Padel Tour") ----------
+  byId('brandBtn').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var actual = byId('brandName').textContent;
+    var nuevo = prompt('Nombre de este torneo:', actual);
+    if (nuevo === null) return;
+    nuevo = nuevo.trim();
+    if (!nuevo) return;
+    torneoRef.set({ nombre: nuevo }, { merge: true }).then(function(){
+      applyBrand(nuevo);
+    }).catch(function(e){ alert('No se pudo guardar el nombre: ' + e.message); });
+  });
+  function applyBrand(name){
+    byId('brandName').textContent = name;
+    byId('brandMark').textContent = (name || 'T').trim().charAt(0).toUpperCase();
+    document.title = name + ' · CourtOS';
+  }
+
+  // ---------- semilla de datos por defecto para un torneo nuevo ----------
+  function seedDefaultData(ref){
+    var batch = fsdb.batch();
+    var cats = [
+      {id:'cat-tercera', nombre:'Tercera', orden:1, valorInscripcion:250000},
+      {id:'cat-cuarta',  nombre:'Cuarta',  orden:2, valorInscripcion:200000},
+      {id:'cat-quinta',  nombre:'Quinta',  orden:3, valorInscripcion:180000},
+      {id:'cat-sexta',   nombre:'Sexta',   orden:4, valorInscripcion:150000},
+      {id:'cat-fem-b',   nombre:'Femenino B', orden:5, valorInscripcion:180000},
+      {id:'cat-fem-c',   nombre:'Femenino C', orden:6, valorInscripcion:150000}
+    ];
+    var cuentasSeed = [
+      {id:'cta-principal', nombre:'Cuenta Principal'},
+      {id:'cta-efectivo',  nombre:'Efectivo'},
+      {id:'cta-nequi',     nombre:'Nequi'}
+    ];
+    cats.forEach(function(c){ batch.set(ref.collection('categorias').doc(c.id), {nombre:c.nombre, orden:c.orden, valorInscripcion:c.valorInscripcion}); });
+    cuentasSeed.forEach(function(c){ batch.set(ref.collection('cuentas').doc(c.id), {nombre:c.nombre}); });
+    return batch.commit();
+  }
+
+  // ============================================================
+  // AUTENTICACIÓN
+  // ============================================================
+  function showAuthError(msg){ var el = byId('authError'); el.textContent = msg; el.classList.add('show'); }
+  function hideAuthError(){ byId('authError').classList.remove('show'); }
+  function translateAuthError(code){
+    var map = {
+      'auth/wrong-password': 'Contraseña incorrecta.',
+      'auth/user-not-found': 'No existe una cuenta con ese correo.',
+      'auth/invalid-email': 'Correo inválido.',
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.'
+    };
+    return map[code] || 'Ocurrió un error. Intenta de nuevo.';
+  }
+
+  byId('tabLogin').addEventListener('click', function(){
+    byId('tabLogin').classList.add('active'); byId('tabSignup').classList.remove('active');
+    byId('formLogin').classList.add('active'); byId('formSignup').classList.remove('active');
+    hideAuthError();
+  });
+  byId('tabSignup').addEventListener('click', function(){
+    byId('tabSignup').classList.add('active'); byId('tabLogin').classList.remove('active');
+    byId('formSignup').classList.add('active'); byId('formLogin').classList.remove('active');
+    hideAuthError();
+  });
+
+  byId('formLogin').addEventListener('submit', function(e){
+    e.preventDefault();
+    hideAuthError();
+    var email = byId('loginEmail').value.trim();
+    var pass = byId('loginPassword').value;
+    byId('btnLogin').disabled = true;
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(function(err){ showAuthError(translateAuthError(err.code)); })
+      .finally(function(){ byId('btnLogin').disabled = false; });
+  });
+
+  // Al registrarse: se crea la cuenta y el PRIMER torneo (con el nombre que
+  // puso en el formulario), y se entra directo a él — sin pasar por el
+  // selector la primera vez.
+  byId('formSignup').addEventListener('submit', function(e){
+    e.preventDefault();
+    hideAuthError();
+    var org = byId('signupOrg').value.trim();
+    var email = byId('signupEmail').value.trim();
+    var pass = byId('signupPassword').value;
+    if (!org) { showAuthError('Escribe el nombre de tu torneo u organización.'); return; }
+    byId('btnSignup').disabled = true;
+    var newUserRef;
+    auth.createUserWithEmailAndPassword(email, pass).then(function(cred){
+      newUserRef = fsdb.collection('users').doc(cred.user.uid);
+      return newUserRef.set({ email: email, creadoEn: Date.now() });
+    }).then(function(){
+      return newUserRef.collection('torneos').add({ nombre: org, creadoEn: Date.now() });
+    }).then(function(nuevoTorneoRef){
+      return seedDefaultData(nuevoTorneoRef).then(function(){ return nuevoTorneoRef; });
+    }).then(function(nuevoTorneoRef){
+      enterTorneo(nuevoTorneoRef.id, { nombre: org });
+    }).catch(function(err){
+      showAuthError(translateAuthError(err.code));
+    }).finally(function(){
+      byId('btnSignup').disabled = false;
+    });
+  });
+
+  byId('btnLogout').addEventListener('click', function(){ if (auth) auth.signOut(); });
+  byId('btnLogoutFromTorneos').addEventListener('click', function(){ if (auth) auth.signOut(); });
+
+  // ============================================================
+  // SELECTOR DE TORNEOS
+  // ============================================================
+  function renderTorneoList(torneos){
+    var list = byId('torneoList');
+    if (!torneos.length){
+      list.innerHTML = '<div class="muted" style="padding:12px 0;">Aún no tienes torneos. Crea el primero abajo.</div>';
+      return;
+    }
+    list.innerHTML = torneos.map(function(t){
+      return '<button class="account-card" data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;">' +
+        '<span style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</span>' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>' +
+        '</button>';
+    }).join('');
+    list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var t = torneos.find(function(x){ return x.id === btn.dataset.torneoId; });
+        enterTorneo(btn.dataset.torneoId, t);
+      });
+    });
+  }
+
+  byId('btnCrearTorneo').addEventListener('click', function(){
+    if (!userRef) return;
+    var nombre = byId('nuevoTorneoNombre').value.trim();
+    if (!nombre) { alert('Escribe un nombre para el torneo.'); return; }
+    userRef.collection('torneos').add({ nombre: nombre, creadoEn: Date.now() }).then(function(ref){
+      return seedDefaultData(ref).then(function(){ return ref; });
+    }).then(function(ref){
+      byId('nuevoTorneoNombre').value = '';
+      enterTorneo(ref.id, { nombre: nombre });
+    }).catch(function(e){ alert('No se pudo crear el torneo: ' + e.message); });
+  });
+
+  function showTorneoScreen(){
+    byId('appShell').classList.remove('active');
+    byId('torneoScreen').style.display = 'flex';
+    byId('torneoScreen').style.flexDirection = 'column';
+    if (userRef && !unsubTorneos){
+      unsubTorneos = userRef.collection('torneos').onSnapshot(function(snap){
+        var arr = [];
+        snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
+        arr.sort(function(a,b){ return (a.creadoEn||0)-(b.creadoEn||0); });
+        renderTorneoList(arr);
+      }, function(err){ console.error('torneos', err); });
+    }
+  }
+
+  function enterTorneo(id, data){
+    torneoId = id;
+    torneoRef = userRef.collection('torneos').doc(id);
+    applyBrand((data && data.nombre) || 'Mi Torneo');
+    byId('torneoScreen').style.display = 'none';
+    byId('appShell').classList.add('active');
+
+    subscribe('paradas', function(a){ paradas = a; });
+    subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
+    subscribe('cuentas', function(a){ cuentas = a; });
+    subscribe('inscripciones', function(a){ inscripciones = a; });
+    subscribe('movimientos', function(a){ movimientos = a; });
+
+    setView('dashboard');
+    renderAll();
+  }
+
+  byId('btnCambiarTorneo').addEventListener('click', function(){
+    teardownSubscriptions();
+    torneoRef = null; torneoId = null;
+    showTorneoScreen();
+  });
+
+  function subscribe(collectionName, onData){
+    var unsub = torneoRef.collection(collectionName).onSnapshot(function(snap){
+      var arr = [];
+      snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
+      onData(arr);
+      renderAll();
+    }, function(err){ console.error(collectionName, err); });
+    unsubs.push(unsub);
+  }
+
+  function teardownSubscriptions(){
+    unsubs.forEach(function(u){ try { u(); } catch(e){} });
+    unsubs = [];
+    paradas = []; categorias = []; cuentas = []; inscripciones = []; movimientos = [];
+  }
+
+  function teardownTorneoList(){
+    if (unsubTorneos) { try { unsubTorneos(); } catch(e){} unsubTorneos = null; }
+  }
+
+  if (auth) {
+    auth.onAuthStateChanged(function(user){
+      if (user) {
+        userRef = fsdb.collection('users').doc(user.uid);
+        byId('authScreen').style.display = 'none';
+        byId('userEmail').textContent = user.email || '';
+        byId('userAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
+        // El signup ya entra directo a su primer torneo (enterTorneo se llama
+        // desde el handler de formSignup); si venimos de un login normal,
+        // mostramos el selector de torneos.
+        if (!torneoRef) showTorneoScreen();
+      } else {
+        teardownSubscriptions();
+        teardownTorneoList();
+        userRef = null; torneoRef = null; torneoId = null;
+        byId('appShell').classList.remove('active');
+        byId('torneoScreen').style.display = 'none';
+        byId('authScreen').style.display = 'flex';
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
