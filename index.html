@@ -363,7 +363,7 @@
         <div class="user-avatar" id="userAvatar">U</div>
         <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;">
           <span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="userEmail">—</span>
-          <span style="font-size:10.5px;color:var(--gray-500);">Administrador</span>
+          <span style="font-size:10.5px;color:var(--gray-500);" id="userPlanLabel">Gratis</span>
         </div>
         <button class="logout-btn" id="btnLogout">Salir</button>
       </div>
@@ -2406,6 +2406,10 @@
   // de torneos (para el límite de "1 torneo gratis").
   function aplicarRestriccionesPlan(){
     var pro = esPro();
+
+    byId('userPlanLabel').textContent = pro ? 'PRO' : 'Gratis';
+    byId('userPlanLabel').style.color = pro ? 'var(--green-tx)' : 'var(--gray-500)';
+    byId('userPlanLabel').style.fontWeight = pro ? '700' : '400';
 
     // Jugadores
     byId('jugadoresContenido').style.display = pro ? 'flex' : 'none';
