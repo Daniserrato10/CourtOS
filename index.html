@@ -342,6 +342,14 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 7h7M8.5 11h2M13 11h2.5M8.5 15h2M13 15h2.5"/></svg>
           Viabilidad de Canchas
         </button>
+        <button class="navitem" data-view="jugadores">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="9" r="2.4"/><path d="M15.5 14a4.6 4.6 0 0 1 5.5 4.4"/></svg>
+          Jugadores <span style="font-size:9px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
+        </button>
+        <button class="navitem" data-view="notas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h4"/></svg>
+          Notas
+        </button>
         <button class="navitem" data-view="configuracion">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
           Configuración
@@ -422,8 +430,9 @@
         <div class="formgrid">
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
           <div class="field"><label>Valor inscripción</label><input id="i_valor" readonly></div>
-          <div class="field"><label>Jugador 1</label><input id="i_j1" placeholder="Nombre completo"></div>
-          <div class="field"><label>Jugador 2</label><input id="i_j2" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <div class="field"><label>Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
+          <div class="field"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <datalist id="jugadoresSuggestions"></datalist>
           <div class="field"><label>Método de pago</label>
             <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
           </div>
@@ -712,6 +721,72 @@
       </div>
     </section>
 
+    <!-- JUGADORES (nivel de cuenta — persiste entre torneos) -->
+    <section class="view" data-view="jugadores">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Jugadores <span style="font-size:10px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
+          <div class="page-sub">Base de datos compartida entre todos tus torneos — no se borra al crear uno nuevo</div>
+        </div>
+        <button class="btn btn-primary" data-toggle-form="jugador">+ Nuevo Jugador</button>
+      </div>
+
+      <div class="formpanel" id="formJugador">
+        <div class="panel-title">Nuevo Jugador</div>
+        <div class="formgrid">
+          <div class="field"><label>Nombre</label><input id="j_nombre" placeholder="Nombre completo"></div>
+          <div class="field"><label>Teléfono</label><input id="j_telefono" placeholder="3001234567"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="jugador">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarJugador">Guardar Jugador</button>
+        </div>
+      </div>
+
+      <div class="no-print" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;max-width:320px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="jug_buscar" type="text" placeholder="Buscar jugador..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
+      </div>
+
+      <div class="card table-wrap" style="flex:1;">
+        <table class="datatable">
+          <thead><tr>
+            <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th>
+          </tr></thead>
+          <tbody id="jugadoresBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NOTAS -->
+    <section class="view" data-view="notas">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Notas</div>
+          <div class="page-sub">Recordatorios y pendientes de este torneo</div>
+        </div>
+        <button class="btn btn-primary" id="btnNuevaNota" data-toggle-form="nota">+ Nueva Nota</button>
+      </div>
+
+      <div class="formpanel" id="formNota">
+        <div class="panel-title">Nueva Nota</div>
+        <div class="field"><label>Título</label><input id="n_titulo" placeholder="Ej: Antes del torneo"></div>
+        <div class="field"><label>Contenido (opcional)</label><textarea id="n_contenido" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;resize:vertical;"></textarea></div>
+        <div class="field"><label>Recordatorio (opcional)</label><input id="n_recordatorio" type="date" style="max-width:200px;"></div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--gray-700);">Checklist (opcional)</label>
+          <div id="n_itemsList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
+          <button class="btn" id="btnAgregarItemNota" style="margin-top:8px;padding:6px 12px;font-size:12px;">+ Agregar ítem</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="nota">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarNota">Guardar Nota</button>
+        </div>
+      </div>
+
+      <div id="notasGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px;"></div>
+    </section>
+
     <!-- CONFIGURACIÓN -->
     <section class="view" data-view="configuracion">
       <div class="page-head">
@@ -798,9 +873,11 @@
   var currentUserEmail = '';  // correo del usuario con sesión iniciada, para dejar rastro en anulaciones
   var isAdminMode = false;    // se reinicia cada vez que entras a un torneo; se activa con el PIN en Configuración
   var unsubTorneos = null;    // listener de la lista de torneos
+  var unsubJugadores = null;  // listener de jugadores — vive a nivel de CUENTA, no se reinicia entre torneos
 
   // ---------- state ----------
-  var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [];
+  var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
+  var jugadoresGlobal = []; // base de datos de jugadores, a nivel de cuenta (persiste entre torneos)
   var insFilter = 'TODAS', finFilter = 'TODOS';
   var unsubs = [];
 
@@ -1155,6 +1232,9 @@
   function fillCategoriaDatalist(){
     var nombres = presupuesto.map(function(l){ return l.concepto; }).filter(Boolean);
     byId('categoriaSuggestions').innerHTML = nombres.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  }
+  function fillJugadoresDatalist(){
+    byId('jugadoresSuggestions').innerHTML = jugadoresGlobal.map(function(j){ return '<option value="'+esc(j.nombre)+'">'; }).join('');
   }
 
   // ---------- render: presupuesto ----------
@@ -1689,6 +1769,153 @@
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
+  // ---------- render: jugadores (nivel de cuenta) ----------
+  function historialDeJugador(j){ return j.historial || []; }
+  function renderJugadores(){
+    var q = normalizaTexto(byId('jug_buscar').value);
+    var lista = jugadoresGlobal.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
+    if (q) lista = lista.filter(function(j){ return normalizaTexto(j.nombre).indexOf(q) >= 0; });
+
+    if (!lista.length){
+      byId('jugadoresBody').innerHTML = '<tr class="empty-row"><td colspan="5">'+(jugadoresGlobal.length?'Sin resultados para esa búsqueda.':'Aún no hay jugadores. Se van agregando solos cuando los inscribes, o créalos aquí a mano.')+'</td></tr>';
+      return;
+    }
+    byId('jugadoresBody').innerHTML = lista.map(function(j){
+      var cats = (j.categorias || []).join(', ') || '—';
+      var hist = historialDeJugador(j);
+      return '<tr>' +
+        '<td style="font-weight:600;">'+esc(j.nombre)+'</td>' +
+        '<td class="muted">'+esc(j.telefono||'—')+'</td>' +
+        '<td class="muted">'+esc(cats)+'</td>' +
+        '<td class="num">'+hist.length+'</td>' +
+        '<td><button class="btn" data-ver-historial="'+j.id+'" style="padding:5px 10px;font-size:12px;">'+(hist.length?'Ver historial':'')+'</button></td>' +
+        '</tr>' +
+        '<tr id="hist-'+j.id+'" style="display:none;"><td colspan="5" style="background:var(--gray-200);padding:12px 24px;">' +
+          (hist.length ? hist.slice().sort(function(a,b){return (b.fecha||0)-(a.fecha||0);}).map(function(h){
+            return '<div style="font-size:12.5px;padding:3px 0;"><strong>'+esc(h.torneo||'—')+'</strong> · '+esc(h.categoria||'—')+' · '+fmtDate(h.fecha)+'</div>';
+          }).join('') : '') +
+        '</td></tr>';
+    }).join('');
+
+    document.querySelectorAll('[data-ver-historial]').forEach(function(btn){
+      if (!btn.textContent) return;
+      btn.addEventListener('click', function(){
+        var row = byId('hist-'+btn.dataset.verHistorial);
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+      });
+    });
+  }
+  byId('jug_buscar').addEventListener('input', renderJugadores);
+
+  byId('btnGuardarJugador').addEventListener('click', function(){
+    if (!userRef) return;
+    var nombre = byId('j_nombre').value.trim();
+    if (!nombre) { alert('Escribe el nombre del jugador.'); return; }
+    var yaExiste = jugadoresGlobal.some(function(j){ return normalizaTexto(j.nombre) === normalizaTexto(nombre); });
+    if (yaExiste) { alert('Ya existe un jugador con ese nombre.'); return; }
+    userRef.collection('jugadores').add({
+      nombre: nombre, telefono: byId('j_telefono').value.trim(), categorias: [], historial: [], creadoEn: Date.now()
+    }).then(function(){
+      byId('j_nombre').value = ''; byId('j_telefono').value = '';
+      closeForm('jugador');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  // Cada vez que se crea una inscripción, el/los jugador(es) quedan
+  // registrados (o actualizados) en la base de datos de la CUENTA —
+  // así el historial y las categorías habituales se arman solos, y
+  // sobreviven aunque el torneo donde jugaron ya no exista.
+  function sincronizarJugador(nombre, categoriaNombre){
+    if (!nombre) return Promise.resolve();
+    var existente = jugadoresGlobal.find(function(j){ return normalizaTexto(j.nombre) === normalizaTexto(nombre); });
+    var entradaHistorial = { torneo: torneoData.nombre || 'Torneo', categoria: categoriaNombre, fecha: Date.now() };
+    if (existente) {
+      return userRef.collection('jugadores').doc(existente.id).update({
+        categorias: firebase.firestore.FieldValue.arrayUnion(categoriaNombre),
+        historial: firebase.firestore.FieldValue.arrayUnion(entradaHistorial)
+      });
+    }
+    return userRef.collection('jugadores').add({
+      nombre: nombre, telefono: '', categorias: [categoriaNombre], historial: [entradaHistorial], creadoEn: Date.now()
+    });
+  }
+
+  // ---------- render: notas ----------
+  var notaItemsTemp = []; // checklist en construcción mientras se arma el formulario de "Nueva Nota"
+  function renderNotaItemsForm(){
+    byId('n_itemsList').innerHTML = notaItemsTemp.map(function(txt, i){
+      return '<div style="display:flex;gap:6px;"><input value="'+esc(txt)+'" data-nota-item-idx="'+i+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;">' +
+        '<button class="logout-btn" data-nota-item-del="'+i+'">✕</button></div>';
+    }).join('');
+    document.querySelectorAll('[data-nota-item-idx]').forEach(function(inp){
+      inp.addEventListener('input', function(){ notaItemsTemp[parseInt(inp.dataset.notaItemIdx,10)] = inp.value; });
+    });
+    document.querySelectorAll('[data-nota-item-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){ notaItemsTemp.splice(parseInt(btn.dataset.notaItemDel,10),1); renderNotaItemsForm(); });
+    });
+  }
+  byId('btnAgregarItemNota').addEventListener('click', function(){ notaItemsTemp.push(''); renderNotaItemsForm(); });
+  byId('btnNuevaNota').addEventListener('click', function(){ notaItemsTemp = []; renderNotaItemsForm(); });
+
+  byId('btnGuardarNota').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var titulo = byId('n_titulo').value.trim();
+    if (!titulo) { alert('Escribe un título para la nota.'); return; }
+    var items = notaItemsTemp.filter(function(t){ return t.trim(); }).map(function(t){ return { texto: t.trim(), hecho: false }; });
+    torneoRef.collection('notas').add({
+      titulo: titulo, contenido: byId('n_contenido').value.trim(),
+      recordatorio: byId('n_recordatorio').value || '', items: items, creadoEn: Date.now()
+    }).then(function(){
+      byId('n_titulo').value = ''; byId('n_contenido').value = ''; byId('n_recordatorio').value = '';
+      notaItemsTemp = []; renderNotaItemsForm();
+      closeForm('nota');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  function renderNotas(){
+    var lista = notas.slice().sort(function(a,b){ return (b.creadoEn||0)-(a.creadoEn||0); });
+    if (!lista.length){
+      byId('notasGrid').innerHTML = '<div class="muted" style="padding:20px 0;">Aún no hay notas. Crea la primera con "+ Nueva Nota".</div>';
+      return;
+    }
+    var hoyStr = new Date().toISOString().slice(0,10);
+    byId('notasGrid').innerHTML = lista.map(function(n){
+      var items = n.items || [];
+      var vencida = n.recordatorio && n.recordatorio < hoyStr;
+      var hoy = n.recordatorio && n.recordatorio === hoyStr;
+      return '<div class="card" style="padding:16px 18px;display:flex;flex-direction:column;gap:8px;">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
+          '<div style="font-weight:700;font-size:14px;">'+esc(n.titulo)+'</div>' +
+          '<button class="logout-btn" data-del-nota="'+n.id+'">✕</button>' +
+        '</div>' +
+        (n.contenido ? '<div style="font-size:13px;color:var(--gray-700);white-space:pre-wrap;">'+esc(n.contenido)+'</div>' : '') +
+        (n.recordatorio ? '<div><span class="chip" style="background:'+(vencida?'var(--red-bg)':hoy?'var(--amber-bg)':'var(--gray-200)')+';color:'+(vencida?'var(--red-tx)':hoy?'var(--amber-tx)':'var(--gray-700)')+';">'+(vencida?'Vencido · ':hoy?'Hoy · ':'')+fmtDateFull(n.recordatorio)+'</span></div>' : '') +
+        (items.length ? '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">' + items.map(function(it, idx){
+          return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;'+(it.hecho?'color:var(--gray-500);text-decoration:line-through;':'')+'">' +
+            '<input type="checkbox" data-nota-toggle="'+n.id+'" data-item-idx="'+idx+'"'+(it.hecho?' checked':'')+'> '+esc(it.texto)+'</label>';
+        }).join('') + '</div>' : '') +
+        '</div>';
+    }).join('');
+
+    document.querySelectorAll('[data-nota-toggle]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var n = notas.find(function(x){ return x.id === cb.dataset.notaToggle; });
+        if (!n) return;
+        var items = (n.items || []).slice();
+        items[parseInt(cb.dataset.itemIdx,10)] = Object.assign({}, items[parseInt(cb.dataset.itemIdx,10)], { hecho: cb.checked });
+        torneoRef.collection('notas').doc(n.id).update({ items: items })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    document.querySelectorAll('[data-del-nota]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar esta nota?')) return;
+        torneoRef.collection('notas').doc(btn.dataset.delNota).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
+      });
+    });
+  }
+
   // ---------- render all ----------
   function renderAll(){
     fillCategoriaSelect();
@@ -1702,6 +1929,8 @@
     renderViabilidadForm();
     calcularViabilidad();
     renderConfiguracion();
+    renderJugadores();
+    renderNotas();
   }
 
   // ---------- write actions ----------
@@ -1741,6 +1970,10 @@
           estado: 'ACTIVO', fecha: Date.now()
         });
       }
+    }).then(function(){
+      return sincronizarJugador(j1, cat.nombre);
+    }).then(function(){
+      if (j2) return sincronizarJugador(j2, cat.nombre);
     }).then(function(){
       ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
       byId('i_pagado').value = 0;
@@ -2055,6 +2288,7 @@
     subscribe('inscripciones', function(a){ inscripciones = a; });
     subscribe('movimientos', function(a){ movimientos = a; });
     subscribe('presupuesto', function(a){ presupuesto = a; });
+    subscribe('notas', function(a){ notas = a; });
 
     setView('dashboard');
     renderAll();
@@ -2079,11 +2313,28 @@
   function teardownSubscriptions(){
     unsubs.forEach(function(u){ try { u(); } catch(e){} });
     unsubs = [];
-    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = [];
+    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
   }
 
   function teardownTorneoList(){
     if (unsubTorneos) { try { unsubTorneos(); } catch(e){} unsubTorneos = null; }
+  }
+
+  // Jugadores vive a nivel de cuenta: se suscribe una sola vez al iniciar
+  // sesión y NO se reinicia al cambiar de torneo — solo al cerrar sesión.
+  function subscribeJugadoresGlobal(){
+    if (unsubJugadores) return;
+    unsubJugadores = userRef.collection('jugadores').onSnapshot(function(snap){
+      var arr = [];
+      snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
+      jugadoresGlobal = arr;
+      fillJugadoresDatalist();
+      renderJugadores();
+    }, function(err){ console.error('jugadores', err); });
+  }
+  function teardownJugadores(){
+    if (unsubJugadores) { try { unsubJugadores(); } catch(e){} unsubJugadores = null; }
+    jugadoresGlobal = [];
   }
 
   if (auth) {
@@ -2094,10 +2345,12 @@
         byId('userEmail').textContent = user.email || '';
         currentUserEmail = user.email || '';
         byId('userAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
+        subscribeJugadoresGlobal();
         if (!torneoRef) showTorneoScreen();
       } else {
         teardownSubscriptions();
         teardownTorneoList();
+        teardownJugadores();
         userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
         byId('appShell').classList.remove('active');
         byId('torneoScreen').style.display = 'none';
