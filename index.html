@@ -73,7 +73,6 @@
   .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; margin-bottom: 28px; cursor: pointer; }
   .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px; flex-shrink: 0; }
   .brand-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .brand-edit-hint { font-size: 9px; color: var(--gray-500); margin-left: auto; flex-shrink: 0; }
   nav.navlist { display: flex; flex-direction: column; gap: 1px; }
   .navitem {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px;
@@ -129,10 +128,9 @@
   .muted { color: var(--gray-500); }
   .empty-row td { text-align: center; padding: 40px; color: var(--gray-500); }
 
-  select.filter-select { font-weight: 600; font-size: 13px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--ink); }
-
   .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; }
   .formpanel.open { display: flex; }
+  .formpanel.static { display: flex; max-width: 640px; }
   .formgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 12px; font-weight: 600; color: var(--gray-700); }
@@ -152,12 +150,25 @@
 
   .two-col { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 18px; flex: 1; min-height: 0; }
   .catlist-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .bar-track { height: 8px; background: var(--gray-200); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--ink); }
 
   .noticebar { display: none; align-items: center; gap: 10px; background: var(--amber-bg); color: var(--amber-tx); border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
   .noticebar.show { display: flex; }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+  .print-only { display: none; }
+  @media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    #sidebar { display: none !important; }
+    #content { height: auto !important; overflow: visible !important; }
+    .view { padding: 10px !important; }
+    body { background: #fff; }
+    .panel, .card, .kpi { box-shadow: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -195,7 +206,6 @@
     </form>
 
     <form class="auth-form" id="formSignup">
-      <div class="auth-field"><label>Nombre de tu torneo / organización</label><input type="text" id="signupOrg" placeholder="Ej: TS Padel Tour" required></div>
       <div class="auth-field"><label>Correo</label><input type="email" id="signupEmail" required autocomplete="email"></div>
       <div class="auth-field"><label>Contraseña</label><input type="password" id="signupPassword" required autocomplete="new-password" minlength="6"></div>
       <button type="submit" class="auth-btn" id="btnSignup">Crear cuenta</button>
@@ -204,21 +214,40 @@
 </div>
 
 <!-- ============================================================
-     SELECTOR DE TORNEOS (aparece tras iniciar sesión; cada torneo
-     es un espacio de trabajo separado: sus propias paradas,
-     categorías, inscripciones y finanzas)
+     SELECTOR DE TORNEOS — cada Torneo es un evento completo e
+     independiente (nombre, ciudad, fechas, cupos, categorías,
+     inscripciones y finanzas propias).
      ============================================================ -->
-<div id="torneoScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--sidebar); padding:24px;">
-  <div style="width:100%; max-width:560px; display:flex; flex-direction:column; gap:18px;">
+<div id="torneoScreen" style="display:none; min-height:100vh; align-items:flex-start; justify-content:center; background:var(--sidebar); padding:48px 24px;">
+  <div style="width:100%; max-width:640px; display:flex; flex-direction:column; gap:18px;">
     <div class="auth-logo"><div class="auth-logo-mark">C</div><div class="auth-logo-name">CourtOS</div></div>
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <div style="font-weight:700; font-size:18px;">Tus torneos</div>
       <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
     </div>
     <div id="torneoList" style="display:flex; flex-direction:column; gap:10px;"></div>
-    <div class="card" style="padding:16px; display:flex; gap:10px; align-items:center;">
-      <input id="nuevoTorneoNombre" placeholder="Nombre del nuevo torneo" style="flex:1; border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; outline:none; font-family:inherit;">
-      <button class="btn btn-primary" id="btnCrearTorneo">+ Crear Torneo</button>
+
+    <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
+      <div class="panel-title">Crear nuevo torneo</div>
+      <div class="formgrid">
+        <div class="field"><label>Nombre</label><input id="nt_nombre" placeholder="Ej: Copa Verano 2026"></div>
+        <div class="field"><label>Ciudad</label><input id="nt_ciudad" placeholder="Bucaramanga"></div>
+        <div class="field"><label>Club / Sede</label><input id="nt_club" placeholder="Club Campestre"></div>
+        <div class="field"><label>Fecha inicio</label><input id="nt_fechaInicio" type="date"></div>
+        <div class="field"><label>Fecha fin</label><input id="nt_fechaFin" type="date"></div>
+        <div class="field"><label>Cupos totales (parejas)</label><input id="nt_cupos" type="number" value="32"></div>
+        <div class="field"><label>Estado</label>
+          <select id="nt_estado">
+            <option value="PLANIFICADA">Planificada</option>
+            <option value="ABIERTA">Abierta</option>
+            <option value="EN_CURSO">En curso</option>
+            <option value="FINALIZADA">Finalizada</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btnCrearTorneo">+ Crear Torneo</button>
+      </div>
     </div>
   </div>
 </div>
@@ -235,7 +264,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 16V4M7 4 3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
         Cambiar de Torneo
       </button>
-      <div class="brand" id="brandBtn" title="Clic para cambiar el nombre">
+      <div class="brand">
         <div class="brand-mark" id="brandMark">T</div>
         <div class="brand-name" id="brandName">Mi Torneo</div>
       </div>
@@ -243,10 +272,6 @@
         <button class="navitem" data-view="dashboard">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
           Dashboard
-        </button>
-        <button class="navitem" data-view="torneos">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
-          Torneos
         </button>
         <button class="navitem" data-view="inscripciones">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8 11h8M8 15h5"/></svg>
@@ -256,9 +281,21 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>
           Financiero
         </button>
+        <button class="navitem" data-view="presupuesto">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h3"/></svg>
+          Presupuesto
+        </button>
+        <button class="navitem" data-view="reportes">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>
+          Reportes
+        </button>
         <button class="navitem" data-view="viabilidad">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 7h7M8.5 11h2M13 11h2.5M8.5 15h2M13 15h2.5"/></svg>
           Viabilidad de Canchas
+        </button>
+        <button class="navitem" data-view="configuracion">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+          Configuración
         </button>
       </nav>
     </div>
@@ -281,21 +318,20 @@
       <div class="page-head">
         <div>
           <div class="page-title">Dashboard</div>
-          <div class="page-sub">Resumen general de la temporada</div>
+          <div class="page-sub">Resumen general del torneo</div>
         </div>
         <div class="actions">
           <button class="btn" data-nav="viabilidad">Calculadora de Viabilidad</button>
-          <button class="btn btn-primary" data-nav="torneos" data-open-form="parada">+ Nueva Parada</button>
         </div>
       </div>
       <div class="kpi-grid" id="dashKpis"></div>
       <div class="panels">
         <div class="panel">
           <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div class="panel-title">Próximas Paradas</div>
-            <button class="btn" style="border:none;padding:0;background:none;font-size:12.5px;" data-nav="torneos">Ver todas →</button>
+            <div class="panel-title">Resumen del Torneo</div>
+            <span id="dashEstadoChip"></span>
           </div>
-          <div id="dashParadas"></div>
+          <div id="dashResumen"></div>
         </div>
         <div class="panel">
           <div class="panel-title">Actividad Reciente</div>
@@ -304,64 +340,37 @@
       </div>
     </section>
 
-    <!-- TORNEOS -->
-    <section class="view" data-view="torneos">
-      <div class="page-head">
-        <div>
-          <div class="page-title">Torneos / Paradas</div>
-          <div class="page-sub" id="torneosSub">0 paradas registradas</div>
-        </div>
-        <button class="btn btn-primary" data-toggle-form="parada">+ Nueva Parada</button>
-      </div>
-
-      <div class="formpanel" id="formParada">
-        <div class="panel-title">Nueva Parada</div>
-        <div class="formgrid">
-          <div class="field"><label>Nombre</label><input id="p_nombre" placeholder="Parada 6"></div>
-          <div class="field"><label>Ciudad</label><input id="p_ciudad" placeholder="Bucaramanga"></div>
-          <div class="field"><label>Club / Sede</label><input id="p_club" placeholder="Club Campestre"></div>
-          <div class="field"><label>Fecha inicio</label><input id="p_fechaInicio" type="date"></div>
-          <div class="field"><label>Fecha fin</label><input id="p_fechaFin" type="date"></div>
-          <div class="field"><label>Cupos totales (parejas)</label><input id="p_cupos" type="number" value="32"></div>
-          <div class="field"><label>Estado</label>
-            <select id="p_estado">
-              <option value="PLANIFICADA">Planificada</option>
-              <option value="ABIERTA">Abierta</option>
-              <option value="EN_CURSO">En curso</option>
-              <option value="FINALIZADA">Finalizada</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn" data-close-form="parada">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarParada">Guardar Parada</button>
-        </div>
-      </div>
-
-      <div class="card table-wrap" style="flex:1;">
-        <table class="datatable">
-          <thead><tr>
-            <th>Nombre</th><th>Ciudad</th><th>Fechas</th><th>Cupos</th><th>Estado</th><th style="text-align:right">Ingresos</th>
-          </tr></thead>
-          <tbody id="torneosBody"></tbody>
-        </table>
-      </div>
-    </section>
-
     <!-- INSCRIPCIONES -->
     <section class="view" data-view="inscripciones">
       <div class="page-head">
         <div>
           <div class="page-title">Inscripciones</div>
-          <div class="page-sub" id="insSub">0 inscripciones en la temporada</div>
+          <div class="page-sub" id="insSub">0 inscripciones</div>
         </div>
-        <button class="btn btn-primary" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
+        <div class="actions">
+          <button class="btn" id="btnAbrirCategorias" data-toggle-form="categorias" style="display:none;">Categorías</button>
+          <button class="btn btn-primary" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
+        </div>
+      </div>
+
+      <div class="formpanel" id="formCategorias">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div class="panel-title">Categorías</div>
+        </div>
+        <div id="categoriasAdminList" style="margin-top:4px;"></div>
+        <div class="formgrid" style="grid-template-columns:1.5fr 1fr; margin-top:14px;">
+          <div class="field"><label>Nueva categoría</label><input id="cat_nombre" placeholder="Ej: Sexta"></div>
+          <div class="field"><label>Valor inscripción</label><input id="cat_valor" type="number" placeholder="0"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="categorias">Cerrar</button>
+          <button class="btn btn-primary" id="btnAgregarCategoria">+ Agregar Categoría</button>
+        </div>
       </div>
 
       <div class="formpanel" id="formInscripcion">
         <div class="panel-title">Nueva Inscripción</div>
         <div class="formgrid">
-          <div class="field"><label>Parada</label><select id="i_parada"></select></div>
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
           <div class="field"><label>Valor inscripción</label><input id="i_valor" readonly></div>
           <div class="field"><label>Jugador 1</label><input id="i_j1" placeholder="Nombre completo"></div>
@@ -385,6 +394,26 @@
         </div>
       </div>
 
+      <div class="formpanel" id="formPago">
+        <div class="panel-title">Confirmar Pago</div>
+        <div id="pg_resumen" class="muted" style="font-size:13px;"></div>
+        <div class="formgrid">
+          <div class="field"><label>¿Quién paga?</label><select id="pg_quien"></select></div>
+          <div class="field"><label>Monto a pagar ahora</label><input id="pg_monto" type="number"></div>
+          <div class="field"><label>Cuenta de ingreso</label><select id="pg_cuenta"></select></div>
+          <div class="field"><label>Método de pago</label>
+            <select id="pg_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
+          </div>
+          <div class="field"><label>Fecha</label><input id="pg_fecha" type="date"></div>
+          <div class="field"><label>Observación (opcional)</label><input id="pg_obs" placeholder="Ej: pagó en cancha"></div>
+        </div>
+        <input type="hidden" id="pg_inscripcionId">
+        <div class="form-actions">
+          <button class="btn" data-close-form="pago">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+        </div>
+      </div>
+
       <div class="tabs" id="insTabs">
         <button class="tab-btn active" data-filter="TODAS">Todas</button>
         <button class="tab-btn" data-filter="CONFIRMADA">Confirmadas</button>
@@ -395,7 +424,7 @@
       <div class="card table-wrap" style="flex:1;">
         <table class="datatable">
           <thead><tr>
-            <th>Pareja</th><th>Categoría</th><th>Parada</th><th style="text-align:right">Valor</th><th style="text-align:right">Pagado</th><th>Estado</th>
+            <th>Pareja</th><th>Categoría</th><th style="text-align:right">Valor</th><th style="text-align:right">Pagado</th><th>Estado</th><th></th>
           </tr></thead>
           <tbody id="insBody"></tbody>
         </table>
@@ -407,9 +436,23 @@
       <div class="page-head">
         <div>
           <div class="page-title">Financiero</div>
-          <div class="page-sub">Movimientos de toda la temporada</div>
+          <div class="page-sub">Movimientos de este torneo</div>
         </div>
-        <button class="btn btn-primary" data-toggle-form="movimiento">+ Nuevo Movimiento</button>
+        <div class="actions">
+          <button class="btn" data-toggle-form="cuenta">+ Nueva Cuenta</button>
+          <button class="btn btn-primary" data-toggle-form="movimiento">+ Nuevo Movimiento</button>
+        </div>
+      </div>
+
+      <div class="formpanel" id="formCuenta">
+        <div class="panel-title">Nueva Cuenta</div>
+        <div class="formgrid" style="grid-template-columns:1fr;max-width:320px;">
+          <div class="field"><label>Nombre</label><input id="c_nombre" placeholder="Ej: Daviplata"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="cuenta">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarCuenta">Guardar Cuenta</button>
+        </div>
       </div>
 
       <div class="formpanel" id="formMovimiento">
@@ -417,10 +460,9 @@
         <div class="formgrid">
           <div class="field"><label>Tipo</label><select id="m_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
           <div class="field"><label>Concepto</label><input id="m_concepto" placeholder="Arriendo de canchas"></div>
-          <div class="field"><label>Categoría</label><input id="m_categoria" placeholder="Canchas / Sede"></div>
+          <div class="field"><label>Categoría</label><input id="m_categoria" list="categoriaSuggestions" placeholder="Canchas / Sede"><datalist id="categoriaSuggestions"></datalist></div>
           <div class="field"><label>Valor</label><input id="m_valor" type="number" placeholder="0"></div>
           <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
-          <div class="field"><label>Parada (opcional)</label><select id="m_parada"><option value="">Sin parada</option></select></div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="movimiento">Cancelar</button>
@@ -435,15 +477,129 @@
         <button class="tab-btn active" data-filter="TODOS">Todos</button>
         <button class="tab-btn" data-filter="INGRESO">Ingresos</button>
         <button class="tab-btn" data-filter="GASTO">Gastos</button>
+        <button class="tab-btn" data-filter="ANULADOS">Anulados</button>
       </div>
 
       <div class="card table-wrap" style="flex:1;">
         <table class="datatable">
           <thead><tr>
-            <th>Fecha</th><th>Concepto</th><th>Parada</th><th>Cuenta</th><th style="text-align:right">Valor</th>
+            <th>Fecha</th><th>Concepto</th><th>Cuenta</th><th style="text-align:right">Valor</th><th></th>
           </tr></thead>
           <tbody id="finBody"></tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- PRESUPUESTO -->
+    <section class="view" data-view="presupuesto">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Presupuesto</div>
+          <div class="page-sub">Proyecta tus ingresos y gastos antes del torneo — lo "Real" se toma de Financiero</div>
+        </div>
+        <button class="btn btn-primary" data-toggle-form="linea">+ Agregar Línea</button>
+      </div>
+
+      <div class="formpanel" id="formLinea">
+        <div class="panel-title">Nueva Línea de Presupuesto</div>
+        <div class="formgrid">
+          <div class="field"><label>Tipo</label><select id="l_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
+          <div class="field"><label>Concepto</label><input id="l_concepto" placeholder="Ej: Patrocinios"></div>
+          <div class="field"><label>Valor proyectado</label><input id="l_valor" type="number" placeholder="0"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" data-close-form="linea">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarLinea">Guardar Línea</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="presKpis"></div>
+
+      <div class="card table-wrap" style="flex:1;">
+        <table class="datatable">
+          <thead><tr>
+            <th>Concepto</th><th>Tipo</th><th style="text-align:right">Presupuestado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th><th></th>
+          </tr></thead>
+          <tbody id="presBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REPORTES -->
+    <section class="view" data-view="reportes">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Reportes</div>
+          <div class="page-sub">Cuánto entró, cuánto salió, en qué se gastó y cómo va contra lo presupuestado</div>
+        </div>
+        <button class="btn btn-primary no-print" id="btnImprimirReporte">🖨️ Imprimir / Exportar PDF</button>
+      </div>
+
+      <div class="print-only" id="repPrintHead" style="display:none;">
+        <div style="font-weight:800; font-size:18px;" id="repPrintTitulo"></div>
+        <div class="muted" style="font-size:12px; margin-bottom:16px;" id="repPrintFecha"></div>
+      </div>
+
+      <div class="card no-print" style="padding:16px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <label style="margin:0;">Desde</label><input id="rep_desde" type="date" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;">
+        </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <label style="margin:0;">Hasta</label><input id="rep_hasta" type="date" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;">
+        </div>
+        <button class="btn" id="btnLimpiarFiltroRep">Limpiar filtro</button>
+        <span class="muted" style="font-size:12px;">Si no filtras, se muestra todo el histórico del torneo.</span>
+      </div>
+
+      <div class="kpi-grid" id="repKpis"></div>
+
+      <div class="panel">
+        <div class="panel-title">Estado de Resultados</div>
+        <table class="datatable" style="margin-top:10px;">
+          <tbody id="repEstadoResultados"></tbody>
+        </table>
+      </div>
+
+      <div class="panels" style="flex:none;">
+        <div class="panel">
+          <div class="panel-title">Ingresos por Categoría</div>
+          <div id="repIngresos"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Gastos por Categoría</div>
+          <div id="repGastos"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Flujo de Caja (saldo acumulado día a día)</div>
+        <table class="datatable" style="margin-top:10px;">
+          <thead><tr><th>Fecha</th><th style="text-align:right">Ingresos del día</th><th style="text-align:right">Gastos del día</th><th style="text-align:right">Saldo Acumulado</th></tr></thead>
+          <tbody id="repFlujoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="panel-title">Cuentas por Cobrar (inscripciones con saldo pendiente hoy)</div>
+          <span style="font-weight:800; font-size:16px;" id="repCxCTotal">$0</span>
+        </div>
+        <table class="datatable" style="margin-top:10px;">
+          <thead><tr><th>Pareja</th><th>Categoría</th><th style="text-align:right">Debe</th></tr></thead>
+          <tbody id="repCxCBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Presupuesto vs. Real</div>
+        <table class="datatable" style="margin-top:10px;">
+          <thead><tr><th>Concepto</th><th>Tipo</th><th style="text-align:right">Presupuestado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th></tr></thead>
+          <tbody id="repPresBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card no-print" style="padding:14px 20px; font-size:12.5px; color:var(--gray-500);">
+        ℹ️ <strong>Cuentas por pagar</strong> todavía no aplica: en CourtOS un gasto se registra cuando ya se pagó, así que hoy no existe el concepto de "factura pendiente de pagar". Si necesitas rastrear compromisos de gasto antes de pagarlos, lo podemos agregar como una funcionalidad aparte.
       </div>
     </section>
 
@@ -452,14 +608,12 @@
       <div class="page-head">
         <div>
           <div class="page-title">Calculadora de Viabilidad de Canchas</div>
-          <div class="page-sub">¿Alcanzan las canchas y el tiempo disponible para jugar los partidos de la parada?</div>
+          <div class="page-sub">¿Alcanzan las canchas y el tiempo disponible para jugar los partidos de este torneo?</div>
         </div>
       </div>
 
       <div class="two-col">
         <div class="card" style="padding:22px;display:flex;flex-direction:column;gap:16px;overflow:auto;">
-          <div class="field"><label>Parada a evaluar</label><select id="v_parada"></select></div>
-
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Disponibilidad</div>
             <div class="formgrid" style="grid-template-columns:1fr 1fr;">
@@ -487,6 +641,53 @@
             </table>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACIÓN -->
+    <section class="view" data-view="configuracion">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Configuración del Torneo</div>
+          <div class="page-sub">Datos generales de este torneo — protegidos con PIN</div>
+        </div>
+      </div>
+
+      <div class="card" id="adminBanner" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; max-width:640px;">
+        <div>
+          <div style="font-weight:700; font-size:14px;" id="adminBannerTitulo">🔒 Modo Administrador</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px;" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones y cuentas.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="btnCambiarPin" style="display:none;">Cambiar PIN</button>
+          <button class="btn btn-primary" id="btnToggleAdmin">Activar</button>
+        </div>
+      </div>
+
+      <div class="formpanel" id="formConfig" style="max-width:640px;">
+        <div class="formgrid">
+          <div class="field"><label>Nombre</label><input id="cfg_nombre"></div>
+          <div class="field"><label>Ciudad</label><input id="cfg_ciudad"></div>
+          <div class="field"><label>Club / Sede</label><input id="cfg_club"></div>
+          <div class="field"><label>Fecha inicio</label><input id="cfg_fechaInicio" type="date"></div>
+          <div class="field"><label>Fecha fin</label><input id="cfg_fechaFin" type="date"></div>
+          <div class="field"><label>Cupos totales (parejas)</label><input id="cfg_cupos" type="number"></div>
+          <div class="field"><label>Estado</label>
+            <select id="cfg_estado">
+              <option value="PLANIFICADA">Planificada</option>
+              <option value="ABIERTA">Abierta</option>
+              <option value="EN_CURSO">En curso</option>
+              <option value="FINALIZADA">Finalizada</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btnGuardarConfig">Guardar Cambios</button>
+        </div>
+      </div>
+
+      <div class="card" id="configLockedMsg" style="padding:16px 20px; max-width:640px; color:var(--gray-500); font-size:13px;">
+        🔒 Activa el modo administrador arriba para poder editar los datos del torneo.
       </div>
     </section>
 
@@ -523,14 +724,16 @@
   var auth = NOT_CONFIGURED ? null : firebase.auth();
   var fsdb = NOT_CONFIGURED ? null : firebase.firestore();
   var userRef = null;         // fsdb.collection('users').doc(uid) — nivel de la cuenta
-  var torneoRef = null;       // userRef.collection('torneos').doc(torneoId) — espacio de trabajo activo
+  var torneoRef = null;       // userRef.collection('torneos').doc(torneoId) — el torneo activo
   var torneoId = null;
+  var torneoData = {};        // copia local de los campos del torneo activo (nombre, ciudad, fechas, cupos, estado)
+  var currentUserEmail = '';  // correo del usuario con sesión iniciada, para dejar rastro en anulaciones
+  var isAdminMode = false;    // se reinicia cada vez que entras a un torneo; se activa con el PIN en Configuración
   var unsubTorneos = null;    // listener de la lista de torneos
 
   // ---------- state ----------
-  var paradas = [], categorias = [], cuentas = [], inscripciones = [], movimientos = [];
+  var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [];
   var insFilter = 'TODAS', finFilter = 'TODOS';
-  var viabParadaId = null;
   var unsubs = [];
 
   // ---------- helpers ----------
@@ -538,9 +741,20 @@
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function byId(x){ return document.getElementById(x); }
   function fmtDate(ts){ if(!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short'}); }
-  function fmtDateFull(ts){ if(!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}); }
+  function fmtDateFull(ts){ if(!ts) return '—'; var d = new Date(ts + 'T12:00:00'); if (isNaN(d.getTime())) return '—'; return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}); }
+  function diasRestantes(fechaInicio){
+    if (!fechaInicio) return '';
+    var hoy = new Date(); hoy.setHours(0,0,0,0);
+    var inicio = new Date(fechaInicio + 'T00:00:00');
+    if (isNaN(inicio.getTime())) return '';
+    var diff = Math.round((inicio - hoy) / 86400000);
+    if (diff > 1) return 'Faltan ' + diff + ' días';
+    if (diff === 1) return 'Es mañana';
+    if (diff === 0) return 'Es hoy';
+    return 'Comenzó hace ' + Math.abs(diff) + ' día' + (Math.abs(diff) === 1 ? '' : 's');
+  }
 
-  var ESTADO_PARADA = {
+  var ESTADO_TORNEO = {
     PLANIFICADA: {bg:'var(--amber-bg)', tx:'var(--amber-tx)', label:'Planificada'},
     ABIERTA:     {bg:'var(--green-bg)', tx:'var(--green-tx)', label:'Abierta'},
     EN_CURSO:    {bg:'var(--blue-bg)',  tx:'var(--blue-tx)',  label:'En curso'},
@@ -552,32 +766,52 @@
     PENDIENTE:  {bg:'var(--amber-bg)', tx:'var(--amber-tx)', label:'Pendiente de pago'},
     CANCELADA:  {bg:'var(--red-bg)',   tx:'var(--red-tx)',   label:'Cancelada'}
   };
+  var TIPO_MOV = {
+    INGRESO: {bg:'var(--green-bg)', tx:'var(--green-tx)', label:'Ingreso'},
+    GASTO:   {bg:'var(--red-bg)',   tx:'var(--red-tx)',   label:'Gasto'}
+  };
   function chip(map, key){
     var m = map[key] || {bg:'var(--gray-200)', tx:'var(--gray-700)', label:key};
     return '<span class="chip" style="background:'+m.bg+';color:'+m.tx+';">'+esc(m.label)+'</span>';
   }
 
   // ---------- derived data ----------
+  function movActivo(m){ return m.estado !== 'ANULADO'; }
   function cuentaSaldo(cuentaId){
     var s = 0;
     movimientos.forEach(function(m){
+      if (!movActivo(m)) return;
       if (m.cuentaId !== cuentaId) return;
       s += (m.tipo === 'INGRESO' ? 1 : -1) * (m.valor || 0);
     });
     return s;
   }
-  function paradaCuposOcupados(paradaId){
-    return inscripciones.filter(function(i){ return i.paradaId === paradaId && i.estadoIns !== 'CANCELADA'; }).length;
+  function torneoCuposOcupados(){
+    return inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).length;
   }
-  function paradaIngresos(paradaId){
+  function totalIngresos(){ var s=0; movimientos.forEach(function(m){ if(movActivo(m) && m.tipo==='INGRESO') s+=(m.valor||0); }); return s; }
+  function totalGastos(){ var s=0; movimientos.forEach(function(m){ if(movActivo(m) && m.tipo==='GASTO') s+=(m.valor||0); }); return s; }
+
+  // Real de una línea de presupuesto = suma de movimientos del mismo tipo
+  // cuya categoría coincide con el concepto de la línea (sin distinguir
+  // mayúsculas/acentos ni espacios extra) — así "Real" siempre sale de
+  // Financiero, nunca se digita dos veces.
+  function normalizaTexto(s){
+    return String(s||'').trim().toLowerCase()
+      .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+  }
+  function realDeLinea(linea){
     var s = 0;
-    movimientos.forEach(function(m){ if (m.paradaId === paradaId && m.tipo === 'INGRESO') s += (m.valor||0); });
+    var nombreLinea = normalizaTexto(linea.concepto);
+    movimientos.forEach(function(m){
+      if (!movActivo(m)) return;
+      if (m.tipo !== linea.tipo) return;
+      if (normalizaTexto(m.categoria) !== nombreLinea) return;
+      s += (m.valor || 0);
+    });
     return s;
   }
-  function totalIngresos(){ var s=0; movimientos.forEach(function(m){ if(m.tipo==='INGRESO') s+=(m.valor||0); }); return s; }
-  function totalGastos(){ var s=0; movimientos.forEach(function(m){ if(m.tipo==='GASTO') s+=(m.valor||0); }); return s; }
 
-  function paradaById(id){ return paradas.find(function(p){ return p.id === id; }); }
   function categoriaById(id){ return categorias.find(function(c){ return c.id === id; }); }
   function cuentaById(id){ return cuentas.find(function(c){ return c.id === id; }); }
 
@@ -626,17 +860,6 @@
   });
 
   // ---------- render: selects ----------
-  function fillParadaSelects(){
-    var opts = paradas.map(function(p){ return '<option value="'+p.id+'">'+esc(p.nombre)+'</option>'; }).join('');
-    ['i_parada','v_parada'].forEach(function(id){
-      var el = byId(id);
-      var prev = el.value;
-      el.innerHTML = opts || '<option value="">Sin paradas — crea una primero</option>';
-      if (prev && paradas.some(function(p){return p.id===prev;})) el.value = prev;
-    });
-    var mParada = byId('m_parada');
-    mParada.innerHTML = '<option value="">Sin parada</option>' + opts;
-  }
   function fillCategoriaSelect(){
     var el = byId('i_categoria');
     var prev = el.value;
@@ -646,7 +869,7 @@
   }
   function fillCuentaSelects(){
     var opts = cuentas.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' ('+money(cuentaSaldo(c.id))+')</option>'; }).join('');
-    ['i_cuenta','m_cuenta'].forEach(function(id){
+    ['i_cuenta','m_cuenta','pg_cuenta'].forEach(function(id){
       var el = byId(id);
       var prev = el.value;
       el.innerHTML = opts;
@@ -669,24 +892,28 @@
   function renderDashboard(){
     var ing = totalIngresos(), gas = totalGastos(), util = ing - gas;
     var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
-    var parejas = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).length;
-    var paradasActivas = paradas.filter(function(p){ return p.estado === 'ABIERTA' || p.estado === 'EN_CURSO'; }).length;
+    var parejas = torneoCuposOcupados();
+    var cuposTotales = torneoData.cuposTotales || 0;
 
     byId('dashKpis').innerHTML =
       kpiCard('Ingresos Totales', money(ing), ing>0 ? '' : 'Aún sin movimientos') +
       kpiCard('Utilidad Neta', money(util), gas>0 ? ('Gastos: '+money(gas)) : '') +
-      kpiCard('Parejas Inscritas', String(parejas), paradasActivas+' parada(s) activa(s)') +
+      kpiCard('Parejas Inscritas', String(parejas), cuposTotales ? (parejas+' / '+cuposTotales+' cupos') : '') +
       kpiCard('Saldo en Cuentas', money(saldoTotal), cuentas.length+' cuenta(s)');
 
-    var proximas = paradas.slice().sort(function(a,b){ return (a.fechaInicio||'').localeCompare(b.fechaInicio||''); }).slice(0,4);
-    byId('dashParadas').innerHTML = proximas.length ? proximas.map(function(p){
-      var e = ESTADO_PARADA[p.estado] || ESTADO_PARADA.PLANIFICADA;
-      return '<div class="row-item"><div><div style="font-weight:600;font-size:14px;">'+esc(p.nombre)+' — '+esc(p.ciudad||'')+'</div>' +
-        '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(p.club||'')+' · '+fmtDateFull(p.fechaInicio)+'</div></div>' +
-        chip(ESTADO_PARADA, p.estado) + '</div>';
-    }).join('') : '<div class="muted" style="padding:20px 0;">Aún no hay paradas creadas.</div>';
+    byId('dashEstadoChip').innerHTML = chip(ESTADO_TORNEO, torneoData.estado || 'PLANIFICADA');
 
-    var recientes = movimientos.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,5);
+    var pct = cuposTotales ? Math.min(100, Math.round(parejas/cuposTotales*100)) : 0;
+    byId('dashResumen').innerHTML =
+      '<div class="row-item"><span class="muted">Ciudad / Sede</span><span style="font-weight:600;">'+esc(torneoData.ciudad||'—')+(torneoData.club?' · '+esc(torneoData.club):'')+'</span></div>' +
+      '<div class="row-item"><span class="muted">Fechas</span><span style="font-weight:600;">'+fmtDateFull(torneoData.fechaInicio)+(torneoData.fechaFin?' – '+fmtDateFull(torneoData.fechaFin):'')+'</span></div>' +
+      '<div class="row-item"><span class="muted">'+diasRestantes(torneoData.fechaInicio)+'</span><span></span></div>' +
+      '<div style="padding:14px 0;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:600;">'+parejas+' / '+(cuposTotales||'—')+'</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;"></div></div>' +
+      '</div>';
+
+    var recientes = movimientos.filter(movActivo).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,5);
     byId('dashActividad').innerHTML = recientes.length ? recientes.map(function(m){
       var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
       var sign = m.tipo === 'INGRESO' ? '+' : '−';
@@ -699,29 +926,14 @@
     return '<div class="kpi"><div class="kpi-lbl">'+esc(lbl)+'</div><div class="kpi-val">'+val+'</div>' + (sub?'<div class="kpi-sub">'+esc(sub)+'</div>':'') + '</div>';
   }
 
-  // ---------- render: torneos ----------
-  function renderTorneos(){
-    byId('torneosSub').textContent = paradas.length + ' parada' + (paradas.length===1?'':'s') + ' registrada' + (paradas.length===1?'':'s');
-    if (!paradas.length){
-      byId('torneosBody').innerHTML = '<tr class="empty-row"><td colspan="6">Aún no hay paradas. Crea la primera con "+ Nueva Parada".</td></tr>';
-      return;
-    }
-    byId('torneosBody').innerHTML = paradas.slice().sort(function(a,b){ return (a.fechaInicio||'').localeCompare(b.fechaInicio||''); }).map(function(p){
-      var ocupados = paradaCuposOcupados(p.id);
-      return '<tr>' +
-        '<td style="font-weight:600;">'+esc(p.nombre)+'</td>' +
-        '<td class="muted">'+esc(p.ciudad||'—')+'</td>' +
-        '<td class="muted">'+fmtDateFull(p.fechaInicio)+(p.fechaFin?' – '+fmtDateFull(p.fechaFin):'')+'</td>' +
-        '<td>'+ocupados+' / '+(p.cuposTotales||0)+'</td>' +
-        '<td>'+chip(ESTADO_PARADA, p.estado)+'</td>' +
-        '<td class="num" style="font-weight:700;">'+money(paradaIngresos(p.id))+'</td>' +
-        '</tr>';
-    }).join('');
-  }
-
   // ---------- render: inscripciones ----------
+  function pagadoTotalIns(i){ return (i.pagadoJ1||0) + (i.pagadoJ2||0); }
+
   function renderInscripciones(){
-    byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es') + ' en la temporada';
+    byId('btnAbrirCategorias').style.display = isAdminMode ? 'inline-block' : 'none';
+    if (isAdminMode) renderCategoriasAdmin();
+
+    byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es');
     var list = inscripciones.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
     if (insFilter !== 'TODAS') list = list.filter(function(i){ return i.estadoIns === insFilter; });
     if (!list.length){
@@ -730,15 +942,36 @@
     }
     byId('insBody').innerHTML = list.map(function(i){
       var j2 = i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>';
+      var pagado = pagadoTotalIns(i);
+      var puedeCobrar = i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO';
       return '<tr>' +
         '<td style="font-weight:600;">'+esc(i.j1Nombre)+' / '+j2+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="muted">'+esc(i.paradaNombre)+'</td>' +
         '<td class="num">'+money(i.valor)+'</td>' +
-        '<td class="num" style="font-weight:600;color:'+(i.valorPagado>=i.valor?'var(--green-tx)':(i.valorPagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(i.valorPagado)+'</td>' +
+        '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
+        '<td style="display:flex;gap:6px;">' +
+          (puedeCobrar ? '<button class="btn" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
+          (isAdminMode ? '<button class="logout-btn" data-del-ins="'+i.id+'" title="Eliminar inscripción">✕</button>' : '') +
+        '</td>' +
         '</tr>';
     }).join('');
+
+    document.querySelectorAll('[data-cobrar]').forEach(function(btn){
+      btn.addEventListener('click', function(){ abrirFormPago(btn.dataset.cobrar); });
+    });
+    document.querySelectorAll('[data-del-ins]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = inscripciones.find(function(x){ return x.id === btn.dataset.delIns; });
+        var pagadoYa = i ? pagadoTotalIns(i) : 0;
+        var aviso = pagadoYa > 0
+          ? '\n\n⚠️ Esta inscripción ya tiene '+money(pagadoYa)+' pagado. Los movimientos financieros de ese pago NO se borran ni se anulan solos — quedan en Financiero como referencia. Anúlalos ahí manualmente si corresponde.'
+          : '';
+        if (!confirm('¿Eliminar esta inscripción de forma permanente?' + aviso)) return;
+        torneoRef.collection('inscripciones').doc(btn.dataset.delIns).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
+      });
+    });
   }
 
   // ---------- render: financiero ----------
@@ -753,45 +986,304 @@
       '<div><div class="stripval">'+money(saldoTotal)+'</div><div class="striplbl">Saldo en Cuentas</div></div>';
 
     byId('finCuentas').innerHTML = cuentas.map(function(c){
-      return '<div class="account-card"><span style="font-size:13px;font-weight:600;">'+esc(c.nombre)+'</span><span style="font-weight:700;font-size:14px;">'+money(cuentaSaldo(c.id))+'</span></div>';
+      return '<div class="account-card"><span style="font-size:13px;font-weight:600;">'+esc(c.nombre)+'</span>' +
+        '<span style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="font-weight:700;font-size:14px;">'+money(cuentaSaldo(c.id))+'</span>' +
+        (isAdminMode ? '<button class="logout-btn" data-del-cuenta="'+c.id+'" title="Eliminar cuenta">✕</button>' : '') +
+        '</span></div>';
     }).join('') || '<div class="muted">Sin cuentas configuradas.</div>';
 
+    document.querySelectorAll('[data-del-cuenta]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar esta cuenta? Los movimientos que ya tenga no se borran, pero quedarán sin cuenta asociada.')) return;
+        torneoRef.collection('cuentas').doc(btn.dataset.delCuenta).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
+      });
+    });
+
     var list = movimientos.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
-    if (finFilter !== 'TODOS') list = list.filter(function(m){ return m.tipo === finFilter; });
+    if (finFilter === 'ANULADOS') list = list.filter(function(m){ return m.estado === 'ANULADO'; });
+    else {
+      list = list.filter(movActivo);
+      if (finFilter !== 'TODOS') list = list.filter(function(m){ return m.tipo === finFilter; });
+    }
     if (!list.length){
       byId('finBody').innerHTML = '<tr class="empty-row"><td colspan="5">No hay movimientos' + (finFilter!=='TODOS'?' con este filtro.':' todavía.') + '</td></tr>';
       return;
     }
     byId('finBody').innerHTML = list.map(function(m){
-      var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
+      var anulado = m.estado === 'ANULADO';
+      var color = anulado ? 'var(--gray-500)' : (m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)');
       var sign = m.tipo === 'INGRESO' ? '+' : '−';
       var cuenta = cuentaById(m.cuentaId);
+      var tachado = anulado ? 'text-decoration:line-through;opacity:.6;' : '';
       return '<tr>' +
-        '<td class="muted">'+fmtDate(m.fecha)+'</td>' +
-        '<td><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+'</div></td>' +
-        '<td class="muted">'+esc(m.paradaNombre||'—')+'</td>' +
-        '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
-        '<td class="num" style="font-weight:700;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</td>' +
+        '<td class="muted" style="'+tachado+'">'+fmtDate(m.fecha)+'</td>' +
+        '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
+          (anulado ? '<br><span style="color:var(--red-tx);">Anulado por '+esc(m.anuladoPor||'—')+' · '+esc(m.motivoAnulacion||'sin motivo')+'</span>' : '') +
+          '</div></td>' +
+        '<td class="muted" style="'+tachado+'">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
+        '<td class="num" style="font-weight:700;color:'+color+';'+tachado+'">'+sign+money(m.valor).replace('-','')+'</td>' +
+        '<td>'+(anulado ? '' : '<button class="btn" data-anular-mov="'+m.id+'" style="padding:5px 10px;font-size:12px;">Anular</button>')+'</td>' +
         '</tr>';
     }).join('');
+
+    document.querySelectorAll('[data-anular-mov]').forEach(function(btn){
+      btn.addEventListener('click', function(){ anularMovimiento(btn.dataset.anularMov); });
+    });
   }
+
+  // Anular un movimiento en vez de borrarlo: pide motivo, lo marca como
+  // ANULADO (deja de contar en cualquier total pero sigue visible para
+  // trazabilidad), y si venía de un pago de inscripción le revierte a esa
+  // pareja justo lo que ese movimiento le había abonado.
+  function anularMovimiento(movId){
+    var m = movimientos.find(function(x){ return x.id === movId; });
+    if (!m) return;
+    var motivo = prompt('¿Por qué se anula este movimiento?\n"'+m.concepto+'" — '+money(m.valor));
+    if (motivo === null) return;
+    motivo = motivo.trim();
+    if (!motivo) { alert('Escribe un motivo para poder anularlo.'); return; }
+
+    torneoRef.collection('movimientos').doc(movId).update({
+      estado: 'ANULADO', motivoAnulacion: motivo,
+      anuladoPor: currentUserEmail, anuladoEn: Date.now()
+    }).then(function(){
+      if (m.sourceType === 'INSCRIPCION' && m.sourceId && (m.attribJ1 || m.attribJ2)) {
+        return revertirPagoInscripcion(m.sourceId, m.attribJ1||0, m.attribJ2||0);
+      }
+    }).catch(function(e){ alert('No se pudo anular: ' + e.message); });
+  }
+
+  function revertirPagoInscripcion(insId, attribJ1, attribJ2){
+    var i = inscripciones.find(function(x){ return x.id === insId; });
+    if (!i) return Promise.resolve();
+    var mitad = i.valor / 2;
+    var nuevoPagadoJ1 = Math.max(0, (i.pagadoJ1||0) - attribJ1);
+    var nuevoPagadoJ2 = Math.max(0, (i.pagadoJ2||0) - attribJ2);
+    var completoJ1 = nuevoPagadoJ1 >= mitad - 1;
+    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitad - 1;
+    var nuevoEstadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : ((nuevoPagadoJ1>0||nuevoPagadoJ2>0) ? 'PARCIAL' : 'PENDIENTE');
+    var nuevoEstadoIns = nuevoEstadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
+    var update = { estadoPago: nuevoEstadoPago, estadoIns: nuevoEstadoIns };
+    if (attribJ1 > 0) update.pagadoJ1 = firebase.firestore.FieldValue.increment(-attribJ1);
+    if (attribJ2 > 0) update.pagadoJ2 = firebase.firestore.FieldValue.increment(-attribJ2);
+    return torneoRef.collection('inscripciones').doc(insId).update(update);
+  }
+
+  function fillCategoriaDatalist(){
+    var nombres = presupuesto.map(function(l){ return l.concepto; }).filter(Boolean);
+    byId('categoriaSuggestions').innerHTML = nombres.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  }
+
+  // ---------- render: presupuesto ----------
+  function renderPresupuesto(){
+    var lineas = presupuesto.slice().sort(function(a,b){
+      if (a.tipo !== b.tipo) return a.tipo === 'INGRESO' ? -1 : 1;
+      return (a.orden||0) - (b.orden||0);
+    });
+
+    var ingProy = 0, gasProy = 0, ingReal = 0, gasReal = 0;
+    lineas.forEach(function(l){
+      var real = realDeLinea(l);
+      if (l.tipo === 'INGRESO') { ingProy += (l.valorProyectado||0); ingReal += real; }
+      else { gasProy += (l.valorProyectado||0); gasReal += real; }
+    });
+    var utilProy = ingProy - gasProy;
+    var margenProy = ingProy > 0 ? Math.round(utilProy/ingProy*100) : 0;
+
+    byId('presKpis').innerHTML =
+      kpiCard('Ingresos Proyectados', money(ingProy), 'Real: '+money(ingReal)) +
+      kpiCard('Gastos Proyectados', money(gasProy), 'Real: '+money(gasReal)) +
+      kpiCard('Utilidad Proyectada', money(utilProy), 'Margen: '+margenProy+'%') +
+      kpiCard('Punto de Equilibrio', money(gasProy), 'Ingresos mínimos para no perder');
+
+    if (!lineas.length){
+      byId('presBody').innerHTML = '<tr class="empty-row"><td colspan="6">Sin líneas de presupuesto todavía. Agrega la primera con "+ Agregar Línea".</td></tr>';
+      return;
+    }
+    byId('presBody').innerHTML = lineas.map(function(l){
+      var real = realDeLinea(l);
+      var diff = real - (l.valorProyectado||0);
+      var esIngreso = l.tipo === 'INGRESO';
+      var diffColor = (esIngreso ? diff >= 0 : diff <= 0) ? 'var(--green-tx)' : 'var(--red-tx)';
+      return '<tr>' +
+        '<td style="font-weight:600;">'+esc(l.concepto)+'</td>' +
+        '<td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
+        '<td class="num"><input type="number" value="'+(l.valorProyectado||0)+'" data-linea-id="'+l.id+'" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
+        '<td class="num">'+money(real)+'</td>' +
+        '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td>' +
+        '<td><button class="logout-btn" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
+        '</tr>';
+    }).join('');
+
+    document.querySelectorAll('.pres-input').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var id = inp.dataset.lineaId;
+        var val = parseFloat(inp.value) || 0;
+        torneoRef.collection('presupuesto').doc(id).update({ valorProyectado: val })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    document.querySelectorAll('[data-del-linea]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar esta línea de presupuesto?')) return;
+        torneoRef.collection('presupuesto').doc(btn.dataset.delLinea).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
+      });
+    });
+  }
+
+  byId('btnGuardarLinea').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var concepto = byId('l_concepto').value.trim();
+    var valor = parseFloat(byId('l_valor').value) || 0;
+    if (!concepto) { alert('Escribe el nombre del concepto.'); return; }
+    torneoRef.collection('presupuesto').add({
+      tipo: byId('l_tipo').value, concepto: concepto, valorProyectado: valor, orden: 99
+    }).then(function(){
+      byId('l_concepto').value = ''; byId('l_valor').value = '';
+      closeForm('linea');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  // ---------- render: reportes ----------
+  function movimientosEnRango(){
+    var desde = byId('rep_desde').value, hasta = byId('rep_hasta').value;
+    var desdeTs = desde ? new Date(desde + 'T00:00:00').getTime() : null;
+    var hastaTs = hasta ? new Date(hasta + 'T23:59:59').getTime() : null;
+    return movimientos.filter(function(m){
+      if (!movActivo(m)) return false;
+      if (desdeTs && (m.fecha||0) < desdeTs) return false;
+      if (hastaTs && (m.fecha||0) > hastaTs) return false;
+      return true;
+    });
+  }
+  function agrupaPorCategoria(lista, tipo){
+    var total = 0, byCat = {};
+    lista.forEach(function(m){
+      if (m.tipo !== tipo) return;
+      var cat = (m.categoria||'').trim() || 'Sin categoría';
+      byCat[cat] = (byCat[cat]||0) + (m.valor||0);
+      total += (m.valor||0);
+    });
+    var rows = Object.keys(byCat).map(function(k){ return {nombre:k, valor:byCat[k]}; }).sort(function(a,b){ return b.valor-a.valor; });
+    return { rows: rows, total: total };
+  }
+  function renderReportes(){
+    var enRango = movimientosEnRango();
+    var ing = agrupaPorCategoria(enRango, 'INGRESO');
+    var gas = agrupaPorCategoria(enRango, 'GASTO');
+    var util = ing.total - gas.total;
+    var margen = ing.total > 0 ? Math.round(util/ing.total*100) : 0;
+
+    byId('repPrintTitulo').textContent = (torneoData.nombre || 'Torneo') + ' — Reporte Financiero';
+    byId('repPrintFecha').textContent = 'Generado el ' + new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'});
+
+    byId('repKpis').innerHTML =
+      kpiCard('Ingresos', money(ing.total)) +
+      kpiCard('Gastos', money(gas.total)) +
+      kpiCard('Utilidad', money(util), 'Margen: '+margen+'%') +
+      kpiCard('Queda en Cuentas', money(cuentas.reduce(function(s,c){return s+cuentaSaldo(c.id);},0)));
+
+    // ---- Estado de Resultados (formato contable) ----
+    var erHtml = '';
+    erHtml += '<tr style="background:var(--gray-200);"><td colspan="2" style="font-weight:700;">INGRESOS OPERACIONALES</td></tr>';
+    ing.rows.forEach(function(r){
+      erHtml += '<tr><td style="padding-left:34px;">'+esc(r.nombre)+'</td><td class="num">'+money(r.valor)+'</td></tr>';
+    });
+    erHtml += '<tr><td style="font-weight:700;">Total Ingresos</td><td class="num" style="font-weight:700;color:var(--green-tx);">'+money(ing.total)+'</td></tr>';
+    erHtml += '<tr style="background:var(--gray-200);"><td colspan="2" style="font-weight:700;">GASTOS OPERACIONALES</td></tr>';
+    gas.rows.forEach(function(r){
+      erHtml += '<tr><td style="padding-left:34px;">'+esc(r.nombre)+'</td><td class="num">'+money(r.valor)+'</td></tr>';
+    });
+    erHtml += '<tr><td style="font-weight:700;">Total Gastos</td><td class="num" style="font-weight:700;color:var(--red-tx);">'+money(gas.total)+'</td></tr>';
+    erHtml += '<tr style="background:'+(util>=0?'var(--green-bg)':'var(--red-bg)')+';"><td style="font-weight:800;">UTILIDAD NETA</td>' +
+      '<td class="num" style="font-weight:800;color:'+(util>=0?'var(--green-tx)':'var(--red-tx)')+';">'+money(util)+' ('+margen+'%)</td></tr>';
+    byId('repEstadoResultados').innerHTML = erHtml;
+
+    function tablaCategorias(rows, total, colorVar){
+      if (!rows.length) return '<div class="muted" style="padding:16px 0;">Sin movimientos en este rango.</div>';
+      return rows.map(function(r){
+        var pct = total>0 ? Math.round(r.valor/total*100) : 0;
+        return '<div class="row-item"><span>'+esc(r.nombre)+'</span>' +
+          '<span style="display:flex;align-items:center;gap:10px;"><span class="muted" style="font-size:11.5px;">'+pct+'%</span>' +
+          '<span style="font-weight:700;color:'+colorVar+';">'+money(r.valor)+'</span></span></div>';
+      }).join('');
+    }
+    byId('repIngresos').innerHTML = tablaCategorias(ing.rows, ing.total, 'var(--green-tx)');
+    byId('repGastos').innerHTML = tablaCategorias(gas.rows, gas.total, 'var(--red-tx)');
+
+    // ---- Flujo de Caja: saldo acumulado día a día ----
+    function dayKey(ts){ var d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    var desde = byId('rep_desde').value, hasta = byId('rep_hasta').value;
+    var desdeTs = desde ? new Date(desde + 'T00:00:00').getTime() : null;
+    var saldoInicial = 0;
+    if (desdeTs) {
+      movimientos.forEach(function(m){ if ((m.fecha||0) < desdeTs) saldoInicial += (m.tipo==='INGRESO'?1:-1)*(m.valor||0); });
+    }
+    var porDia = {};
+    enRango.slice().sort(function(a,b){ return (a.fecha||0)-(b.fecha||0); }).forEach(function(m){
+      var k = dayKey(m.fecha);
+      porDia[k] = porDia[k] || { ing: 0, gas: 0 };
+      if (m.tipo === 'INGRESO') porDia[k].ing += (m.valor||0); else porDia[k].gas += (m.valor||0);
+    });
+    var dias = Object.keys(porDia).sort();
+    var acumulado = saldoInicial;
+    byId('repFlujoBody').innerHTML = dias.length ? dias.map(function(k){
+      acumulado += porDia[k].ing - porDia[k].gas;
+      return '<tr><td>'+fmtDateFull(k)+'</td><td class="num" style="color:var(--green-tx);">'+(porDia[k].ing?money(porDia[k].ing):'—')+'</td>' +
+        '<td class="num" style="color:var(--red-tx);">'+(porDia[k].gas?money(porDia[k].gas):'—')+'</td>' +
+        '<td class="num" style="font-weight:700;">'+money(acumulado)+'</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="4">Sin movimientos en este rango.</td></tr>';
+
+    // Cuentas por cobrar: saldo pendiente de cada inscripción activa, a hoy
+    // (no se filtra por fecha — es una foto del estado actual).
+    var pendientes = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA' && i.valor > pagadoTotalIns(i); });
+    var totalCxC = pendientes.reduce(function(s,i){ return s + (i.valor - pagadoTotalIns(i)); }, 0);
+    byId('repCxCTotal').textContent = money(totalCxC);
+    byId('repCxCBody').innerHTML = pendientes.length ? pendientes.map(function(i){
+      var j2 = i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>';
+      return '<tr><td style="font-weight:600;">'+esc(i.j1Nombre)+' / '+j2+'</td><td class="muted">'+esc(i.categoriaNombre)+'</td>' +
+        '<td class="num" style="font-weight:700;color:var(--amber-tx);">'+money(i.valor-pagadoTotalIns(i))+'</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="3">No hay saldos pendientes — todo está al día.</td></tr>';
+
+    // Presupuesto vs Real (reutiliza exactamente la misma lógica del
+    // módulo de Presupuesto — el dato nunca se vuelve a digitar).
+    var lineas = presupuesto.slice().sort(function(a,b){
+      if (a.tipo !== b.tipo) return a.tipo === 'INGRESO' ? -1 : 1;
+      return (a.orden||0) - (b.orden||0);
+    });
+    byId('repPresBody').innerHTML = lineas.length ? lineas.map(function(l){
+      var real = realDeLinea(l);
+      var diff = real - (l.valorProyectado||0);
+      var esIngreso = l.tipo === 'INGRESO';
+      var diffColor = (esIngreso ? diff >= 0 : diff <= 0) ? 'var(--green-tx)' : 'var(--red-tx)';
+      return '<tr><td style="font-weight:600;">'+esc(l.concepto)+'</td><td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
+        '<td class="num">'+money(l.valorProyectado||0)+'</td><td class="num">'+money(real)+'</td>' +
+        '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="5">Sin líneas de presupuesto.</td></tr>';
+  }
+  byId('rep_desde').addEventListener('change', renderReportes);
+  byId('rep_hasta').addEventListener('change', renderReportes);
+  byId('btnLimpiarFiltroRep').addEventListener('click', function(){
+    byId('rep_desde').value = ''; byId('rep_hasta').value = '';
+    renderReportes();
+  });
+  byId('btnImprimirReporte').addEventListener('click', function(){ window.print(); });
 
   // ---------- render: viabilidad ----------
   function renderViabilidadForm(){
-    if (!viabParadaId && paradas.length) viabParadaId = paradas[0].id;
-    var sel = byId('v_parada');
-    if (sel.value !== viabParadaId && viabParadaId) sel.value = viabParadaId;
-
-    var cats = categoriasConteoPorParada(viabParadaId);
+    var cats = categoriasConteoTorneo();
     byId('v_catlist').innerHTML = '<div class="catlist-row" style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--gray-500);border-bottom:1px solid var(--border);"><span>Categoría</span><span style="text-align:right;">Parejas</span><span></span><span></span></div>' +
       (cats.length ? cats.map(function(c){
         return '<div class="catlist-row"><span style="font-weight:600;">'+esc(c.nombre)+'</span><span class="num">'+c.parejas+'</span><span></span><span></span></div>';
-      }).join('') : '<div class="muted" style="padding:12px 0;">Esta parada aún no tiene inscripciones.</div>');
+      }).join('') : '<div class="muted" style="padding:12px 0;">Este torneo aún no tiene inscripciones.</div>');
   }
-  function categoriasConteoPorParada(paradaId){
+  function categoriasConteoTorneo(){
     var byCat = {};
     inscripciones.forEach(function(i){
-      if (i.paradaId !== paradaId || i.estadoIns === 'CANCELADA') return;
+      if (i.estadoIns === 'CANCELADA') return;
       byCat[i.categoriaId] = byCat[i.categoriaId] || {nombre: i.categoriaNombre, parejas: 0};
       byCat[i.categoriaId].parejas++;
     });
@@ -802,7 +1294,7 @@
     var horasDia = parseFloat(byId('v_horas').value) || 0;
     var canchas = parseFloat(byId('v_canchas').value) || 0;
     var duracionMin = parseFloat(byId('v_duracion').value) || 0;
-    var cats = categoriasConteoPorParada(viabParadaId);
+    var cats = categoriasConteoTorneo();
 
     var totalPartidos = 0, totalHoras = 0;
     var rows = cats.map(function(c){
@@ -838,74 +1330,184 @@
     byId('v_catBody').innerHTML = rows.length ? rows.map(function(r){
       return '<tr><td style="font-weight:600;">'+esc(r.nombre)+'</td><td class="num muted">'+r.parejas+'</td><td class="num">'+r.partidos+'</td><td class="num">'+r.horas.toFixed(1)+'h</td></tr>';
     }).join('') + '<tr style="background:var(--gray-200);"><td style="font-weight:700;">Total</td><td class="num" style="font-weight:700;">'+cats.reduce(function(s,c){return s+c.parejas;},0)+'</td><td class="num" style="font-weight:700;">'+totalPartidos+'</td><td class="num" style="font-weight:700;">'+totalHoras.toFixed(1)+'h</td></tr>'
-      : '<tr class="empty-row"><td colspan="4">Selecciona una parada con inscripciones para calcular.</td></tr>';
+      : '<tr class="empty-row"><td colspan="4">Registra inscripciones para poder calcular.</td></tr>';
   }
-  byId('v_parada').addEventListener('change', function(){ viabParadaId = this.value; renderViabilidadForm(); calcularViabilidad(); });
   byId('btnCalcularViabilidad').addEventListener('click', calcularViabilidad);
 
-  // ---------- render all ----------
-  function renderAll(){
-    fillParadaSelects();
-    fillCategoriaSelect();
-    fillCuentaSelects();
-    renderDashboard();
-    renderTorneos();
-    renderInscripciones();
-    renderFinanciero();
-    renderViabilidadForm();
-    calcularViabilidad();
+  // ---------- render: configuración ----------
+  function renderConfiguracion(){
+    byId('cfg_nombre').value = torneoData.nombre || '';
+    byId('cfg_ciudad').value = torneoData.ciudad || '';
+    byId('cfg_club').value = torneoData.club || '';
+    byId('cfg_fechaInicio').value = torneoData.fechaInicio || '';
+    byId('cfg_fechaFin').value = torneoData.fechaFin || '';
+    byId('cfg_cupos').value = torneoData.cuposTotales || 0;
+    byId('cfg_estado').value = torneoData.estado || 'PLANIFICADA';
+
+    if (isAdminMode) {
+      byId('adminBannerTitulo').textContent = '🔓 Modo Administrador activo';
+      byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo, categorías, y eliminar inscripciones y cuentas. Ciérralo cuando termines.';
+      byId('btnToggleAdmin').textContent = 'Salir';
+      byId('btnCambiarPin').style.display = 'inline-block';
+      byId('formConfig').style.display = 'flex';
+      byId('configLockedMsg').style.display = 'none';
+    } else {
+      byId('adminBannerTitulo').textContent = '🔒 Modo Administrador';
+      byId('adminBannerSub').textContent = 'Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones y cuentas.';
+      byId('btnToggleAdmin').textContent = 'Activar';
+      byId('btnCambiarPin').style.display = 'none';
+      byId('formConfig').style.display = 'none';
+      byId('configLockedMsg').style.display = 'block';
+    }
   }
 
-  // ---------- write actions (todas escriben bajo userRef, es decir,
-  //            en el espacio de datos privado de cada usuario) ----------
-  byId('btnGuardarParada').addEventListener('click', function(){
+  function renderCategoriasAdmin(){
+    var lista = categorias.slice().sort(function(a,b){ return (a.orden||0)-(b.orden||0); });
+    byId('categoriasAdminList').innerHTML = lista.length ? lista.map(function(c){
+      return '<div class="row-item">' +
+        '<input value="'+esc(c.nombre)+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;margin-right:10px;">' +
+        '<input type="number" value="'+(c.valorInscripcion||0)+'" data-cat-valor="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;width:130px;text-align:right;margin-right:10px;">' +
+        '<button class="logout-btn" data-del-cat="'+c.id+'" title="Eliminar categoría">✕</button>' +
+        '</div>';
+    }).join('') : '<div class="muted" style="padding:10px 0;">Sin categorías todavía.</div>';
+
+    document.querySelectorAll('[data-cat-nombre]').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        torneoRef.collection('categorias').doc(inp.dataset.catNombre).update({ nombre: inp.value.trim() })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    document.querySelectorAll('[data-cat-valor]').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var val = parseFloat(inp.value) || 0;
+        torneoRef.collection('categorias').doc(inp.dataset.catValor).update({ valorInscripcion: val })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    document.querySelectorAll('[data-del-cat]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar esta categoría? Las inscripciones que ya la usan no se ven afectadas.')) return;
+        torneoRef.collection('categorias').doc(btn.dataset.delCat).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
+      });
+    });
+  }
+
+  byId('btnAgregarCategoria').addEventListener('click', function(){
     if (!torneoRef) return;
-    var nombre = byId('p_nombre').value.trim();
-    if (!nombre) { alert('Escribe el nombre de la parada.'); return; }
-    torneoRef.collection('paradas').add({
-      nombre: nombre,
-      ciudad: byId('p_ciudad').value.trim(),
-      club: byId('p_club').value.trim(),
-      fechaInicio: byId('p_fechaInicio').value,
-      fechaFin: byId('p_fechaFin').value,
-      cuposTotales: parseInt(byId('p_cupos').value, 10) || 0,
-      estado: byId('p_estado').value,
-      creadoEn: Date.now()
-    }).then(function(){
-      ['p_nombre','p_ciudad','p_club','p_fechaInicio','p_fechaFin'].forEach(function(id){ byId(id).value = ''; });
-      byId('p_cupos').value = 32;
-      closeForm('parada');
+    var nombre = byId('cat_nombre').value.trim();
+    var valor = parseFloat(byId('cat_valor').value) || 0;
+    if (!nombre) { alert('Escribe el nombre de la categoría.'); return; }
+    torneoRef.collection('categorias').add({ nombre: nombre, valorInscripcion: valor, orden: 99 }).then(function(){
+      byId('cat_nombre').value = ''; byId('cat_valor').value = '';
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
+  // ---------- modo administrador (PIN por torneo) ----------
+  byId('btnToggleAdmin').addEventListener('click', function(){
+    if (isAdminMode) { isAdminMode = false; renderAll(); return; }
+    if (!torneoData.adminPin) {
+      var nuevo = prompt('Todavía no tienes un PIN de administrador para este torneo.\nCrea uno (mínimo 4 caracteres):');
+      if (nuevo === null) return;
+      nuevo = nuevo.trim();
+      if (nuevo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
+      torneoRef.set({ adminPin: nuevo }, { merge: true }).then(function(){
+        torneoData.adminPin = nuevo;
+        isAdminMode = true;
+        renderAll();
+      }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
+      return;
+    }
+    var intento = prompt('Ingresa el PIN de administrador:');
+    if (intento === null) return;
+    if (intento === torneoData.adminPin) {
+      isAdminMode = true;
+      renderAll();
+    } else {
+      alert('PIN incorrecto.');
+    }
+  });
+  byId('btnCambiarPin').addEventListener('click', function(){
+    var nuevo = prompt('Nuevo PIN de administrador (mínimo 4 caracteres):');
+    if (nuevo === null) return;
+    nuevo = nuevo.trim();
+    if (nuevo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
+    torneoRef.set({ adminPin: nuevo }, { merge: true }).then(function(){
+      torneoData.adminPin = nuevo;
+      alert('PIN actualizado.');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  byId('btnGuardarConfig').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var nombre = byId('cfg_nombre').value.trim();
+    if (!nombre) { alert('El torneo necesita un nombre.'); return; }
+    var datos = {
+      nombre: nombre,
+      ciudad: byId('cfg_ciudad').value.trim(),
+      club: byId('cfg_club').value.trim(),
+      fechaInicio: byId('cfg_fechaInicio').value,
+      fechaFin: byId('cfg_fechaFin').value,
+      cuposTotales: parseInt(byId('cfg_cupos').value, 10) || 0,
+      estado: byId('cfg_estado').value
+    };
+    torneoRef.set(datos, { merge: true }).then(function(){
+      torneoData = Object.assign({}, torneoData, datos);
+      applyBrand(torneoData.nombre);
+      renderAll();
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  // ---------- render all ----------
+  function renderAll(){
+    fillCategoriaSelect();
+    fillCuentaSelects();
+    fillCategoriaDatalist();
+    renderDashboard();
+    renderInscripciones();
+    renderFinanciero();
+    renderPresupuesto();
+    renderReportes();
+    renderViabilidadForm();
+    calcularViabilidad();
+    renderConfiguracion();
+  }
+
+  // ---------- write actions ----------
   byId('btnGuardarInscripcion').addEventListener('click', function(){
     if (!torneoRef) return;
-    var paradaId = byId('i_parada').value;
     var categoriaId = byId('i_categoria').value;
     var j1 = byId('i_j1').value.trim();
     var j2 = byId('i_j2').value.trim();
     var cuentaId = byId('i_cuenta').value;
-    if (!paradaId || !categoriaId || !j1 || !cuentaId) { alert('Completa parada, categoría, jugador 1 y cuenta.'); return; }
-    var parada = paradaById(paradaId), cat = categoriaById(categoriaId);
+    if (!categoriaId || !j1 || !cuentaId) { alert('Completa categoría, jugador 1 y cuenta.'); return; }
+    var cat = categoriaById(categoriaId);
     var estadoPago = byId('i_estadoPago').value;
     var pagado = parseFloat(byId('i_pagado').value) || 0;
     var valor = cat.valorInscripcion;
+    var mitad = valor / 2;
+    // El monto pagado al crear no distingue jugador todavía: se reparte
+    // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
+    // (misma regla que usa "Confirmar Pago" más abajo).
+    var pagadoJ1 = Math.min(pagado, mitad);
+    var pagadoJ2 = Math.max(0, pagado - mitad);
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE';
 
     torneoRef.collection('inscripciones').add({
-      paradaId: paradaId, paradaNombre: parada.nombre,
       categoriaId: categoriaId, categoriaNombre: cat.nombre,
       j1Nombre: j1, j2Nombre: j2,
-      valor: valor, valorPagado: pagado, estadoPago: estadoPago, estadoIns: estadoIns,
+      valor: valor, pagadoJ1: pagadoJ1, pagadoJ2: pagadoJ2,
+      estadoPago: estadoPago, estadoIns: estadoIns,
       cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
       fecha: Date.now()
     }).then(function(ref){
       if (pagado > 0){
         return torneoRef.collection('movimientos').add({
           tipo: 'INGRESO', concepto: 'Inscripción — ' + j1 + (j2 ? ' / ' + j2 : ''),
-          categoria: 'Inscripciones', valor: pagado,
-          cuentaId: cuentaId, paradaId: paradaId, paradaNombre: parada.nombre,
-          sourceType: 'INSCRIPCION', sourceId: ref.id, fecha: Date.now()
+          categoria: 'Inscripciones', valor: pagado, cuentaId: cuentaId,
+          sourceType: 'INSCRIPCION', sourceId: ref.id,
+          attribJ1: pagadoJ1, attribJ2: pagadoJ2,
+          estado: 'ACTIVO', fecha: Date.now()
         });
       }
     }).then(function(){
@@ -915,37 +1517,132 @@
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
+  // ============================================================
+  // CONFIRMAR PAGO — individual (Jugador 1 / Jugador 2) o de la
+  // pareja completa. Siempre genera UN solo movimiento por pago,
+  // nunca dos, y usa incrementos atómicos de Firestore para que
+  // varios pagos seguidos nunca se pisen entre sí.
+  // ============================================================
+  var pagoInsActual = null; // la inscripción abierta en el panel de pago
+
+  function abrirFormPago(insId){
+    var i = inscripciones.find(function(x){ return x.id === insId; });
+    if (!i) return;
+    pagoInsActual = i;
+    var mitad = i.valor / 2;
+    var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
+    var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
+
+    byId('pg_inscripcionId').value = insId;
+    byId('pg_resumen').innerHTML =
+      '<strong>'+esc(i.j1Nombre)+' / '+(i.j2Nombre?esc(i.j2Nombre):'⏳ por confirmar')+'</strong> — '+esc(i.categoriaNombre)+'<br>' +
+      'Total: '+money(i.valor)+' · '+esc(i.j1Nombre)+' debe '+money(saldoJ1) +
+      (i.j2Nombre ? ' · '+esc(i.j2Nombre)+' debe '+money(saldoJ2) : '');
+
+    var opciones = '';
+    if (saldoJ1 > 0) opciones += '<option value="J1">'+esc(i.j1Nombre)+' — debe '+money(saldoJ1)+'</option>';
+    if (i.j2Nombre && saldoJ2 > 0) opciones += '<option value="J2">'+esc(i.j2Nombre)+' — debe '+money(saldoJ2)+'</option>';
+    if (i.j2Nombre && saldoJ1 > 0 && saldoJ2 > 0) opciones += '<option value="AMBOS">Ambos (pago conjunto) — debe '+money(saldoJ1+saldoJ2)+'</option>';
+    byId('pg_quien').innerHTML = opciones;
+
+    byId('pg_fecha').value = new Date().toISOString().slice(0,10);
+    byId('pg_obs').value = '';
+    actualizarMontoPago();
+    openForm('pago');
+  }
+  byId('pg_quien').addEventListener('change', actualizarMontoPago);
+  function actualizarMontoPago(){
+    if (!pagoInsActual) return;
+    var mitad = pagoInsActual.valor / 2;
+    var saldoJ1 = Math.max(0, mitad - (pagoInsActual.pagadoJ1||0));
+    var saldoJ2 = pagoInsActual.j2Nombre ? Math.max(0, mitad - (pagoInsActual.pagadoJ2||0)) : 0;
+    var quien = byId('pg_quien').value;
+    var monto = quien === 'J1' ? saldoJ1 : quien === 'J2' ? saldoJ2 : quien === 'AMBOS' ? saldoJ1+saldoJ2 : 0;
+    byId('pg_monto').value = Math.round(monto);
+    byId('pg_monto').readOnly = (quien === 'AMBOS');
+  }
+
+  byId('btnGuardarPago').addEventListener('click', function(){
+    if (!torneoRef || !pagoInsActual) return;
+    var insId = byId('pg_inscripcionId').value;
+    var i = inscripciones.find(function(x){ return x.id === insId; });
+    if (!i) { alert('Esta inscripción ya no existe.'); closeForm('pago'); return; }
+    var quien = byId('pg_quien').value;
+    var monto = parseFloat(byId('pg_monto').value) || 0;
+    var cuentaId = byId('pg_cuenta').value;
+    if (!quien || monto <= 0 || !cuentaId) { alert('Selecciona quién paga, un monto mayor a 0 y la cuenta.'); return; }
+
+    var mitad = i.valor / 2;
+    var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
+    var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
+    var deltaJ1 = 0, deltaJ2 = 0, quienTexto = '';
+
+    if (quien === 'J1') {
+      if (monto > saldoJ1 + 1) { alert('El monto supera lo que debe '+i.j1Nombre+' ('+money(saldoJ1)+').'); return; }
+      deltaJ1 = monto; quienTexto = i.j1Nombre;
+    } else if (quien === 'J2') {
+      if (monto > saldoJ2 + 1) { alert('El monto supera lo que debe '+i.j2Nombre+' ('+money(saldoJ2)+').'); return; }
+      deltaJ2 = monto; quienTexto = i.j2Nombre;
+    } else if (quien === 'AMBOS') {
+      deltaJ1 = saldoJ1; deltaJ2 = saldoJ2; quienTexto = 'ambos';
+      monto = saldoJ1 + saldoJ2;
+    } else { return; }
+
+    var nuevoPagadoJ1 = (i.pagadoJ1||0) + deltaJ1;
+    var nuevoPagadoJ2 = (i.pagadoJ2||0) + deltaJ2;
+    var completoJ1 = nuevoPagadoJ1 >= mitad - 1;
+    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitad - 1;
+    var nuevoEstadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : 'PARCIAL';
+    var nuevoEstadoIns = nuevoEstadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'PENDIENTE' ? 'PENDIENTE' : i.estadoIns);
+
+    var fechaStr = byId('pg_fecha').value;
+    var fechaTs = fechaStr ? new Date(fechaStr + 'T12:00:00').getTime() : Date.now();
+    var obs = byId('pg_obs').value.trim();
+
+    torneoRef.collection('movimientos').add({
+      tipo: 'INGRESO',
+      concepto: 'Pago inscripción — ' + quienTexto + ' (' + i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : '') + ')',
+      categoria: 'Inscripciones', valor: monto, cuentaId: cuentaId,
+      sourceType: 'INSCRIPCION', sourceId: insId, observacion: obs || '',
+      attribJ1: deltaJ1, attribJ2: deltaJ2,
+      estado: 'ACTIVO', fecha: fechaTs
+    }).then(function(){
+      var update = { estadoPago: nuevoEstadoPago, estadoIns: nuevoEstadoIns };
+      if (deltaJ1 > 0) update.pagadoJ1 = firebase.firestore.FieldValue.increment(deltaJ1);
+      if (deltaJ2 > 0) update.pagadoJ2 = firebase.firestore.FieldValue.increment(deltaJ2);
+      return torneoRef.collection('inscripciones').doc(insId).update(update);
+    }).then(function(){
+      pagoInsActual = null;
+      closeForm('pago');
+    }).catch(function(e){ alert('No se pudo registrar el pago: ' + e.message); });
+  });
+
   byId('btnGuardarMovimiento').addEventListener('click', function(){
     if (!torneoRef) return;
     var concepto = byId('m_concepto').value.trim();
     var valor = parseFloat(byId('m_valor').value) || 0;
     var cuentaId = byId('m_cuenta').value;
     if (!concepto || valor <= 0 || !cuentaId) { alert('Completa concepto, valor y cuenta.'); return; }
-    var paradaId = byId('m_parada').value;
-    var parada = paradaId ? paradaById(paradaId) : null;
     torneoRef.collection('movimientos').add({
       tipo: byId('m_tipo').value, concepto: concepto,
       categoria: byId('m_categoria').value.trim(), valor: valor,
-      cuentaId: cuentaId, paradaId: paradaId || '', paradaNombre: parada ? parada.nombre : '',
-      fecha: Date.now()
+      cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now()
     }).then(function(){
       byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = '';
       closeForm('movimiento');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
-  // ---------- nombre del torneo activo (reemplaza "TS Padel Tour") ----------
-  byId('brandBtn').addEventListener('click', function(){
+  byId('btnGuardarCuenta').addEventListener('click', function(){
     if (!torneoRef) return;
-    var actual = byId('brandName').textContent;
-    var nuevo = prompt('Nombre de este torneo:', actual);
-    if (nuevo === null) return;
-    nuevo = nuevo.trim();
-    if (!nuevo) return;
-    torneoRef.set({ nombre: nuevo }, { merge: true }).then(function(){
-      applyBrand(nuevo);
-    }).catch(function(e){ alert('No se pudo guardar el nombre: ' + e.message); });
+    var nombre = byId('c_nombre').value.trim();
+    if (!nombre) { alert('Escribe el nombre de la cuenta.'); return; }
+    torneoRef.collection('cuentas').add({ nombre: nombre }).then(function(){
+      byId('c_nombre').value = '';
+      closeForm('cuenta');
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
+
   function applyBrand(name){
     byId('brandName').textContent = name;
     byId('brandMark').textContent = (name || 'T').trim().charAt(0).toUpperCase();
@@ -968,8 +1665,25 @@
       {id:'cta-efectivo',  nombre:'Efectivo'},
       {id:'cta-nequi',     nombre:'Nequi'}
     ];
+    var presupuestoSeed = [
+      {id:'pl-inscripciones', tipo:'INGRESO', concepto:'Inscripciones', orden:1},
+      {id:'pl-patrocinios',   tipo:'INGRESO', concepto:'Patrocinios', orden:2},
+      {id:'pl-ventas',        tipo:'INGRESO', concepto:'Ventas', orden:3},
+      {id:'pl-otros-ing',     tipo:'INGRESO', concepto:'Otros ingresos', orden:4},
+      {id:'pl-canchas',       tipo:'GASTO', concepto:'Canchas', orden:1},
+      {id:'pl-pelotas',       tipo:'GASTO', concepto:'Pelotas', orden:2},
+      {id:'pl-trofeos',       tipo:'GASTO', concepto:'Trofeos', orden:3},
+      {id:'pl-camisetas',     tipo:'GASTO', concepto:'Camisetas', orden:4},
+      {id:'pl-premios',       tipo:'GASTO', concepto:'Premios', orden:5},
+      {id:'pl-personal',      tipo:'GASTO', concepto:'Personal', orden:6},
+      {id:'pl-marketing',     tipo:'GASTO', concepto:'Marketing', orden:7},
+      {id:'pl-transporte',    tipo:'GASTO', concepto:'Transporte', orden:8},
+      {id:'pl-proveedores',   tipo:'GASTO', concepto:'Proveedores', orden:9},
+      {id:'pl-otros-gas',     tipo:'GASTO', concepto:'Otros gastos', orden:10}
+    ];
     cats.forEach(function(c){ batch.set(ref.collection('categorias').doc(c.id), {nombre:c.nombre, orden:c.orden, valorInscripcion:c.valorInscripcion}); });
     cuentasSeed.forEach(function(c){ batch.set(ref.collection('cuentas').doc(c.id), {nombre:c.nombre}); });
+    presupuestoSeed.forEach(function(l){ batch.set(ref.collection('presupuesto').doc(l.id), {tipo:l.tipo, concepto:l.concepto, orden:l.orden, valorProyectado:0}); });
     return batch.commit();
   }
 
@@ -1012,27 +1726,16 @@
       .finally(function(){ byId('btnLogin').disabled = false; });
   });
 
-  // Al registrarse: se crea la cuenta y el PRIMER torneo (con el nombre que
-  // puso en el formulario), y se entra directo a él — sin pasar por el
-  // selector la primera vez.
+  // Al registrarse: solo se crea la cuenta (correo/contraseña). El primer
+  // torneo se crea aparte, en el selector, con el formulario completo.
   byId('formSignup').addEventListener('submit', function(e){
     e.preventDefault();
     hideAuthError();
-    var org = byId('signupOrg').value.trim();
     var email = byId('signupEmail').value.trim();
     var pass = byId('signupPassword').value;
-    if (!org) { showAuthError('Escribe el nombre de tu torneo u organización.'); return; }
     byId('btnSignup').disabled = true;
-    var newUserRef;
     auth.createUserWithEmailAndPassword(email, pass).then(function(cred){
-      newUserRef = fsdb.collection('users').doc(cred.user.uid);
-      return newUserRef.set({ email: email, creadoEn: Date.now() });
-    }).then(function(){
-      return newUserRef.collection('torneos').add({ nombre: org, creadoEn: Date.now() });
-    }).then(function(nuevoTorneoRef){
-      return seedDefaultData(nuevoTorneoRef).then(function(){ return nuevoTorneoRef; });
-    }).then(function(nuevoTorneoRef){
-      enterTorneo(nuevoTorneoRef.id, { nombre: org });
+      return fsdb.collection('users').doc(cred.user.uid).set({ email: email, creadoEn: Date.now() });
     }).catch(function(err){
       showAuthError(translateAuthError(err.code));
     }).finally(function(){
@@ -1053,9 +1756,11 @@
       return;
     }
     list.innerHTML = torneos.map(function(t){
-      return '<button class="account-card" data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;">' +
-        '<span style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</span>' +
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>' +
+      return '<button data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">' +
+        '<div><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
+        '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;">'+chip(ESTADO_TORNEO, t.estado)+
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
         '</button>';
     }).join('');
     list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
@@ -1068,13 +1773,24 @@
 
   byId('btnCrearTorneo').addEventListener('click', function(){
     if (!userRef) return;
-    var nombre = byId('nuevoTorneoNombre').value.trim();
+    var nombre = byId('nt_nombre').value.trim();
     if (!nombre) { alert('Escribe un nombre para el torneo.'); return; }
-    userRef.collection('torneos').add({ nombre: nombre, creadoEn: Date.now() }).then(function(ref){
+    var datos = {
+      nombre: nombre,
+      ciudad: byId('nt_ciudad').value.trim(),
+      club: byId('nt_club').value.trim(),
+      fechaInicio: byId('nt_fechaInicio').value,
+      fechaFin: byId('nt_fechaFin').value,
+      cuposTotales: parseInt(byId('nt_cupos').value, 10) || 0,
+      estado: byId('nt_estado').value,
+      creadoEn: Date.now()
+    };
+    userRef.collection('torneos').add(datos).then(function(ref){
       return seedDefaultData(ref).then(function(){ return ref; });
     }).then(function(ref){
-      byId('nuevoTorneoNombre').value = '';
-      enterTorneo(ref.id, { nombre: nombre });
+      ['nt_nombre','nt_ciudad','nt_club','nt_fechaInicio','nt_fechaFin'].forEach(function(id){ byId(id).value = ''; });
+      byId('nt_cupos').value = 32;
+      enterTorneo(ref.id, datos);
     }).catch(function(e){ alert('No se pudo crear el torneo: ' + e.message); });
   });
 
@@ -1095,15 +1811,17 @@
   function enterTorneo(id, data){
     torneoId = id;
     torneoRef = userRef.collection('torneos').doc(id);
-    applyBrand((data && data.nombre) || 'Mi Torneo');
+    torneoData = data || {};
+    isAdminMode = false;
+    applyBrand(torneoData.nombre || 'Mi Torneo');
     byId('torneoScreen').style.display = 'none';
     byId('appShell').classList.add('active');
 
-    subscribe('paradas', function(a){ paradas = a; });
     subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
     subscribe('cuentas', function(a){ cuentas = a; });
     subscribe('inscripciones', function(a){ inscripciones = a; });
     subscribe('movimientos', function(a){ movimientos = a; });
+    subscribe('presupuesto', function(a){ presupuesto = a; });
 
     setView('dashboard');
     renderAll();
@@ -1111,7 +1829,7 @@
 
   byId('btnCambiarTorneo').addEventListener('click', function(){
     teardownSubscriptions();
-    torneoRef = null; torneoId = null;
+    torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
     showTorneoScreen();
   });
 
@@ -1128,7 +1846,7 @@
   function teardownSubscriptions(){
     unsubs.forEach(function(u){ try { u(); } catch(e){} });
     unsubs = [];
-    paradas = []; categorias = []; cuentas = []; inscripciones = []; movimientos = [];
+    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = [];
   }
 
   function teardownTorneoList(){
@@ -1141,15 +1859,13 @@
         userRef = fsdb.collection('users').doc(user.uid);
         byId('authScreen').style.display = 'none';
         byId('userEmail').textContent = user.email || '';
+        currentUserEmail = user.email || '';
         byId('userAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
-        // El signup ya entra directo a su primer torneo (enterTorneo se llama
-        // desde el handler de formSignup); si venimos de un login normal,
-        // mostramos el selector de torneos.
         if (!torneoRef) showTorneoScreen();
       } else {
         teardownSubscriptions();
         teardownTorneoList();
-        userRef = null; torneoRef = null; torneoId = null;
+        userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
         byId('appShell').classList.remove('active');
         byId('torneoScreen').style.display = 'none';
         byId('authScreen').style.display = 'flex';
