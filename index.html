@@ -684,11 +684,12 @@
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Disponibilidad</div>
             <div class="formgrid" style="grid-template-columns:1fr 1fr;">
-              <div class="field"><label>Días de torneo</label><input id="v_dias" type="number" value="2"></div>
-              <div class="field"><label>Horas / día</label><input id="v_horas" type="number" value="10"></div>
               <div class="field"><label>Canchas disponibles</label><input id="v_canchas" type="number" value="3"></div>
               <div class="field"><label>Min. por partido</label><input id="v_duracion" type="number" value="75"></div>
             </div>
+            <div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-top:4px;">Marca los días que se juega y su horario (puede variar día a día)</div>
+            <div id="v_diasSemana" style="display:flex;flex-direction:column;gap:6px;"></div>
+            <div class="muted" style="font-size:12px;" id="v_horasResumen"></div>
           </div>
 
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Formato y estimado por categoría</div>
@@ -1456,14 +1457,72 @@
         });
       });
     });
+
+    renderHorarioSemanal();
+  }
+
+  // ---------- horario por día de la semana ----------
+  var DIAS_SEMANA = [
+    {key:'lunes', label:'Lunes'}, {key:'martes', label:'Martes'}, {key:'miercoles', label:'Miércoles'},
+    {key:'jueves', label:'Jueves'}, {key:'viernes', label:'Viernes'}, {key:'sabado', label:'Sábado'}, {key:'domingo', label:'Domingo'}
+  ];
+  function horasDelDia(cfg){
+    if (!cfg || !cfg.activo || !cfg.inicio || !cfg.fin) return 0;
+    var i = cfg.inicio.split(':'), f = cfg.fin.split(':');
+    var horas = (parseInt(f[0],10)+parseInt(f[1],10)/60) - (parseInt(i[0],10)+parseInt(i[1],10)/60);
+    return Math.max(0, horas);
+  }
+  function renderHorarioSemanal(){
+    var cfg = torneoData.viabDias || {};
+    byId('v_diasSemana').innerHTML = DIAS_SEMANA.map(function(d){
+      var c = cfg[d.key] || {};
+      return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+        '<label style="display:flex;align-items:center;gap:6px;min-width:110px;font-size:13px;font-weight:600;">' +
+        '<input type="checkbox" data-vd-activo="'+d.key+'"'+(c.activo?' checked':'')+'> '+d.label+'</label>' +
+        '<input type="time" data-vd-inicio="'+d.key+'" value="'+(c.inicio||'08:00')+'" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12.5px;font-family:inherit;width:110px;">' +
+        '<span class="muted" style="font-size:12px;">a</span>' +
+        '<input type="time" data-vd-fin="'+d.key+'" value="'+(c.fin||'18:00')+'" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12.5px;font-family:inherit;width:110px;">' +
+        '<span class="muted" style="font-size:11.5px;" id="vd-h-'+d.key+'">'+(c.activo?horasDelDia(c).toFixed(1)+'h':'')+'</span>' +
+        '</div>';
+    }).join('');
+
+    function guardarDia(dia){
+      var activo = document.querySelector('[data-vd-activo="'+dia+'"]').checked;
+      var inicio = document.querySelector('[data-vd-inicio="'+dia+'"]').value;
+      var fin = document.querySelector('[data-vd-fin="'+dia+'"]').value;
+      var horas = horasDelDia({activo:activo, inicio:inicio, fin:fin});
+      byId('vd-h-'+dia).textContent = activo ? horas.toFixed(1)+'h' : '';
+      var nuevo = Object.assign({}, torneoData.viabDias || {});
+      nuevo[dia] = { activo: activo, inicio: inicio, fin: fin };
+      torneoData.viabDias = nuevo;
+      torneoRef.set({ viabDias: nuevo }, { merge: true }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      calcularViabilidad();
+    }
+    document.querySelectorAll('[data-vd-activo]').forEach(function(cb){
+      cb.addEventListener('change', function(){ guardarDia(cb.dataset.vdActivo); });
+    });
+    document.querySelectorAll('[data-vd-inicio]').forEach(function(inp){
+      inp.addEventListener('change', function(){ guardarDia(inp.dataset.vdInicio); });
+    });
+    document.querySelectorAll('[data-vd-fin]').forEach(function(inp){
+      inp.addEventListener('change', function(){ guardarDia(inp.dataset.vdFin); });
+    });
+  }
+  function horasDisponiblesSemana(){
+    var cfg = torneoData.viabDias || {};
+    var total = 0, dias = 0;
+    DIAS_SEMANA.forEach(function(d){
+      var h = horasDelDia(cfg[d.key]);
+      if (h > 0) { total += h; dias++; }
+    });
+    return { horas: total, dias: dias };
   }
 
   function calcularViabilidad(){
-    var dias = parseFloat(byId('v_dias').value) || 0;
-    var horasDia = parseFloat(byId('v_horas').value) || 0;
     var canchas = parseFloat(byId('v_canchas').value) || 0;
     var duracionMin = parseFloat(byId('v_duracion').value) || 0;
     var cats = categoriasParaViabilidad();
+    var semana = horasDisponiblesSemana();
 
     var totalPartidos = 0, totalHoras = 0;
     var rows = cats.map(function(c){
@@ -1472,8 +1531,12 @@
       return {nombre:c.nombre, parejas:c.parejas, partidos:c.partidos, horas:horas};
     });
 
-    var horasDisponibles = dias * horasDia * canchas;
-    var canchasMinimas = (dias>0 && horasDia>0) ? Math.ceil(totalHoras / (dias*horasDia)) : 0;
+    var horasDisponibles = semana.horas * canchas;
+    byId('v_horasResumen').textContent = semana.dias
+      ? (semana.dias+' día(s) marcado(s) · '+semana.horas.toFixed(1)+'h/semana de cancha × '+canchas+' cancha(s) = '+horasDisponibles.toFixed(1)+'h disponibles')
+      : 'Marca al menos un día para calcular las horas disponibles.';
+
+    var canchasMinimas = semana.horas>0 ? Math.ceil(totalHoras / semana.horas) : 0;
     var ocupacion = horasDisponibles>0 ? Math.round(totalHoras/horasDisponibles*100) : 0;
     var margen = horasDisponibles - totalHoras;
     var viable = totalHoras <= horasDisponibles;
