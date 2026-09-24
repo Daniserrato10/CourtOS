@@ -267,7 +267,9 @@
     </div>
     <div id="torneoList" style="display:flex; flex-direction:column; gap:10px;"></div>
 
-    <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
+    <div id="limiteTorneoAviso" style="display:none;"></div>
+
+    <div class="card" id="crearTorneoCard" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
       <div class="panel-title">Crear nuevo torneo</div>
       <div class="formgrid">
         <div class="field"><label>Nombre</label><input id="nt_nombre" placeholder="Ej: Copa Verano 2026"></div>
@@ -552,34 +554,38 @@
     <section class="view" data-view="presupuesto">
       <div class="page-head">
         <div>
-          <div class="page-title">Presupuesto</div>
+          <div class="page-title">Presupuesto <span style="font-size:10px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Proyecta tus ingresos y gastos antes del torneo — lo "Real" se toma de Financiero</div>
         </div>
-        <button class="btn btn-primary" data-toggle-form="linea">+ Agregar Línea</button>
+        <button class="btn btn-primary" id="btnAgregarLineaToggle" data-toggle-form="linea">+ Agregar Línea</button>
       </div>
 
-      <div class="formpanel" id="formLinea">
-        <div class="panel-title">Nueva Línea de Presupuesto</div>
-        <div class="formgrid">
-          <div class="field"><label>Tipo</label><select id="l_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
-          <div class="field"><label>Concepto</label><input id="l_concepto" placeholder="Ej: Patrocinios"></div>
-          <div class="field"><label>Valor proyectado</label><input id="l_valor" type="number" placeholder="0"></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn" data-close-form="linea">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarLinea">Guardar Línea</button>
-        </div>
-      </div>
+      <div id="presupuestoLock" style="display:none;"></div>
 
-      <div class="kpi-grid" id="presKpis"></div>
+      <div id="presupuestoContenido">
+        <div class="formpanel" id="formLinea">
+          <div class="panel-title">Nueva Línea de Presupuesto</div>
+          <div class="formgrid">
+            <div class="field"><label>Tipo</label><select id="l_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
+            <div class="field"><label>Concepto</label><input id="l_concepto" placeholder="Ej: Patrocinios"></div>
+            <div class="field"><label>Valor proyectado</label><input id="l_valor" type="number" placeholder="0"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" data-close-form="linea">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarLinea">Guardar Línea</button>
+          </div>
+        </div>
 
-      <div class="card table-wrap" style="flex:1;">
-        <table class="datatable">
-          <thead><tr>
-            <th>Concepto</th><th>Tipo</th><th style="text-align:right">Presupuestado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th><th></th>
-          </tr></thead>
-          <tbody id="presBody"></tbody>
-        </table>
+        <div class="kpi-grid" id="presKpis"></div>
+
+        <div class="card table-wrap" style="flex:1;">
+          <table class="datatable">
+            <thead><tr>
+              <th>Concepto</th><th>Tipo</th><th style="text-align:right">Presupuestado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th><th></th>
+            </tr></thead>
+            <tbody id="presBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -590,7 +596,7 @@
           <div class="page-title">Reportes</div>
           <div class="page-sub">Cuánto entró, cuánto salió, en qué se gastó y cómo va contra lo presupuestado</div>
         </div>
-        <button class="btn btn-primary no-print" id="btnImprimirReporte">🖨️ Imprimir / Exportar PDF</button>
+        <button class="btn btn-primary no-print" id="btnImprimirReporte">🖨️ Imprimir / Exportar PDF <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
       </div>
 
       <div class="print-only" id="repPrintHead" style="display:none;">
@@ -728,33 +734,37 @@
           <div class="page-title">Jugadores <span style="font-size:10px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Base de datos compartida entre todos tus torneos — no se borra al crear uno nuevo</div>
         </div>
-        <button class="btn btn-primary" data-toggle-form="jugador">+ Nuevo Jugador</button>
+        <button class="btn btn-primary" id="btnNuevoJugador" data-toggle-form="jugador">+ Nuevo Jugador</button>
       </div>
 
-      <div class="formpanel" id="formJugador">
-        <div class="panel-title">Nuevo Jugador</div>
-        <div class="formgrid">
-          <div class="field"><label>Nombre</label><input id="j_nombre" placeholder="Nombre completo"></div>
-          <div class="field"><label>Teléfono</label><input id="j_telefono" placeholder="3001234567"></div>
+      <div id="jugadoresLock" style="display:none;"></div>
+
+      <div id="jugadoresContenido">
+        <div class="formpanel" id="formJugador">
+          <div class="panel-title">Nuevo Jugador</div>
+          <div class="formgrid">
+            <div class="field"><label>Nombre</label><input id="j_nombre" placeholder="Nombre completo"></div>
+            <div class="field"><label>Teléfono</label><input id="j_telefono" placeholder="3001234567"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" data-close-form="jugador">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarJugador">Guardar Jugador</button>
+          </div>
         </div>
-        <div class="form-actions">
-          <button class="btn" data-close-form="jugador">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarJugador">Guardar Jugador</button>
+
+        <div class="no-print" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;max-width:320px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="jug_buscar" type="text" placeholder="Buscar jugador..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
         </div>
-      </div>
 
-      <div class="no-print" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;max-width:320px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="jug_buscar" type="text" placeholder="Buscar jugador..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
-      </div>
-
-      <div class="card table-wrap" style="flex:1;">
-        <table class="datatable">
-          <thead><tr>
-            <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th>
-          </tr></thead>
-          <tbody id="jugadoresBody"></tbody>
-        </table>
+        <div class="card table-wrap" style="flex:1;">
+          <table class="datatable">
+            <thead><tr>
+              <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th>
+            </tr></thead>
+            <tbody id="jugadoresBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -874,6 +884,9 @@
   var isAdminMode = false;    // se reinicia cada vez que entras a un torneo; se activa con el PIN en Configuración
   var unsubTorneos = null;    // listener de la lista de torneos
   var unsubJugadores = null;  // listener de jugadores — vive a nivel de CUENTA, no se reinicia entre torneos
+  var unsubUserDoc = null;
+  var userPlan = 'FREE';      // FREE | PRO — se activa manualmente desde la consola de Firebase (ver campo "plan" en users/{uid})
+  function esPro(){ return userPlan === 'PRO'; }
 
   // ---------- state ----------
   var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
@@ -1431,7 +1444,10 @@
     byId('rep_desde').value = ''; byId('rep_hasta').value = '';
     renderReportes();
   });
-  byId('btnImprimirReporte').addEventListener('click', function(){ window.print(); });
+  byId('btnImprimirReporte').addEventListener('click', function(){
+    if (!esPro()) { alert('Exportar a PDF es una función PRO. Actívala para poder descargar tus reportes.'); return; }
+    window.print();
+  });
 
   // ---------- selección de secciones a exportar/imprimir ----------
   function aplicarSeleccionReporte(){
@@ -2201,7 +2217,7 @@
     var pass = byId('signupPassword').value;
     byId('btnSignup').disabled = true;
     auth.createUserWithEmailAndPassword(email, pass).then(function(cred){
-      return fsdb.collection('users').doc(cred.user.uid).set({ email: email, creadoEn: Date.now() });
+      return fsdb.collection('users').doc(cred.user.uid).set({ email: email, plan: 'FREE', creadoEn: Date.now() });
     }).catch(function(err){
       showAuthError(translateAuthError(err.code));
     }).finally(function(){
@@ -2215,30 +2231,40 @@
   // ============================================================
   // SELECTOR DE TORNEOS
   // ============================================================
+  var torneosCountCache = 0;
   function renderTorneoList(torneos){
+    torneosCountCache = torneos.length;
     var list = byId('torneoList');
     if (!torneos.length){
       list.innerHTML = '<div class="muted" style="padding:12px 0;">Aún no tienes torneos. Crea el primero abajo.</div>';
-      return;
-    }
-    list.innerHTML = torneos.map(function(t){
-      return '<button data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">' +
-        '<div><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
-        '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
-        '<div style="display:flex;align-items:center;gap:10px;">'+chip(ESTADO_TORNEO, t.estado)+
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
-        '</button>';
-    }).join('');
-    list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var t = torneos.find(function(x){ return x.id === btn.dataset.torneoId; });
-        enterTorneo(btn.dataset.torneoId, t);
+    } else {
+      list.innerHTML = torneos.map(function(t){
+        return '<button data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">' +
+          '<div><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
+          '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
+          '<div style="display:flex;align-items:center;gap:10px;">'+chip(ESTADO_TORNEO, t.estado)+
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
+          '</button>';
+      }).join('');
+      list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var t = torneos.find(function(x){ return x.id === btn.dataset.torneoId; });
+          enterTorneo(btn.dataset.torneoId, t);
+        });
       });
-    });
+    }
+
+    // Plan FREE: máximo 1 torneo. Al llegar al límite, se oculta el
+    // formulario de creación y se muestra un aviso en su lugar.
+    var enElLimite = !esPro() && torneos.length >= 1;
+    byId('crearTorneoCard').style.display = enElLimite ? 'none' : 'flex';
+    byId('limiteTorneoAviso').style.display = enElLimite ? 'block' : 'none';
+    if (enElLimite) byId('limiteTorneoAviso').innerHTML = bloqueoProHtml('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear torneos ilimitados.');
   }
 
   byId('btnCrearTorneo').addEventListener('click', function(){
     if (!userRef) return;
+    if (!esPro() && torneosCountCache >= 1) { alert('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear más.'); return; }
     var nombre = byId('nt_nombre').value.trim();
     if (!nombre) { alert('Escribe un nombre para el torneo.'); return; }
     var datos = {
@@ -2337,6 +2363,59 @@
     jugadoresGlobal = [];
   }
 
+  // Se suscribe al propio documento de la cuenta para saber el plan
+  // (FREE/PRO) en vivo — así si tú lo cambias desde la consola de
+  // Firebase mientras la persona tiene la app abierta, se desbloquea
+  // solo, sin que tenga que cerrar sesión y volver a entrar.
+  function subscribeUserDoc(){
+    if (unsubUserDoc) return;
+    unsubUserDoc = userRef.onSnapshot(function(doc){
+      userPlan = (doc.exists && doc.data().plan === 'PRO') ? 'PRO' : 'FREE';
+      aplicarRestriccionesPlan();
+    }, function(err){ console.error('user doc', err); });
+  }
+  function teardownUserDoc(){
+    if (unsubUserDoc) { try { unsubUserDoc(); } catch(e){} unsubUserDoc = null; }
+    userPlan = 'FREE';
+  }
+
+  function bloqueoProHtml(mensaje){
+    return '<div class="card" style="padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">' +
+      '<div style="width:40px;height:40px;border-radius:999px;background:var(--gray-200);display:flex;align-items:center;justify-content:center;">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gray-700)" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>' +
+      '<div style="font-weight:700;font-size:15px;">Función PRO</div>' +
+      '<div class="muted" style="font-size:13px;max-width:360px;">'+esc(mensaje)+'</div>' +
+      '</div>';
+  }
+
+  // Aplica (o quita) los 4 candados PRO en toda la app. Se llama cada vez
+  // que cambia el plan, y también cada vez que se re-renderiza la lista
+  // de torneos (para el límite de "1 torneo gratis").
+  function aplicarRestriccionesPlan(){
+    var pro = esPro();
+
+    // Jugadores
+    byId('jugadoresContenido').style.display = pro ? 'flex' : 'none';
+    byId('jugadoresContenido').style.flexDirection = 'column';
+    byId('jugadoresContenido').style.gap = '18px';
+    byId('jugadoresLock').style.display = pro ? 'none' : 'block';
+    if (!pro) byId('jugadoresLock').innerHTML = bloqueoProHtml('Guarda un historial de jugadores que se comparte entre todos tus torneos, con sus categorías habituales y en qué torneos han jugado. Actívalo con el plan PRO.');
+    byId('btnNuevoJugador').style.display = pro ? 'inline-flex' : 'none';
+
+    // Presupuesto
+    byId('presupuestoContenido').style.display = pro ? 'block' : 'none';
+    byId('presupuestoLock').style.display = pro ? 'none' : 'block';
+    if (!pro) byId('presupuestoLock').innerHTML = bloqueoProHtml('Proyecta tus ingresos y gastos antes del torneo y compáralos con lo real, automáticamente. Actívalo con el plan PRO.');
+    byId('btnAgregarLineaToggle').style.display = pro ? 'inline-flex' : 'none';
+
+    // Exportar Reportes a PDF
+    byId('btnImprimirReporte').disabled = !pro;
+    byId('btnImprimirReporte').style.opacity = pro ? '1' : '.6';
+
+    // Torneos ilimitados: se resuelve por separado en renderTorneoList(),
+    // porque depende de cuántos torneos existen en ese momento.
+  }
+
   if (auth) {
     auth.onAuthStateChanged(function(user){
       if (user) {
@@ -2346,11 +2425,13 @@
         currentUserEmail = user.email || '';
         byId('userAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
         subscribeJugadoresGlobal();
+        subscribeUserDoc();
         if (!torneoRef) showTorneoScreen();
       } else {
         teardownSubscriptions();
         teardownTorneoList();
         teardownJugadores();
+        teardownUserDoc();
         userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
         byId('appShell').classList.remove('active');
         byId('torneoScreen').style.display = 'none';
