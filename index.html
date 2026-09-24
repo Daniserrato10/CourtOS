@@ -334,7 +334,7 @@
         </button>
         <button class="navitem" data-view="presupuesto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h3"/></svg>
-          Presupuesto
+          Presupuesto <span style="font-size:9px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
         </button>
         <button class="navitem" data-view="reportes">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>
@@ -2233,18 +2233,22 @@
   // ============================================================
   var torneosCountCache = 0;
   function renderTorneoList(torneos){
-    torneosCountCache = torneos.length;
+    torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA'; }).length;
     var list = byId('torneoList');
     if (!torneos.length){
       list.innerHTML = '<div class="muted" style="padding:12px 0;">Aún no tienes torneos. Crea el primero abajo.</div>';
     } else {
       list.innerHTML = torneos.map(function(t){
-        return '<button data-torneo-id="'+t.id+'" style="cursor:pointer;width:100%;border:1px solid var(--border);background:#fff;text-align:left;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">' +
-          '<div><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
-          '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
-          '<div style="display:flex;align-items:center;gap:10px;">'+chip(ESTADO_TORNEO, t.estado)+
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
-          '</button>';
+        var puedeFinalizar = t.estado !== 'FINALIZADA';
+        return '<div style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:6px 8px 6px 16px;display:flex;align-items:center;gap:8px;">' +
+          '<button data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:space-between;padding:8px 0;min-width:0;">' +
+            '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
+            '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
+            '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:10px;">'+chip(ESTADO_TORNEO, t.estado)+
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
+          '</button>' +
+          (puedeFinalizar ? '<button class="btn" data-finalizar-torneo="'+t.id+'" style="padding:6px 12px;font-size:12px;flex-shrink:0;">Finalizar</button>' : '') +
+          '</div>';
       }).join('');
       list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -2252,11 +2256,20 @@
           enterTorneo(btn.dataset.torneoId, t);
         });
       });
+      list.querySelectorAll('[data-finalizar-torneo]').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var t = torneos.find(function(x){ return x.id === btn.dataset.finalizarTorneo; });
+          if (!confirm('¿Marcar "'+(t?t.nombre:'este torneo')+'" como finalizado? Podrás seguir viendo toda su información después.')) return;
+          userRef.collection('torneos').doc(btn.dataset.finalizarTorneo).update({ estado: 'FINALIZADA' })
+            .catch(function(err){ alert('No se pudo actualizar: ' + err.message); });
+        });
+      });
     }
 
     // Plan FREE: máximo 1 torneo. Al llegar al límite, se oculta el
     // formulario de creación y se muestra un aviso en su lugar.
-    var enElLimite = !esPro() && torneos.length >= 1;
+    var enElLimite = !esPro() && torneosCountCache >= 1;
     byId('crearTorneoCard').style.display = enElLimite ? 'none' : 'flex';
     byId('limiteTorneoAviso').style.display = enElLimite ? 'block' : 'none';
     if (enElLimite) byId('limiteTorneoAviso').innerHTML = bloqueoProHtml('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear torneos ilimitados.');
