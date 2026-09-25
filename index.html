@@ -571,6 +571,7 @@
             <div class="field"><label>Tipo</label><select id="l_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
             <div class="field"><label>Concepto</label><input id="l_concepto" placeholder="Ej: Patrocinios"></div>
             <div class="field"><label>Valor proyectado</label><input id="l_valor" type="number" placeholder="0"></div>
+            <div class="field" style="grid-column:1/-1;"><label>Descripción (opcional)</label><input id="l_descripcion" placeholder="Ej: Tres Locos SAS"></div>
           </div>
           <div class="form-actions">
             <button class="btn" data-close-form="linea">Cancelar</button>
@@ -893,7 +894,7 @@
   // ---------- state ----------
   var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
   var jugadoresGlobal = []; // base de datos de jugadores, a nivel de cuenta (persiste entre torneos)
-  var insFilter = 'TODAS', finFilter = 'TODOS', presLineaAbierta = null;
+  var insFilter = 'TODAS', finFilter = 'TODOS';
   var unsubs = [];
 
   // ---------- helpers ----------
@@ -959,14 +960,6 @@
   function normalizaTexto(s){
     return String(s||'').trim().toLowerCase()
       .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
-  }
-  function movimientosDeLinea(linea){
-    var nombreLinea = normalizaTexto(linea.concepto);
-    return movimientos.filter(function(m){
-      if (!movActivo(m)) return false;
-      if (m.tipo !== linea.tipo) return false;
-      return normalizaTexto(m.categoria) === nombreLinea;
-    }).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
   }
   function realDeLinea(linea){
     var s = 0;
@@ -1292,29 +1285,16 @@
       var diff = real - (l.valorProyectado||0);
       var esIngreso = l.tipo === 'INGRESO';
       var diffColor = (esIngreso ? diff >= 0 : diff <= 0) ? 'var(--green-tx)' : 'var(--red-tx)';
-      var movs = movimientosDeLinea(l);
-      var abierta = presLineaAbierta === l.id;
-      var filaPrincipal = '<tr>' +
-        '<td style="font-weight:600;">'+esc(l.concepto)+'</td>' +
+      return '<tr>' +
+        '<td><div style="font-weight:600;">'+esc(l.concepto)+'</div>' +
+          (l.descripcion ? '<div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(l.descripcion)+'</div>' : '') +
+          '</td>' +
         '<td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
         '<td class="num"><input type="number" value="'+(l.valorProyectado||0)+'" data-linea-id="'+l.id+'" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
-        '<td class="num">' +
-          (movs.length ? '<a href="#" data-toggle-linea="'+l.id+'" style="text-decoration:underline;color:inherit;">'+money(real)+' ('+movs.length+')</a>' : money(real)) +
-        '</td>' +
+        '<td class="num">'+money(real)+'</td>' +
         '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td>' +
         '<td><button class="logout-btn" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
         '</tr>';
-      var filaDetalle = (abierta && movs.length) ? '<tr><td colspan="6" style="background:var(--gray-100);padding:0;">' +
-        '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;">' +
-        movs.map(function(m){
-          return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;">' +
-            '<span class="muted">'+fmtDate(m.fecha)+'</span>' +
-            '<span style="flex:1;">'+esc(m.concepto)+(m.descripcion ? ' <span class="muted">— '+esc(m.descripcion)+'</span>' : '')+'</span>' +
-            '<span style="font-weight:600;">'+money(m.valor)+'</span>' +
-            '</div>';
-        }).join('') +
-        '</div></td></tr>' : '';
-      return filaPrincipal + filaDetalle;
     }).join('');
 
     document.querySelectorAll('.pres-input').forEach(function(inp){
@@ -1332,14 +1312,6 @@
           .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
       });
     });
-    document.querySelectorAll('[data-toggle-linea]').forEach(function(a){
-      a.addEventListener('click', function(e){
-        e.preventDefault();
-        var id = a.dataset.toggleLinea;
-        presLineaAbierta = (presLineaAbierta === id) ? null : id;
-        renderPresupuesto();
-      });
-    });
   }
 
   byId('btnGuardarLinea').addEventListener('click', function(){
@@ -1348,9 +1320,10 @@
     var valor = parseFloat(byId('l_valor').value) || 0;
     if (!concepto) { alert('Escribe el nombre del concepto.'); return; }
     torneoRef.collection('presupuesto').add({
-      tipo: byId('l_tipo').value, concepto: concepto, valorProyectado: valor, orden: 99
+      tipo: byId('l_tipo').value, concepto: concepto, valorProyectado: valor,
+      descripcion: byId('l_descripcion').value.trim(), orden: 99
     }).then(function(){
-      byId('l_concepto').value = ''; byId('l_valor').value = '';
+      byId('l_concepto').value = ''; byId('l_valor').value = ''; byId('l_descripcion').value = '';
       closeForm('linea');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
