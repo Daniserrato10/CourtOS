@@ -243,6 +243,7 @@
       <div class="auth-field"><label>Correo</label><input type="email" id="loginEmail" required autocomplete="email"></div>
       <div class="auth-field"><label>Contraseña</label><input type="password" id="loginPassword" required autocomplete="current-password"></div>
       <button type="submit" class="auth-btn" id="btnLogin">Entrar</button>
+      <div style="text-align:center;"><a href="#" id="btnOlvideContrasena" style="font-size:12.5px;color:var(--gray-500);text-decoration:underline;">¿Olvidaste tu contraseña?</a></div>
     </form>
 
     <form class="auth-form" id="formSignup">
@@ -523,6 +524,7 @@
           <div class="field"><label>Categoría</label><input id="m_categoria" list="categoriaSuggestions" placeholder="Canchas / Sede"><datalist id="categoriaSuggestions"></datalist></div>
           <div class="field"><label>Valor</label><input id="m_valor" type="number" placeholder="0"></div>
           <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
+          <div class="field" style="grid-column:1/-1;"><label>Descripción (opcional)</label><input id="m_descripcion" placeholder="Ej: patrocinio de Nike, factura #123, detalle adicional..."></div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="movimiento">Cancelar</button>
@@ -1191,6 +1193,7 @@
       return '<tr>' +
         '<td class="muted" style="'+tachado+'">'+fmtDate(m.fecha)+'</td>' +
         '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
+          (m.descripcion ? ' — '+esc(m.descripcion) : '') +
           (anulado ? '<br><span style="color:var(--red-tx);">Anulado por '+esc(m.anuladoPor||'—')+' · '+esc(m.motivoAnulacion||'sin motivo')+'</span>' : '') +
           '</div></td>' +
         '<td class="muted" style="'+tachado+'">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
@@ -1745,8 +1748,21 @@
       }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
       return;
     }
-    var intento = prompt('Ingresa el PIN de administrador:');
+    var intento = prompt('Ingresa el PIN de administrador:\n\n(¿Lo olvidaste? Escribe "olvide" y podrás crear uno nuevo)');
     if (intento === null) return;
+    intento = intento.trim();
+    if (intento.toLowerCase() === 'olvide') {
+      var reemplazo = prompt('Como esta es tu cuenta, puedes restablecer el PIN ahora mismo.\nEscribe el nuevo PIN de administrador (mínimo 4 caracteres):');
+      if (reemplazo === null) return;
+      reemplazo = reemplazo.trim();
+      if (reemplazo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
+      torneoRef.set({ adminPin: reemplazo }, { merge: true }).then(function(){
+        torneoData.adminPin = reemplazo;
+        isAdminMode = true;
+        renderAll();
+      }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
+      return;
+    }
     if (intento === torneoData.adminPin) {
       isAdminMode = true;
       renderAll();
@@ -2106,9 +2122,10 @@
     torneoRef.collection('movimientos').add({
       tipo: byId('m_tipo').value, concepto: concepto,
       categoria: byId('m_categoria').value.trim(), valor: valor,
+      descripcion: byId('m_descripcion').value.trim(),
       cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now()
     }).then(function(){
-      byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = '';
+      byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = ''; byId('m_descripcion').value = '';
       closeForm('movimiento');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
@@ -2181,10 +2198,23 @@
       'auth/invalid-email': 'Correo inválido.',
       'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
       'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-      'auth/invalid-credential': 'Correo o contraseña incorrectos.'
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/missing-email': 'Escribe tu correo para poder enviarte el enlace.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera un momento y vuelve a intentar.'
     };
     return map[code] || 'Ocurrió un error. Intenta de nuevo.';
   }
+
+  byId('btnOlvideContrasena').addEventListener('click', function(e){
+    e.preventDefault();
+    hideAuthError();
+    var email = byId('loginEmail').value.trim();
+    if (!email) email = (prompt('Escribe el correo de tu cuenta para enviarte el enlace de recuperación:') || '').trim();
+    if (!email) return;
+    auth.sendPasswordResetEmail(email).then(function(){
+      alert('Listo — te enviamos un correo a ' + email + ' con un enlace para crear una nueva contraseña.');
+    }).catch(function(err){ showAuthError(translateAuthError(err.code)); });
+  });
 
   byId('tabLogin').addEventListener('click', function(){
     byId('tabLogin').classList.add('active'); byId('tabSignup').classList.remove('active');
