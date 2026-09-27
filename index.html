@@ -1572,8 +1572,14 @@
   function horasDelDia(cfg){
     if (!cfg || !cfg.activo || !cfg.inicio || !cfg.fin) return 0;
     var i = cfg.inicio.split(':'), f = cfg.fin.split(':');
-    var horas = (parseInt(f[0],10)+parseInt(f[1],10)/60) - (parseInt(i[0],10)+parseInt(i[1],10)/60);
-    return Math.max(0, horas);
+    var minInicio = parseInt(i[0],10)*60 + parseInt(i[1],10);
+    var minFin = parseInt(f[0],10)*60 + parseInt(f[1],10);
+    // Si la hora de fin es igual o menor a la de inicio, el horario cruza
+    // la medianoche (ej: 5:00 p.m. a 12:00 a.m.) — se suma un día completo
+    // a la hora de fin para calcular las horas reales en vez de dar 0.
+    var minutos = minFin - minInicio;
+    if (minutos <= 0) minutos += 24*60;
+    return minutos / 60;
   }
   function renderHorarioSemanal(){
     var cfg = torneoData.viabDias || {};
