@@ -763,7 +763,7 @@
         <div class="card table-wrap" style="flex:1;">
           <table class="datatable">
             <thead><tr>
-              <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th>
+              <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th><th></th>
             </tr></thead>
             <tbody id="jugadoresBody"></tbody>
           </table>
@@ -812,7 +812,7 @@
       <div class="card" id="adminBanner" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; max-width:640px;">
         <div>
           <div style="font-weight:700; font-size:14px;" id="adminBannerTitulo">🔒 Modo Administrador</div>
-          <div class="muted" style="font-size:12.5px; margin-top:2px;" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones y cuentas.</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px;" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.</div>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="btn" id="btnCambiarPin" style="display:none;">Cambiar PIN</button>
@@ -1686,14 +1686,14 @@
 
     if (isAdminMode) {
       byId('adminBannerTitulo').textContent = '🔓 Modo Administrador activo';
-      byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo, categorías, y eliminar inscripciones y cuentas. Ciérralo cuando termines.';
+      byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo, categorías, y eliminar inscripciones, cuentas y jugadores. Ciérralo cuando termines.';
       byId('btnToggleAdmin').textContent = 'Salir';
       byId('btnCambiarPin').style.display = 'inline-block';
       byId('formConfig').style.display = 'flex';
       byId('configLockedMsg').style.display = 'none';
     } else {
       byId('adminBannerTitulo').textContent = '🔒 Modo Administrador';
-      byId('adminBannerSub').textContent = 'Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones y cuentas.';
+      byId('adminBannerSub').textContent = 'Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.';
       byId('btnToggleAdmin').textContent = 'Activar';
       byId('btnCambiarPin').style.display = 'none';
       byId('formConfig').style.display = 'none';
@@ -1831,8 +1831,9 @@
         '<td class="muted">'+esc(cats)+'</td>' +
         '<td class="num">'+hist.length+'</td>' +
         '<td><button class="btn" data-ver-historial="'+j.id+'" style="padding:5px 10px;font-size:12px;">'+(hist.length?'Ver historial':'')+'</button></td>' +
+        '<td>'+(isAdminMode ? '<button class="logout-btn" data-del-jugador="'+j.id+'" title="Eliminar jugador">✕</button>' : '')+'</td>' +
         '</tr>' +
-        '<tr id="hist-'+j.id+'" style="display:none;"><td colspan="5" style="background:var(--gray-200);padding:12px 24px;">' +
+        '<tr id="hist-'+j.id+'" style="display:none;"><td colspan="6" style="background:var(--gray-200);padding:12px 24px;">' +
           (hist.length ? hist.slice().sort(function(a,b){return (b.fecha||0)-(a.fecha||0);}).map(function(h){
             return '<div style="font-size:12.5px;padding:3px 0;"><strong>'+esc(h.torneo||'—')+'</strong> · '+esc(h.categoria||'—')+' · '+fmtDate(h.fecha)+'</div>';
           }).join('') : '') +
@@ -1844,6 +1845,13 @@
       btn.addEventListener('click', function(){
         var row = byId('hist-'+btn.dataset.verHistorial);
         row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+      });
+    });
+    document.querySelectorAll('[data-del-jugador]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar este jugador de tu base de datos? Se borra su historial. Esto NO afecta inscripciones ya existentes en ningún torneo.')) return;
+        userRef.collection('jugadores').doc(btn.dataset.delJugador).delete()
+          .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
       });
     });
   }
