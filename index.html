@@ -845,6 +845,14 @@
       <div class="card" id="configLockedMsg" style="padding:16px 20px; max-width:640px; color:var(--gray-500); font-size:13px;">
         🔒 Activa el modo administrador arriba para poder editar los datos del torneo.
       </div>
+
+      <div class="card" id="reporteGeneralCard" style="display:none; padding:16px 20px; max-width:640px; align-items:center; justify-content:space-between; gap:14px;">
+        <div>
+          <div style="font-weight:700; font-size:14px;">📋 Reporte General del Torneo</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px;">Este torneo ya está finalizado — genera un PDF con todo lo financiero de principio a fin (Estado de Resultados, categorías, flujo de caja, presupuesto vs. real).</div>
+        </div>
+        <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
+      </div>
     </section>
 
   </div>
@@ -1456,6 +1464,20 @@
     window.print();
   });
 
+  // Reporte General del Torneo (Configuración, solo cuando ya está
+  // FINALIZADA): reutiliza toda la pantalla de Reportes — quita el filtro
+  // de fechas para cubrir la vida completa del torneo, marca todas las
+  // secciones para exportar, y abre el diálogo de impresión/PDF.
+  byId('btnReporteGeneral').addEventListener('click', function(){
+    if (!esPro()) { alert('El Reporte General es una función PRO. Actívala para poder generarlo.'); return; }
+    byId('rep_desde').value = ''; byId('rep_hasta').value = '';
+    document.querySelectorAll('[data-report-toggle]').forEach(function(cb){ cb.checked = true; });
+    aplicarSeleccionReporte();
+    renderReportes();
+    setView('reportes');
+    setTimeout(function(){ window.print(); }, 200);
+  });
+
   // ---------- selección de secciones a exportar/imprimir ----------
   function aplicarSeleccionReporte(){
     document.querySelectorAll('[data-report-toggle]').forEach(function(cb){
@@ -1699,6 +1721,8 @@
       byId('formConfig').style.display = 'none';
       byId('configLockedMsg').style.display = 'block';
     }
+
+    byId('reporteGeneralCard').style.display = (torneoData.estado === 'FINALIZADA') ? 'flex' : 'none';
   }
 
   function renderCategoriasAdmin(){
@@ -2296,6 +2320,7 @@
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
           '</button>' +
           (puedeFinalizar ? '<button class="btn" data-finalizar-torneo="'+t.id+'" style="padding:6px 12px;font-size:12px;flex-shrink:0;">Finalizar</button>' : '') +
+          '<button class="logout-btn" data-eliminar-torneo="'+t.id+'" title="Eliminar torneo" style="flex-shrink:0;">✕</button>' +
           '</div>';
       }).join('');
       list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
@@ -2311,6 +2336,23 @@
           if (!confirm('¿Marcar "'+(t?t.nombre:'este torneo')+'" como finalizado? Podrás seguir viendo toda su información después.')) return;
           userRef.collection('torneos').doc(btn.dataset.finalizarTorneo).update({ estado: 'FINALIZADA' })
             .catch(function(err){ alert('No se pudo actualizar: ' + err.message); });
+        });
+      });
+      list.querySelectorAll('[data-eliminar-torneo]').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var id = btn.dataset.eliminarTorneo;
+          var t = torneos.find(function(x){ return x.id === id; });
+          var nombre = t ? (t.nombre || 'Sin nombre') : 'este torneo';
+          var escrito = prompt('Esto borra TODO lo del torneo "'+nombre+'" de forma permanente: inscripciones, movimientos, presupuesto, cuentas, categorías y notas. No se puede deshacer.\n\nEscribe el nombre exacto del torneo para confirmar:');
+          if (escrito === null) return;
+          if (escrito.trim() !== nombre) { alert('El nombre no coincide. No se eliminó nada.'); return; }
+          btn.disabled = true; btn.textContent = '…';
+          eliminarTorneoCompleto(id).then(function(){
+            alert('Torneo "'+nombre+'" eliminado.');
+          }).catch(function(err){
+            alert('No se pudo eliminar por completo: ' + err.message);
+          });
         });
       });
     }
@@ -2346,6 +2388,30 @@
       enterTorneo(ref.id, datos);
     }).catch(function(e){ alert('No se pudo crear el torneo: ' + e.message); });
   });
+
+  // Borra todos los documentos de una subcolección en tandas (el límite de
+  // un batch de Firestore es 500 operaciones), y repite hasta vaciarla.
+  function eliminarColeccionCompleta(colRef){
+    return colRef.limit(400).get().then(function(snap){
+      if (snap.empty) return Promise.resolve();
+      var batch = fsdb.batch();
+      snap.forEach(function(doc){ batch.delete(doc.ref); });
+      return batch.commit().then(function(){ return eliminarColeccionCompleta(colRef); });
+    });
+  }
+
+  // Elimina un torneo por completo: sus subcolecciones (inscripciones,
+  // movimientos, presupuesto, cuentas, categorías, notas) y luego el
+  // documento del torneo. Es permanente — no hay papelera ni "anular".
+  var SUBCOLECCIONES_TORNEO = ['inscripciones','movimientos','presupuesto','cuentas','categorias','notas'];
+  function eliminarTorneoCompleto(id){
+    var ref = userRef.collection('torneos').doc(id);
+    var cadena = Promise.resolve();
+    SUBCOLECCIONES_TORNEO.forEach(function(nombre){
+      cadena = cadena.then(function(){ return eliminarColeccionCompleta(ref.collection(nombre)); });
+    });
+    return cadena.then(function(){ return ref.delete(); });
+  }
 
   function showTorneoScreen(){
     byId('appShell').classList.remove('active');
