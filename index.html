@@ -250,7 +250,73 @@
       <div class="auth-field"><label>Correo</label><input type="email" id="signupEmail" required autocomplete="email"></div>
       <div class="auth-field"><label>Contraseña</label><input type="password" id="signupPassword" required autocomplete="new-password" minlength="6"></div>
       <button type="submit" class="auth-btn" id="btnSignup">Crear cuenta</button>
+      <div class="muted" style="text-align:center;font-size:11.5px;line-height:1.5;">
+        Al crear una cuenta aceptas los <a href="#" data-open-legal="terminos" style="color:inherit;text-decoration:underline;">Términos y Condiciones</a>
+        y la <a href="#" data-open-legal="privacidad" style="color:inherit;text-decoration:underline;">Política de Privacidad</a>.
+      </div>
     </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     LEGAL — Términos y Condiciones / Política de Privacidad
+     Accesible sin iniciar sesión (enlaces en el login) y desde
+     Configuración para quien ya tiene cuenta.
+     ============================================================ -->
+<div id="legalModal" style="display:none; position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; align-items:center; justify-content:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div class="auth-tabs" style="max-width:340px;">
+        <button class="auth-tab active" id="legalTabTerminos">Términos y Condiciones</button>
+        <button class="auth-tab" id="legalTabPrivacidad">Política de Privacidad</button>
+      </div>
+      <button class="logout-btn" id="btnCerrarLegal" title="Cerrar" style="margin-left:12px;">✕</button>
+    </div>
+    <div style="padding:20px 24px; overflow-y:auto; font-size:13px; line-height:1.6;">
+      <div id="legalTerminos">
+        <h2 style="font-size:16px;margin:0 0 4px;">Términos y Condiciones de CourtOS</h2>
+        <p class="muted" style="font-size:11.5px;margin:0 0 16px;">Última actualización: <span id="legalFechaT"></span></p>
+
+        <p><strong>1. Qué es CourtOS.</strong> CourtOS es una herramienta de gestión administrativa y financiera para organizadores de torneos de pádel: inscripciones, pagos, presupuesto, reportes y datos de jugadores. No organiza, arbitra ni participa en los torneos — es un software de apoyo para quien los organiza (en adelante, "el organizador" o "tú").</p>
+
+        <p><strong>2. Tu cuenta.</strong> Eres responsable de mantener segura tu contraseña y tu PIN de administrador, y de todo lo que ocurra en tu cuenta. Cada cuenta es independiente: los torneos, jugadores y datos financieros que registres solo son visibles para ti.</p>
+
+        <p><strong>3. Planes y pagos.</strong> CourtOS ofrece un plan Gratis con funciones limitadas y un plan PRO con funciones adicionales. Mientras no se habilite un método de pago automático dentro de la app, la activación del plan PRO se hace de forma manual por parte del equipo de CourtOS, según lo acordado contigo.</p>
+
+        <p><strong>4. Responsabilidad sobre la información.</strong> Tú eres el único responsable de la exactitud de los datos que registras (valores de inscripción, pagos, categorías, información de jugadores). CourtOS es una herramienta de apoyo administrativo y no garantiza la corrección de decisiones tomadas con base en esa información, ni actúa como intermediario de los pagos que recibas de los jugadores.</p>
+
+        <p><strong>5. Uso permitido.</strong> No puedes usar CourtOS para fines distintos a la gestión de torneos, ni intentar vulnerar su seguridad, acceder a cuentas de otros usuarios, o usar la información de jugadores de terceros para fines distintos a la organización del torneo en el que participaron.</p>
+
+        <p><strong>6. Disponibilidad del servicio.</strong> Hacemos lo posible por mantener CourtOS disponible y tus datos seguros, pero al ser un servicio en evolución no garantizamos disponibilidad ininterrumpida. Te recomendamos exportar tus reportes importantes periódicamente.</p>
+
+        <p><strong>7. Cancelación.</strong> Puedes dejar de usar CourtOS cuando quieras. Si quieres que se elimine tu cuenta y tus datos, puedes solicitarlo por el medio de contacto que te dio quien te dio acceso a la plataforma.</p>
+
+        <p><strong>8. Cambios a estos términos.</strong> Podemos actualizar estos términos a medida que el producto evolucione. Los cambios importantes se avisarán dentro de la app.</p>
+
+        <p><strong>9. Ley aplicable.</strong> Estos términos se rigen por las leyes de la República de Colombia.</p>
+      </div>
+
+      <div id="legalPrivacidad" style="display:none;">
+        <h2 style="font-size:16px;margin:0 0 4px;">Política de Privacidad de CourtOS</h2>
+        <p class="muted" style="font-size:11.5px;margin:0 0 16px;">Última actualización: <span id="legalFechaP"></span></p>
+
+        <p><strong>1. Qué datos recopilamos.</strong> Tu correo (para tu cuenta), y los datos que tú mismo registras: nombres de torneos, categorías, información financiera, y datos de jugadores (nombre, teléfono, categoría e historial de participación) que ingresas al inscribirlos.</p>
+
+        <p><strong>2. Datos de jugadores (terceros).</strong> Como organizador, tú eres quien recopila y registra los datos de los jugadores dentro de CourtOS. Al hacerlo, actúas como responsable del tratamiento de esos datos frente a ellos, conforme a la Ley 1581 de 2012 de Colombia (Habeas Data) — es tu responsabilidad informarles que sus datos quedarán registrados para la gestión del torneo. CourtOS actúa como encargado técnico: almacena esa información de forma segura, pero no la usa con fines distintos a hacer funcionar la plataforma.</p>
+
+        <p><strong>3. Para qué usamos los datos.</strong> Para que la aplicación funcione (mostrar tus torneos, calcular saldos, generar reportes), para mantener tu cuenta segura, y para darte soporte si lo necesitas. No vendemos ni compartimos tus datos ni los de tus jugadores con terceros para fines publicitarios.</p>
+
+        <p><strong>4. Dónde se almacenan.</strong> Tus datos se almacenan en Firebase (Google Cloud), con acceso restringido a tu propia cuenta mediante reglas de seguridad — ni otros usuarios de CourtOS ni personas externas pueden ver tu información.</p>
+
+        <p><strong>5. Cuánto tiempo se conservan.</strong> Mientras tu cuenta esté activa. Si eliminas un torneo o un jugador desde la app, esa información se borra de forma permanente. Si quieres eliminar tu cuenta completa, puedes solicitarlo por el medio de contacto correspondiente.</p>
+
+        <p><strong>6. Tus derechos (y los de tus jugadores).</strong> Como titular de tus datos, y en representación de la relación con tus jugadores, puedes en cualquier momento consultar, corregir o solicitar la eliminación de la información registrada, conforme a la normativa colombiana de protección de datos personales.</p>
+
+        <p><strong>7. Cambios a esta política.</strong> Si cambia sustancialmente cómo tratamos los datos, lo avisaremos dentro de la app.</p>
+
+        <p><strong>8. Contacto.</strong> Para cualquier solicitud relacionada con tus datos o los de tus jugadores, contacta al equipo de CourtOS por el medio que te dieron acceso a la plataforma.</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -852,6 +918,12 @@
           <div class="muted" style="font-size:12.5px; margin-top:2px;">Este torneo ya está finalizado — genera un PDF con todo lo financiero de principio a fin (Estado de Resultados, categorías, flujo de caja, presupuesto vs. real).</div>
         </div>
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
+      </div>
+
+      <div class="muted" style="font-size:12px; max-width:640px;">
+        <a href="#" data-open-legal="terminos" style="color:inherit;text-decoration:underline;">Términos y Condiciones</a>
+        &nbsp;·&nbsp;
+        <a href="#" data-open-legal="privacidad" style="color:inherit;text-decoration:underline;">Política de Privacidad</a>
       </div>
     </section>
 
@@ -2257,6 +2329,36 @@
       alert('Listo — te enviamos un correo a ' + email + ' con un enlace para crear una nueva contraseña.');
     }).catch(function(err){ showAuthError(translateAuthError(err.code)); });
   });
+
+  // ---------- legal: Términos y Condiciones / Política de Privacidad ----------
+  // Accesible desde el login (sin sesión) y desde Configuración. Es el
+  // mismo texto, embebido en la app en lugar de un documento aparte, para
+  // no tener dos copias que se puedan desincronizar.
+  (function(){
+    var fechaLegal = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'});
+    byId('legalFechaT').textContent = fechaLegal;
+    byId('legalFechaP').textContent = fechaLegal;
+
+    function mostrarTab(cual){
+      byId('legalTabTerminos').classList.toggle('active', cual === 'terminos');
+      byId('legalTabPrivacidad').classList.toggle('active', cual === 'privacidad');
+      byId('legalTerminos').style.display = cual === 'terminos' ? 'block' : 'none';
+      byId('legalPrivacidad').style.display = cual === 'privacidad' ? 'block' : 'none';
+    }
+    function abrirLegal(cual){
+      mostrarTab(cual || 'terminos');
+      byId('legalModal').style.display = 'flex';
+    }
+    function cerrarLegal(){ byId('legalModal').style.display = 'none'; }
+
+    document.querySelectorAll('[data-open-legal]').forEach(function(a){
+      a.addEventListener('click', function(e){ e.preventDefault(); abrirLegal(a.dataset.openLegal); });
+    });
+    byId('legalTabTerminos').addEventListener('click', function(){ mostrarTab('terminos'); });
+    byId('legalTabPrivacidad').addEventListener('click', function(){ mostrarTab('privacidad'); });
+    byId('btnCerrarLegal').addEventListener('click', cerrarLegal);
+    byId('legalModal').addEventListener('click', function(e){ if (e.target === byId('legalModal')) cerrarLegal(); });
+  })();
 
   byId('tabLogin').addEventListener('click', function(){
     byId('tabLogin').classList.add('active'); byId('tabSignup').classList.remove('active');
