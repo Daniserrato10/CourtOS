@@ -22,6 +22,15 @@
     --gray-200:#F1F0EC; --border:#E9E8E3;
     --green-bg:#DBEDDB; --green-tx:#2F7C31; --amber-bg:#FDECC8; --amber-tx:#9F6702;
     --red-bg:#FFE2DD; --red-tx:#C4554D; --blue-bg:#DCE9F9; --blue-tx:#2A5D95;
+    /* Acento de marca — reutiliza el mismo azul de los chips de estado,
+       usado con moderación: solo en señales interactivas (nav activo,
+       foco de campos, insignias PRO), nunca decorativo. */
+    --accent: var(--blue-tx); --accent-bg: var(--blue-bg); --accent-ring: rgba(42,93,149,0.18);
+    --login-blue: #9CC2EE; --login-blue-bg: rgba(156,194,238,0.16);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    /* Sombras muy sutiles — profundidad discreta, no decorativa. */
+    --shadow-sm: 0 1px 2px rgba(24,24,15,0.04), 0 1px 1px rgba(24,24,15,0.035);
+    --shadow-md: 0 8px 24px rgba(24,24,15,0.08), 0 2px 6px rgba(24,24,15,0.05);
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -36,22 +45,53 @@
   input, select { font-family: inherit; }
 
   /* ================= AUTH SCREEN ================= */
-  #authScreen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  #authScreen { min-height: 100vh; display: flex; }
+
+  /* Panel izquierdo — marca, solo en escritorio. En celular se oculta y
+     el formulario queda solo, a pantalla completa (ver media query). */
+  .auth-showcase {
+    flex: 1; min-width: 0; position: relative; overflow: hidden;
+    background: var(--ink); color: #fff;
+    display: flex; align-items: center; padding: 64px;
+  }
+  .auth-showcase::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 640px 480px at 22% 18%, rgba(42,93,149,0.55) 0%, transparent 62%);
+  }
+  .auth-showcase-content { position: relative; max-width: 380px; }
+  .auth-showcase .wordmark { color: #fff; font-size: 26px; }
+  .auth-showcase .wordmark .os { color: #9CC2EE; }
+  .auth-tagline { font-size: 17px; line-height: 1.5; font-weight: 500; color: rgba(255,255,255,0.78); margin: 18px 0 0; }
+  .auth-features { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
+  .auth-feature { display: flex; align-items: center; gap: 12px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.88); }
+  .auth-feature svg { flex-shrink: 0; opacity: 0.9; }
+
+  /* Panel derecho — el formulario, siempre visible. */
+  .auth-formside {
+    flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center;
     background: var(--sidebar); padding: 24px;
   }
-  .auth-card { width: 100%; max-width: 380px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
-  .auth-logo { display: flex; align-items: center; gap: 9px; justify-content: center; margin-bottom: 4px; }
-  .auth-logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 14px; }
-  .auth-logo-name { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+  #authCard .auth-logo { display: none; }
+
+  @media (max-width: 860px) {
+    .auth-showcase { display: none; }
+    .auth-formside { flex: none; width: 100%; }
+    #authCard .auth-logo { display: flex; }
+  }
+  .auth-card { width: 100%; max-width: 380px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 18px; box-shadow: var(--shadow-md); }
+  .auth-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+  .wordmark { font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: var(--ink); }
+  .wordmark .os { color: var(--accent); }
   .auth-tabs { display: flex; background: var(--gray-200); border-radius: 9px; padding: 3px; gap: 2px; }
-  .auth-tab { flex: 1; text-align: center; font-weight: 600; font-size: 13px; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); }
+  .auth-tab { flex: 1; text-align: center; font-weight: 600; font-size: 13px; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); transition: background-color 150ms ease, color 150ms ease; }
   .auth-tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(24,24,15,0.08); }
   .auth-field { display: flex; flex-direction: column; gap: 5px; }
   .auth-field label { font-size: 12.5px; font-weight: 600; color: var(--gray-700); }
-  .auth-field input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
-  .auth-field input:focus { border-color: var(--ink); }
-  .auth-btn { font-weight: 700; font-size: 14px; padding: 11px; border-radius: 8px; border: none; background: var(--ink); color: #fff; }
+  .auth-field input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .auth-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+  .auth-btn { font-weight: 700; font-size: 14px; padding: 11px; border-radius: 8px; border: none; background: var(--ink); color: #fff; transition: transform 120ms var(--ease-out), background-color 150ms ease; }
+  .auth-btn:hover:not(:disabled) { background: #000; }
+  .auth-btn:active:not(:disabled) { transform: scale(0.98); }
   .auth-btn:disabled { opacity: .5; }
   .auth-error { font-size: 12.5px; color: var(--red-tx); background: var(--red-bg); border-radius: 8px; padding: 9px 12px; display: none; }
   .auth-error.show { display: block; }
@@ -65,54 +105,97 @@
   #appShell.active { display: flex; }
   #sidebar {
     width: 236px; min-width: 236px; height: 100vh;
-    background: var(--sidebar); border-right: 1px solid var(--border);
+    background: var(--ink); border-right: none; color: #fff;
     box-sizing: border-box; padding: 24px 14px;
     display: flex; flex-direction: column; justify-content: space-between;
-    position: sticky; top: 0; overflow-y: auto;
+    position: sticky; top: 0; overflow-y: auto; overflow-x: hidden;
   }
+  /* Mismo lenguaje visual del login: fondo --ink + resplandor azul
+     difuminado, ahora en toda la barra lateral (visible en cada pantalla). */
+  #sidebar::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 300px 420px at 10% 0%, rgba(42,93,149,0.55) 0%, transparent 60%);
+  }
+  #sidebar > * { position: relative; z-index: 1; }
   .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; margin-bottom: 28px; cursor: pointer; }
-  .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px; flex-shrink: 0; }
+  .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); font-size: 12px; flex-shrink: 0; }
+  #sidebar .brand-mark { background: rgba(156,194,238,0.18); color: var(--login-blue); }
   .brand-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #sidebar .brand-name { color: #fff; }
   nav.navlist { display: flex; flex-direction: column; gap: 1px; }
+  .navgroup-label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500); padding: 0 10px; margin: 16px 0 4px; }
+  #sidebar .navgroup-label { color: rgba(255,255,255,0.36); }
   .navitem {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px;
     font-weight: 500; font-size: 13.5px; color: var(--gray-700); border: none; background: transparent;
-    width: 100%; text-align: left;
+    width: 100%; text-align: left; position: relative;
+    transition: transform 120ms var(--ease-out), background-color 150ms ease, color 150ms ease;
   }
-  .navitem svg { flex-shrink: 0; }
+  #sidebar .navitem { color: rgba(255,255,255,0.66); }
+  #sidebar #btnCambiarTorneo { color: rgba(255,255,255,0.5) !important; }
+  .navitem svg { flex-shrink: 0; transition: stroke 150ms ease; }
+  .navitem:hover:not(.active) { background: var(--gray-200); }
+  #sidebar .navitem:hover:not(.active) { background: rgba(255,255,255,0.08); }
+  .navitem:active { transform: scale(0.97); }
   .navitem.active { background: var(--gray-200); font-weight: 600; color: var(--ink); }
+  #sidebar .navitem.active { background: rgba(255,255,255,0.12); color: #fff; }
+  .navitem.active::before {
+    content: ""; position: absolute; left: -14px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; border-radius: 0 3px 3px 0; background: var(--accent);
+  }
+  #sidebar .navitem.active::before { background: var(--login-blue); }
   .sidebar-foot { display: flex; flex-direction: column; gap: 2px; }
   .user-chip { display: flex; align-items: center; gap: 9px; padding: 10px; margin-top: 8px; border-top: 1px solid var(--border); }
-  .user-avatar { width: 26px; height: 26px; border-radius: 999px; background: var(--gray-200); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: var(--gray-700); }
-  .logout-btn { border: none; background: transparent; color: var(--gray-500); font-size: 11px; font-weight: 600; padding: 0; margin-left: auto; }
+  #sidebar .user-chip { border-top-color: rgba(255,255,255,0.12); }
+  .user-avatar { width: 26px; height: 26px; border-radius: 999px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: var(--accent); }
+  #sidebar .user-avatar { background: rgba(156,194,238,0.18); color: var(--login-blue); }
+  #sidebar #userPlanLabel { color: rgba(255,255,255,0.42) !important; }
+  .logout-btn { border: none; background: transparent; color: var(--gray-500); font-size: 11px; font-weight: 600; padding: 0; margin-left: auto; transition: color 150ms ease, transform 120ms var(--ease-out); }
+  .logout-btn:hover { color: var(--red-tx); }
+  .logout-btn:active { transform: scale(0.94); }
+  #sidebar .logout-btn { color: rgba(255,255,255,0.42); }
+  #sidebar .logout-btn:hover { color: #ff9c9c; }
 
   #content { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
   .view { padding: 40px 48px; display: none; flex-direction: column; gap: 18px; min-height: 100%; }
   .view.active { display: flex; }
-  .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .page-title { font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .page-title { font-weight: 800; font-size: 23px; letter-spacing: -0.02em; }
   .page-sub { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
   .actions { display: flex; gap: 8px; }
 
-  .btn { font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--ink); }
-  .btn-primary { border: none; background: var(--ink); color: #fff; }
+  .btn { font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--ink); transition: transform 120ms var(--ease-out), background-color 150ms ease, border-color 150ms ease; }
+  .btn:hover:not(:disabled) { border-color: var(--gray-500); }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn-primary {
+    border: none; color: #fff;
+    background: radial-gradient(130% 180% at 18% -30%, rgba(156,194,238,0.55) 0%, transparent 55%), var(--accent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    border-color: transparent;
+    background: radial-gradient(130% 180% at 18% -30%, rgba(156,194,238,0.55) 0%, transparent 55%), #1e4a78;
+  }
   .btn:disabled { opacity: .5; cursor: default; }
 
-  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; }
-  .strip { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); }
+  .torneo-card { transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .torneo-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+  .torneo-card svg { transition: transform 150ms var(--ease-out); }
+  .torneo-card:hover svg { transform: translateX(2px); }
+  .strip { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
   .strip > div { flex: 1; padding: 16px 22px; display: flex; flex-direction: column; gap: 4px; }
   .strip > div + div { border-left: 1px solid var(--border); }
-  .stripval { font-weight: 800; font-size: 20px; overflow-wrap: anywhere; }
+  .stripval { font-weight: 800; font-size: 20px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .striplbl { font-size: 11.5px; color: var(--gray-500); font-weight: 500; }
 
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm); }
   .kpi-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--gray-500); }
-  .kpi-val { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .kpi-val { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .kpi-sub { font-size: 12px; font-weight: 500; color: var(--gray-500); }
 
   .panels { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; flex: 1; min-height: 0; }
-  .panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; overflow: auto; }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; overflow: auto; box-shadow: var(--shadow-sm); }
   .panel-title { font-weight: 700; font-size: 15px; }
   .row-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
   .row-item:last-child { border-bottom: none; }
@@ -123,18 +206,24 @@
   table.datatable thead th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-500); padding: 12px 24px; background: var(--gray-200); border-bottom: 1px solid var(--border); }
   table.datatable tbody td { padding: 12px 24px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   table.datatable tbody tr:last-child td { border-bottom: none; }
+  table.datatable tbody tr { transition: background-color 120ms ease; }
+  table.datatable tbody tr:hover { background-color: var(--sidebar); }
+  table.datatable tbody tr.empty-row:hover { background-color: transparent; }
   .table-wrap { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .muted { color: var(--gray-500); }
   .empty-row td { text-align: center; padding: 40px; color: var(--gray-500); }
 
-  .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; }
-  .formpanel.open { display: flex; }
+  .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; transform-origin: top; box-shadow: var(--shadow-md); }
+  .formpanel.open { display: flex; animation: formpanelIn 220ms var(--ease-out); }
   .formpanel.static { display: flex; max-width: 640px; }
+  @keyframes formpanelIn { from { opacity: 0; transform: scale(0.98) translateY(-4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .formpanel.open { animation: none; } }
   .formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 12px; font-weight: 600; color: var(--gray-700); }
-  .field input, .field select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); outline: none; }
+  .field input, .field select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
   .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
   .banner { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 16px 20px; }
@@ -142,19 +231,31 @@
   .banner-sub { font-size: 12.5px; margin-top: 1px; }
 
   .accounts-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .account-card { flex: 1; min-width: 160px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; }
+  .account-card { flex: 1; min-width: 160px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); }
 
   .tabs { display: inline-flex; align-items: center; background: var(--gray-200); border-radius: 9px; padding: 3px; gap: 2px; width: fit-content; }
-  .tab-btn { font-weight: 500; font-size: 12.5px; padding: 7px 14px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); }
+  .tab-btn { font-weight: 500; font-size: 12.5px; padding: 7px 14px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); transition: background-color 150ms ease, color 150ms ease; }
   .tab-btn.active { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(24,24,15,0.08); }
 
   .two-col { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 18px; flex: 1; min-height: 0; }
   .catlist-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
   .bar-track { height: 8px; background: var(--gray-200); border-radius: 999px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 999px; background: var(--ink); }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--login-blue); }
+  .dash-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--login-blue-bg); color: #5B8AC4; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dash-days-pill { display: inline-block; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--amber-bg); color: var(--amber-tx); }
 
   .noticebar { display: none; align-items: center; gap: 10px; background: var(--amber-bg); color: var(--amber-tx); border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
   .noticebar.show { display: flex; }
+
+  #legalModal { display: none; align-items: center; }
+  #legalModal .card { box-shadow: var(--shadow-md); }
+  #legalModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  #legalModal.show .card { animation: modalIn 220ms var(--ease-out); }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    #legalModal.show, #legalModal.show .card { animation: none; }
+  }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
@@ -218,6 +319,29 @@
      ============================================================ -->
 <div id="authScreen">
 
+  <div class="auth-showcase">
+    <div class="auth-showcase-content">
+      <span class="wordmark">Court<span class="os">OS</span></span>
+      <p class="auth-tagline">Todo lo administrativo de tu torneo de pádel, en un solo lugar.</p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8 11h8M8 15h5"/></svg>
+          Inscripciones y pagos por pareja
+        </div>
+        <div class="auth-feature">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>
+          Financiero, presupuesto y reportes
+        </div>
+        <div class="auth-feature">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          Tus torneos, organizados en un mismo lugar
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-formside">
+
   <div id="setupBanner" class="setup-banner" style="display:none;">
     <strong>⚙️ Falta configurar Firebase.</strong><br><br>
     Abre este archivo HTML en un editor de texto, busca el bloque
@@ -228,8 +352,7 @@
 
   <div id="authCard" class="auth-card">
     <div class="auth-logo">
-      <div class="auth-logo-mark">C</div>
-      <div class="auth-logo-name">CourtOS</div>
+      <span class="wordmark">Court<span class="os">OS</span></span>
     </div>
 
     <div class="auth-tabs">
@@ -256,6 +379,8 @@
       </div>
     </form>
   </div>
+
+  </div>
 </div>
 
 <!-- ============================================================
@@ -263,8 +388,8 @@
      Accesible sin iniciar sesión (enlaces en el login) y desde
      Configuración para quien ya tiene cuenta.
      ============================================================ -->
-<div id="legalModal" style="display:none; position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; align-items:center; justify-content:center; padding:24px;">
-  <div class="card" style="width:100%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+<div id="legalModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden; transform-origin:center;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
       <div class="auth-tabs" style="max-width:340px;">
         <button class="auth-tab active" id="legalTabTerminos">Términos y Condiciones</button>
@@ -325,12 +450,15 @@
      independiente (nombre, ciudad, fechas, cupos, categorías,
      inscripciones y finanzas propias).
      ============================================================ -->
-<div id="torneoScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--sidebar); padding:48px 24px;">
-  <div style="width:100%; max-width:640px; display:flex; flex-direction:column; gap:18px;">
-    <div class="auth-logo"><div class="auth-logo-mark">C</div><div class="auth-logo-name">CourtOS</div></div>
+<div id="torneoScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--sidebar) radial-gradient(ellipse 900px 500px at 50% -10%, var(--accent-bg) 0%, transparent 60%); padding:48px 24px;">
+  <div style="width:100%; max-width:640px; display:flex; flex-direction:column; gap:24px;">
     <div style="display:flex; align-items:center; justify-content:space-between;">
-      <div style="font-weight:700; font-size:18px;">Tus torneos</div>
+      <span class="wordmark" style="font-size:18px;">Court<span class="os">OS</span></span>
       <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
+    </div>
+    <div>
+      <div style="font-weight:800; font-size:24px; letter-spacing:-0.02em;">Tus torneos</div>
+      <div class="muted" style="font-size:13px; margin-top:2px;">Elige uno para entrar, o crea uno nuevo abajo.</div>
     </div>
     <div id="torneoList" style="display:flex; flex-direction:column; gap:10px;"></div>
 
@@ -391,34 +519,42 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
           Dashboard
         </button>
+
+        <div class="navgroup-label">Torneo</div>
         <button class="navitem" data-view="inscripciones">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8 11h8M8 15h5"/></svg>
           Inscripciones
         </button>
+        <button class="navitem" data-view="viabilidad">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 7h7M8.5 11h2M13 11h2.5M8.5 15h2M13 15h2.5"/></svg>
+          Viabilidad de Canchas
+        </button>
+        <button class="navitem" data-view="notas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h4"/></svg>
+          Notas
+        </button>
+
+        <div class="navgroup-label">Datos</div>
+        <button class="navitem" data-view="jugadores">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="9" r="2.4"/><path d="M15.5 14a4.6 4.6 0 0 1 5.5 4.4"/></svg>
+          Jugadores <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
+        </button>
+
+        <div class="navgroup-label">Finanzas</div>
         <button class="navitem" data-view="financiero">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>
           Financiero
         </button>
         <button class="navitem" data-view="presupuesto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h3"/></svg>
-          Presupuesto <span style="font-size:9px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
+          Presupuesto <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
         </button>
         <button class="navitem" data-view="reportes">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>
           Reportes
         </button>
-        <button class="navitem" data-view="viabilidad">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 7h7M8.5 11h2M13 11h2.5M8.5 15h2M13 15h2.5"/></svg>
-          Viabilidad de Canchas
-        </button>
-        <button class="navitem" data-view="jugadores">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="9" r="2.4"/><path d="M15.5 14a4.6 4.6 0 0 1 5.5 4.4"/></svg>
-          Jugadores <span style="font-size:9px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:1px 6px;border-radius:5px;margin-left:auto;">PRO</span>
-        </button>
-        <button class="navitem" data-view="notas">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h4"/></svg>
-          Notas
-        </button>
+
+        <div class="navgroup-label">Cuenta</div>
         <button class="navitem" data-view="configuracion">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
           Configuración
@@ -454,13 +590,19 @@
       <div class="panels">
         <div class="panel">
           <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div class="panel-title">Resumen del Torneo</div>
+            <div class="panel-title" style="display:flex;align-items:center;gap:10px;">
+              <span class="dash-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+              Resumen del Torneo
+            </div>
             <span id="dashEstadoChip"></span>
           </div>
           <div id="dashResumen"></div>
         </div>
         <div class="panel">
-          <div class="panel-title">Actividad Reciente</div>
+          <div class="panel-title" style="display:flex;align-items:center;gap:10px;">
+            <span class="dash-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>
+            Actividad Reciente
+          </div>
           <div id="dashActividad"></div>
         </div>
       </div>
@@ -622,7 +764,7 @@
     <section class="view" data-view="presupuesto">
       <div class="page-head">
         <div>
-          <div class="page-title">Presupuesto <span style="font-size:10px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
+          <div class="page-title">Presupuesto <span style="font-size:10px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Proyecta tus ingresos y gastos antes del torneo — lo "Real" se toma de Financiero</div>
         </div>
         <button class="btn btn-primary" id="btnAgregarLineaToggle" data-toggle-form="linea">+ Agregar Línea</button>
@@ -800,7 +942,7 @@
     <section class="view" data-view="jugadores">
       <div class="page-head">
         <div>
-          <div class="page-title">Jugadores <span style="font-size:10px;font-weight:700;background:var(--gray-200);color:var(--gray-700);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
+          <div class="page-title">Jugadores <span style="font-size:10px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Base de datos compartida entre todos tus torneos — no se borra al crear uno nuevo</div>
         </div>
         <button class="btn btn-primary" id="btnNuevoJugador" data-toggle-form="jugador">+ Nuevo Jugador</button>
@@ -1161,9 +1303,9 @@
     byId('dashResumen').innerHTML =
       '<div class="row-item"><span class="muted">Ciudad / Sede</span><span style="font-weight:600;">'+esc(torneoData.ciudad||'—')+(torneoData.club?' · '+esc(torneoData.club):'')+'</span></div>' +
       '<div class="row-item"><span class="muted">Fechas</span><span style="font-weight:600;">'+fmtDateFull(torneoData.fechaInicio)+(torneoData.fechaFin?' – '+fmtDateFull(torneoData.fechaFin):'')+'</span></div>' +
-      '<div class="row-item"><span class="muted">'+diasRestantes(torneoData.fechaInicio)+'</span><span></span></div>' +
+      '<div class="row-item"><span class="muted">Tiempo restante</span><span class="dash-days-pill">'+esc(diasRestantes(torneoData.fechaInicio))+'</span></div>' +
       '<div style="padding:14px 0;">' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:600;">'+parejas+' / '+(cuposTotales||'—')+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:700;color:var(--accent);">'+parejas+' / '+(cuposTotales||'—')+'</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;"></div></div>' +
       '</div>';
 
@@ -2347,9 +2489,9 @@
     }
     function abrirLegal(cual){
       mostrarTab(cual || 'terminos');
-      byId('legalModal').style.display = 'flex';
+      byId('legalModal').classList.add('show');
     }
-    function cerrarLegal(){ byId('legalModal').style.display = 'none'; }
+    function cerrarLegal(){ byId('legalModal').classList.remove('show'); }
 
     document.querySelectorAll('[data-open-legal]').forEach(function(a){
       a.addEventListener('click', function(e){ e.preventDefault(); abrirLegal(a.dataset.openLegal); });
@@ -2414,12 +2556,15 @@
     } else {
       list.innerHTML = torneos.map(function(t){
         var puedeFinalizar = t.estado !== 'FINALIZADA';
-        return '<div style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:6px 8px 6px 16px;display:flex;align-items:center;gap:8px;">' +
-          '<button data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:space-between;padding:8px 0;min-width:0;">' +
+        return '<div class="torneo-card" style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 10px 8px 12px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-sm);">' +
+          '<button data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;gap:12px;padding:6px 0;min-width:0;">' +
+            '<div style="width:34px;height:34px;border-radius:9px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">'+esc((t.nombre||'?').trim().charAt(0).toUpperCase())+'</div>' +
+            '<div style="min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
             '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
             '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
             '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:10px;">'+chip(ESTADO_TORNEO, t.estado)+
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
+            '</div>' +
           '</button>' +
           (puedeFinalizar ? '<button class="btn" data-finalizar-torneo="'+t.id+'" style="padding:6px 12px;font-size:12px;flex-shrink:0;">Finalizar</button>' : '') +
           '<button class="logout-btn" data-eliminar-torneo="'+t.id+'" title="Eliminar torneo" style="flex-shrink:0;">✕</button>' +
@@ -2609,10 +2754,11 @@
   }
 
   function bloqueoProHtml(mensaje){
-    return '<div class="card" style="padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">' +
-      '<div style="width:40px;height:40px;border-radius:999px;background:var(--gray-200);display:flex;align-items:center;justify-content:center;">' +
-      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gray-700)" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>' +
-      '<div style="font-weight:700;font-size:15px;">Función PRO</div>' +
+    return '<div class="card" style="padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;border-color:var(--accent-bg);background:linear-gradient(180deg,var(--accent-bg) 0%,#fff 140px);">' +
+      '<div style="width:44px;height:44px;border-radius:999px;background:#fff;box-shadow:0 0 0 1px var(--accent-bg);display:flex;align-items:center;justify-content:center;">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>' +
+      '<span style="font-size:9px;font-weight:700;background:var(--accent);color:#fff;padding:2px 8px;border-radius:5px;letter-spacing:0.03em;">PRO</span>' +
+      '<div style="font-weight:700;font-size:15px;">Esto se desbloquea con PRO</div>' +
       '<div class="muted" style="font-size:13px;max-width:360px;">'+esc(mensaje)+'</div>' +
       '</div>';
   }
