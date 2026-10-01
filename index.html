@@ -303,12 +303,20 @@
     .view { padding: 76px 18px 24px; }
 
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi { padding: 16px; }
+    .kpi-val { font-size: 18px; }
     .panels, .two-col { grid-template-columns: 1fr !important; }
     .formgrid { grid-template-columns: 1fr !important; }
     .strip { flex-direction: column; }
     .strip > div + div { border-left: none; border-top: 1px solid var(--border); }
     .table-wrap { -webkit-overflow-scrolling: touch; }
     table.datatable { min-width: 560px; }
+
+    /* Tarjeta de torneo ("Tus torneos"): en celular, el nombre + chip
+       pasan a su propia línea y Finalizar/Eliminar bajan debajo, para
+       que un nombre largo no quede aplastado contra esos botones. */
+    .torneo-card-main { flex-basis: 100% !important; }
+    .torneo-card-actions { margin-left: auto; }
   }
 </style>
 </head>
@@ -1304,8 +1312,8 @@
 
     var pct = cuposTotales ? Math.min(100, Math.round(parejas/cuposTotales*100)) : 0;
     byId('dashResumen').innerHTML =
-      '<div class="row-item"><span class="muted">Ciudad / Sede</span><span style="font-weight:600;">'+esc(torneoData.ciudad||'—')+(torneoData.club?' · '+esc(torneoData.club):'')+'</span></div>' +
-      '<div class="row-item"><span class="muted">Fechas</span><span style="font-weight:600;">'+fmtDateFull(torneoData.fechaInicio)+(torneoData.fechaFin?' – '+fmtDateFull(torneoData.fechaFin):'')+'</span></div>' +
+      '<div class="row-item" style="align-items:flex-start;"><span class="muted" style="flex-shrink:0;padding-top:1px;">Ciudad / Sede</span><span style="font-weight:600;text-align:right;margin-left:12px;">'+esc(torneoData.ciudad||'—')+(torneoData.club?' · '+esc(torneoData.club):'')+'</span></div>' +
+      '<div class="row-item" style="align-items:flex-start;"><span class="muted" style="flex-shrink:0;padding-top:1px;">Fechas</span><span style="font-weight:600;text-align:right;margin-left:12px;">'+fmtDateFull(torneoData.fechaInicio)+(torneoData.fechaFin?' – '+fmtDateFull(torneoData.fechaFin):'')+'</span></div>' +
       '<div class="row-item"><span class="muted">Tiempo restante</span><span class="dash-days-pill">'+esc(diasRestantes(torneoData.fechaInicio))+'</span></div>' +
       '<div style="padding:14px 0;">' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:700;color:var(--accent);">'+parejas+' / '+(cuposTotales||'—')+'</span></div>' +
@@ -2563,18 +2571,20 @@
     } else {
       list.innerHTML = torneos.map(function(t){
         var puedeFinalizar = t.estado !== 'FINALIZADA';
-        return '<div class="torneo-card" style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 10px 8px 12px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-sm);">' +
-          '<button data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;gap:12px;padding:6px 0;min-width:0;">' +
+        return '<div class="torneo-card" style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 10px 8px 12px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;box-shadow:var(--shadow-sm);">' +
+          '<button class="torneo-card-main" data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;gap:12px;padding:6px 0;min-width:0;">' +
             '<div style="width:34px;height:34px;border-radius:9px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">'+esc((t.nombre||'?').trim().charAt(0).toUpperCase())+'</div>' +
             '<div style="min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
-            '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;">'+esc(t.nombre||'Sin nombre')+'</div>' +
-            '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
+            '<div style="min-width:0;"><div title="'+esc(t.nombre||'Sin nombre')+'" style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.nombre||'Sin nombre')+'</div>' +
+            '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
             '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:10px;">'+chip(ESTADO_TORNEO, t.estado)+
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
             '</div>' +
           '</button>' +
+          '<div class="torneo-card-actions" style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
           (puedeFinalizar ? '<button class="btn" data-finalizar-torneo="'+t.id+'" style="padding:6px 12px;font-size:12px;flex-shrink:0;">Finalizar</button>' : '') +
           '<button class="logout-btn" data-eliminar-torneo="'+t.id+'" title="Eliminar torneo" style="flex-shrink:0;">✕</button>' +
+          '</div>' +
           '</div>';
       }).join('');
       list.querySelectorAll('[data-torneo-id]').forEach(function(btn){
