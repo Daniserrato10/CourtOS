@@ -330,11 +330,11 @@
   <div class="auth-showcase">
     <div class="auth-showcase-content">
       <span class="wordmark">Court<span class="os">OS</span></span>
-      <p class="auth-tagline">Todo lo administrativo de tu torneo de pádel, en un solo lugar.</p>
+      <p class="auth-tagline">Todo lo administrativo de tu torneo deportivo, en un solo lugar.</p>
       <div class="auth-features">
         <div class="auth-feature">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8 11h8M8 15h5"/></svg>
-          Inscripciones y pagos por pareja
+          Inscripciones y pagos, individuales o por pareja
         </div>
         <div class="auth-feature">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>
@@ -411,7 +411,7 @@
         <h2 style="font-size:16px;margin:0 0 4px;">Términos y Condiciones de CourtOS</h2>
         <p class="muted" style="font-size:11.5px;margin:0 0 16px;">Última actualización: <span id="legalFechaT"></span></p>
 
-        <p><strong>1. Qué es CourtOS.</strong> CourtOS es una herramienta de gestión administrativa y financiera para organizadores de torneos de pádel: inscripciones, pagos, presupuesto, reportes y datos de jugadores. No organiza, arbitra ni participa en los torneos — es un software de apoyo para quien los organiza (en adelante, "el organizador" o "tú").</p>
+        <p><strong>1. Qué es CourtOS.</strong> CourtOS es una herramienta de gestión administrativa y financiera para organizadores de torneos deportivos (pádel, tenis y otros que se habiliten más adelante): inscripciones, pagos, presupuesto, reportes y datos de jugadores. No organiza, arbitra ni participa en los torneos — es un software de apoyo para quien los organiza (en adelante, "el organizador" o "tú").</p>
 
         <p><strong>2. Tu cuenta.</strong> Eres responsable de mantener segura tu contraseña y tu PIN de administrador, y de todo lo que ocurra en tu cuenta. Cada cuenta es independiente: los torneos, jugadores y datos financieros que registres solo son visibles para ti.</p>
 
@@ -479,11 +479,24 @@
       <div class="panel-title">Crear nuevo torneo</div>
       <div class="formgrid">
         <div class="field"><label>Nombre</label><input id="nt_nombre" placeholder="Ej: Copa Verano 2026"></div>
+        <div class="field"><label>Deporte</label>
+          <select id="nt_deporte">
+            <option value="PADEL">Pádel</option>
+            <option value="TENIS">Tenis</option>
+          </select>
+        </div>
+        <div class="field" id="nt_modalidadWrap" style="display:none;"><label>Modalidad</label>
+          <select id="nt_modalidad">
+            <option value="PAREJAS">Dobles (parejas)</option>
+            <option value="INDIVIDUAL">Individual</option>
+            <option value="AMBAS">Ambas (dobles y sencillos)</option>
+          </select>
+        </div>
         <div class="field"><label>Ciudad</label><input id="nt_ciudad" placeholder="Bucaramanga"></div>
         <div class="field"><label>Club / Sede</label><input id="nt_club" placeholder="Club Campestre"></div>
         <div class="field"><label>Fecha inicio</label><input id="nt_fechaInicio" type="date"></div>
         <div class="field"><label>Fecha fin</label><input id="nt_fechaFin" type="date"></div>
-        <div class="field"><label>Cupos totales (parejas)</label><input id="nt_cupos" type="number" value="32"></div>
+        <div class="field"><label id="nt_cuposLabel">Cupos totales (parejas)</label><input id="nt_cupos" type="number" value="32"></div>
         <div class="field"><label>Estado</label>
           <select id="nt_estado">
             <option value="PLANIFICADA">Planificada</option>
@@ -637,9 +650,15 @@
           <div class="panel-title">Categorías</div>
         </div>
         <div id="categoriasAdminList" style="margin-top:4px;"></div>
-        <div class="formgrid" style="grid-template-columns:1.5fr 1fr; margin-top:14px;">
+        <div class="formgrid" style="margin-top:14px;">
           <div class="field"><label>Nueva categoría</label><input id="cat_nombre" placeholder="Ej: Sexta"></div>
           <div class="field"><label>Valor inscripción</label><input id="cat_valor" type="number" placeholder="0"></div>
+          <div class="field" id="cat_modalidadWrap" style="display:none;"><label>Modalidad</label>
+            <select id="cat_modalidad">
+              <option value="PAREJAS">Dobles (parejas)</option>
+              <option value="INDIVIDUAL">Individual</option>
+            </select>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="categorias">Cerrar</button>
@@ -652,8 +671,8 @@
         <div class="formgrid">
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
           <div class="field"><label>Valor inscripción</label><input id="i_valor" readonly></div>
-          <div class="field"><label>Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
-          <div class="field"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
+          <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
           <datalist id="jugadoresSuggestions"></datalist>
           <div class="field"><label>Método de pago</label>
             <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
@@ -704,7 +723,7 @@
       <div class="card table-wrap" style="flex:1;">
         <table class="datatable">
           <thead><tr>
-            <th>Pareja</th><th>Categoría</th><th style="text-align:right">Valor</th><th style="text-align:right">Pagado</th><th>Estado</th><th></th>
+            <th id="insThUnidad">Pareja</th><th>Categoría</th><th style="text-align:right">Valor</th><th style="text-align:right">Pagado</th><th>Estado</th><th></th>
           </tr></thead>
           <tbody id="insBody"></tbody>
         </table>
@@ -941,7 +960,7 @@
           <div class="card table-wrap" style="flex:1;">
             <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;">Partidos por Categoría</div>
             <table class="datatable">
-              <thead><tr><th>Categoría</th><th style="text-align:right">Parejas</th><th style="text-align:right">Partidos</th><th style="text-align:right">Horas cancha</th></tr></thead>
+              <thead><tr><th>Categoría</th><th id="vThUnidad" style="text-align:right">Parejas</th><th style="text-align:right">Partidos</th><th style="text-align:right">Horas cancha</th></tr></thead>
               <tbody id="v_catBody"></tbody>
             </table>
           </div>
@@ -1042,11 +1061,12 @@
       <div class="formpanel" id="formConfig" style="max-width:640px;">
         <div class="formgrid">
           <div class="field"><label>Nombre</label><input id="cfg_nombre"></div>
+          <div class="field"><label>Deporte</label><input id="cfg_deporte" readonly style="background:var(--sidebar);color:var(--gray-500);cursor:not-allowed;"></div>
           <div class="field"><label>Ciudad</label><input id="cfg_ciudad"></div>
           <div class="field"><label>Club / Sede</label><input id="cfg_club"></div>
           <div class="field"><label>Fecha inicio</label><input id="cfg_fechaInicio" type="date"></div>
           <div class="field"><label>Fecha fin</label><input id="cfg_fechaFin" type="date"></div>
-          <div class="field"><label>Cupos totales (parejas)</label><input id="cfg_cupos" type="number"></div>
+          <div class="field"><label id="cfg_cuposLabel">Cupos totales (parejas)</label><input id="cfg_cupos" type="number"></div>
           <div class="field"><label>Estado</label>
             <select id="cfg_estado">
               <option value="PLANIFICADA">Planificada</option>
@@ -1131,6 +1151,33 @@
   var unsubs = [];
 
   // ---------- helpers ----------
+  // Deporte del torneo actual: se fija al crear el torneo y no cambia
+  // después (evita inconsistencias con inscripciones ya creadas).
+  // PADEL siempre es por parejas. TENIS puede ser PAREJAS (dobles) o
+  // INDIVIDUAL — esPareja()/esIndividualTorneo() lo resuelven en un solo
+  // lugar para que el resto de la app (labels, formularios, cálculos de
+  // pago) no repita esta lógica.
+  function torneoDeporte(){ return (torneoData && torneoData.deporte) || 'PADEL'; }
+  function torneoModalidad(){ return (torneoData && torneoData.modalidad) || 'PAREJAS'; }
+  function torneoEsIndividual(){ return torneoDeporte() === 'TENIS' && torneoModalidad() === 'INDIVIDUAL'; }
+  // AMBAS = el torneo de tenis admite dobles Y sencillos a la vez: cada
+  // categoría define su propia modalidad (categoria.modalidad), en vez de
+  // quedar fija para todo el torneo.
+  function torneoEsAmbas(){ return torneoDeporte() === 'TENIS' && torneoModalidad() === 'AMBAS'; }
+  function categoriaEsIndividual(cat){
+    if (torneoEsAmbas()) return !!(cat && cat.modalidad === 'INDIVIDUAL');
+    return torneoEsIndividual();
+  }
+  // Sin categoría de referencia (KPIs, encabezados generales) un torneo
+  // AMBAS no tiene una sola respuesta, así que se usa una palabra neutra.
+  function labelUnidad(cat){ return categoriaEsIndividual(cat) ? 'Jugador' : 'Pareja'; }
+  function labelUnidadPlural(cat){ return categoriaEsIndividual(cat) ? 'Jugadores' : 'Parejas'; }
+  // En una inscripción de pareja, el valor se divide en dos "mitades" (una
+  // por jugador) para poder cobrarlas por separado. En una inscripción
+  // individual (torneo.individual=true, guardado al crearla) no hay
+  // segundo jugador, así que toda la "mitad" de Jugador 1 es el valor
+  // completo — si no, quedaría cobrando solo la mitad de lo que debe.
+  function mitadDe(i){ return i.individual ? i.valor : i.valor / 2; }
   function money(n){ n = Math.round(n||0); return (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('es-CO'); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function byId(x){ return document.getElementById(x); }
@@ -1243,10 +1290,23 @@
   document.querySelectorAll('[data-toggle-form]').forEach(function(btn){
     btn.addEventListener('click', function(){
       var name = btn.dataset.toggleForm;
+      if (name === 'inscripcion') actualizarFormInscripcionSegunCategoria();
       var el = byId('form' + cap(name));
       el.classList.toggle('open');
     });
   });
+
+  // En modalidad Individual (Tenis) no existe "Jugador 2": se oculta ese
+  // campo y el primero pasa a llamarse solo "Jugador". En torneos AMBAS
+  // esto depende de la categoría elegida, no de un ajuste único para todo
+  // el torneo.
+  function actualizarFormInscripcionSegunCategoria(){
+    var cat = categoriaById(byId('i_categoria').value);
+    var individual = categoriaEsIndividual(cat);
+    byId('i_j2Wrap').style.display = individual ? 'none' : 'flex';
+    byId('i_j1Label').textContent = individual ? 'Jugador' : 'Jugador 1';
+    if (individual) byId('i_j2').value = '';
+  }
   document.querySelectorAll('[data-close-form]').forEach(function(btn){
     btn.addEventListener('click', function(){ closeForm(btn.dataset.closeForm); });
   });
@@ -1287,6 +1347,7 @@
     var cat = categoriaById(byId('i_categoria').value);
     byId('i_valor').value = cat ? money(cat.valorInscripcion) : '';
     if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = cat.valorInscripcion;
+    actualizarFormInscripcionSegunCategoria();
   }
   byId('i_categoria').addEventListener('change', updateValorInscripcion);
   byId('i_estadoPago').addEventListener('change', function(){
@@ -1305,7 +1366,7 @@
     byId('dashKpis').innerHTML =
       kpiCard('Ingresos Totales', money(ing), ing>0 ? '' : 'Aún sin movimientos') +
       kpiCard('Utilidad Neta', money(util), gas>0 ? ('Gastos: '+money(gas)) : '') +
-      kpiCard('Parejas Inscritas', String(parejas), cuposTotales ? (parejas+' / '+cuposTotales+' cupos') : '') +
+      kpiCard(torneoEsAmbas() ? 'Inscritos' : (labelUnidadPlural()+' Inscrit'+(torneoEsIndividual()?'os':'as')), String(parejas), cuposTotales ? (parejas+' / '+cuposTotales+' cupos') : '') +
       kpiCard('Saldo en Cuentas', money(saldoTotal), cuentas.length+' cuenta(s)');
 
     byId('dashEstadoChip').innerHTML = chip(ESTADO_TORNEO, torneoData.estado || 'PLANIFICADA');
@@ -1340,6 +1401,7 @@
     byId('btnAbrirCategorias').style.display = isAdminMode ? 'inline-block' : 'none';
     if (isAdminMode) renderCategoriasAdmin();
 
+    byId('insThUnidad').textContent = torneoEsAmbas() ? 'Inscrito' : labelUnidad();
     byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es');
     var list = inscripciones.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
     if (insFilter !== 'TODAS') list = list.filter(function(i){ return i.estadoIns === insFilter; });
@@ -1348,11 +1410,12 @@
       return;
     }
     byId('insBody').innerHTML = list.map(function(i){
-      var j2 = i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>';
+      var nombreUnidad = i.individual ? esc(i.j1Nombre) :
+        esc(i.j1Nombre) + ' / ' + (i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>');
       var pagado = pagadoTotalIns(i);
       var puedeCobrar = i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO';
       return '<tr>' +
-        '<td style="font-weight:600;">'+esc(i.j1Nombre)+' / '+j2+'</td>' +
+        '<td style="font-weight:600;">'+nombreUnidad+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
         '<td class="num">'+money(i.valor)+'</td>' +
         '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
@@ -1466,7 +1529,7 @@
   function revertirPagoInscripcion(insId, attribJ1, attribJ2){
     var i = inscripciones.find(function(x){ return x.id === insId; });
     if (!i) return Promise.resolve();
-    var mitad = i.valor / 2;
+    var mitad = mitadDe(i);
     var nuevoPagadoJ1 = Math.max(0, (i.pagadoJ1||0) - attribJ1);
     var nuevoPagadoJ2 = Math.max(0, (i.pagadoJ2||0) - attribJ2);
     var completoJ1 = nuevoPagadoJ1 >= mitad - 1;
@@ -1752,6 +1815,7 @@
   }
 
   function renderViabilidadForm(){
+    byId('vThUnidad').textContent = torneoEsAmbas() ? 'Inscritos' : labelUnidadPlural();
     if (!categorias.length){
       byId('v_catlist').innerHTML = '<div class="muted" style="padding:12px 0;">Crea categorías primero (modo administrador → Inscripciones → Categorías).</div>';
       return;
@@ -1760,6 +1824,8 @@
       var esGrupos = c.viabFormato === 'GRUPOS';
       var hoy = inscritosHoy(c.id);
       var r = computeCategoriaPartidos(c);
+      var individualCat = categoriaEsIndividual(c);
+      var unidadPluralMin = labelUnidadPlural(c).toLowerCase();
       return '<div class="card" style="padding:14px 16px;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
           '<span style="font-weight:700;font-size:13.5px;">'+esc(c.nombre)+'</span>' +
@@ -1772,19 +1838,19 @@
             '<option value="GRUPOS"'+(esGrupos?' selected':'')+'>Grupos + Eliminación</option>' +
           '</select></div>' +
           (esGrupos ? '' :
-            '<div class="field"><label style="font-size:11px;">Parejas estimadas</label>' +
+            '<div class="field"><label style="font-size:11px;">'+labelUnidadPlural(c)+' estimad'+(individualCat?'os':'as')+'</label>' +
             '<input type="number" data-viab-parejas="'+c.id+'" value="'+(c.viabParejas||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>') +
         '</div>' +
         (esGrupos ?
           '<div class="formgrid" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;">' +
             '<div class="field"><label style="font-size:11px;">Núm. grupos</label>' +
             '<input type="number" data-viab-grupos="'+c.id+'" value="'+(c.viabGrupos||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
-            '<div class="field"><label style="font-size:11px;">Parejas / grupo</label>' +
+            '<div class="field"><label style="font-size:11px;">'+labelUnidad(c)+' / grupo</label>' +
             '<input type="number" data-viab-jpg="'+c.id+'" value="'+(c.viabJugadoresPorGrupo||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
             '<div class="field"><label style="font-size:11px;">Partidos elim.</label>' +
             '<input type="number" data-viab-elim="'+c.id+'" value="'+(c.viabPartidosElim||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
           '</div>' +
-          '<div class="muted" style="font-size:11px;margin-top:8px;">'+r.parejas+' parejas estimadas · '+r.partidosGrupos+' partido(s) de grupos + '+r.partidosElim+' de eliminación</div>'
+          '<div class="muted" style="font-size:11px;margin-top:8px;">'+r.parejas+' '+unidadPluralMin+' estimad'+(individualCat?'os':'as')+' · '+r.partidosGrupos+' partido(s) de grupos + '+r.partidosElim+' de eliminación</div>'
           : '') +
         '</div>';
     }).join('');
@@ -1924,6 +1990,8 @@
   // ---------- render: configuración ----------
   function renderConfiguracion(){
     byId('cfg_nombre').value = torneoData.nombre || '';
+    byId('cfg_deporte').value = torneoDeporte() === 'TENIS' ? ('Tenis — ' + (torneoEsAmbas() ? 'Dobles y sencillos' : (torneoEsIndividual() ? 'Individual' : 'Dobles'))) : 'Pádel';
+    byId('cfg_cuposLabel').textContent = torneoEsAmbas() ? 'Cupos totales (inscritos)' : (torneoEsIndividual() ? 'Cupos totales (jugadores)' : 'Cupos totales (parejas)');
     byId('cfg_ciudad').value = torneoData.ciudad || '';
     byId('cfg_club').value = torneoData.club || '';
     byId('cfg_fechaInicio').value = torneoData.fechaInicio || '';
@@ -1951,11 +2019,17 @@
   }
 
   function renderCategoriasAdmin(){
+    var ambas = torneoEsAmbas();
+    byId('cat_modalidadWrap').style.display = ambas ? 'flex' : 'none';
     var lista = categorias.slice().sort(function(a,b){ return (a.orden||0)-(b.orden||0); });
     byId('categoriasAdminList').innerHTML = lista.length ? lista.map(function(c){
       return '<div class="row-item">' +
         '<input value="'+esc(c.nombre)+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;margin-right:10px;">' +
         '<input type="number" value="'+(c.valorInscripcion||0)+'" data-cat-valor="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;width:130px;text-align:right;margin-right:10px;">' +
+        (ambas ? '<select data-cat-modalidad="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;margin-right:10px;">' +
+          '<option value="PAREJAS"'+(c.modalidad!=='INDIVIDUAL'?' selected':'')+'>Dobles</option>' +
+          '<option value="INDIVIDUAL"'+(c.modalidad==='INDIVIDUAL'?' selected':'')+'>Individual</option>' +
+        '</select>' : '') +
         '<button class="logout-btn" data-del-cat="'+c.id+'" title="Eliminar categoría">✕</button>' +
         '</div>';
     }).join('') : '<div class="muted" style="padding:10px 0;">Sin categorías todavía.</div>';
@@ -1973,6 +2047,12 @@
           .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
       });
     });
+    document.querySelectorAll('[data-cat-modalidad]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        torneoRef.collection('categorias').doc(sel.dataset.catModalidad).update({ modalidad: sel.value })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
     document.querySelectorAll('[data-del-cat]').forEach(function(btn){
       btn.addEventListener('click', function(){
         if (!confirm('¿Eliminar esta categoría? Las inscripciones que ya la usan no se ven afectadas.')) return;
@@ -1987,7 +2067,8 @@
     var nombre = byId('cat_nombre').value.trim();
     var valor = parseFloat(byId('cat_valor').value) || 0;
     if (!nombre) { alert('Escribe el nombre de la categoría.'); return; }
-    torneoRef.collection('categorias').add({ nombre: nombre, valorInscripcion: valor, orden: 99 }).then(function(){
+    var modalidad = torneoEsAmbas() ? byId('cat_modalidad').value : (torneoEsIndividual() ? 'INDIVIDUAL' : 'PAREJAS');
+    torneoRef.collection('categorias').add({ nombre: nombre, valorInscripcion: valor, orden: 99, modalidad: modalidad }).then(function(){
       byId('cat_nombre').value = ''; byId('cat_valor').value = '';
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
@@ -2236,25 +2317,27 @@
   byId('btnGuardarInscripcion').addEventListener('click', function(){
     if (!torneoRef) return;
     var categoriaId = byId('i_categoria').value;
-    var j1 = byId('i_j1').value.trim();
-    var j2 = byId('i_j2').value.trim();
-    var cuentaId = byId('i_cuenta').value;
-    if (!categoriaId || !j1 || !cuentaId) { alert('Completa categoría, jugador 1 y cuenta.'); return; }
     var cat = categoriaById(categoriaId);
+    var individual = categoriaEsIndividual(cat);
+    var j1 = byId('i_j1').value.trim();
+    var j2 = individual ? '' : byId('i_j2').value.trim();
+    var cuentaId = byId('i_cuenta').value;
+    if (!categoriaId || !j1 || !cuentaId) { alert('Completa categoría, '+(individual?'jugador':'jugador 1')+' y cuenta.'); return; }
     var estadoPago = byId('i_estadoPago').value;
     var pagado = parseFloat(byId('i_pagado').value) || 0;
     var valor = cat.valorInscripcion;
-    var mitad = valor / 2;
+    var mitad = mitadDe({ valor: valor, individual: individual });
     // El monto pagado al crear no distingue jugador todavía: se reparte
     // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
-    // (misma regla que usa "Confirmar Pago" más abajo).
+    // (misma regla que usa "Confirmar Pago" más abajo). En modalidad
+    // individual no hay Jugador 2, así que "mitad" ya es el valor completo.
     var pagadoJ1 = Math.min(pagado, mitad);
     var pagadoJ2 = Math.max(0, pagado - mitad);
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE';
 
     torneoRef.collection('inscripciones').add({
       categoriaId: categoriaId, categoriaNombre: cat.nombre,
-      j1Nombre: j1, j2Nombre: j2,
+      j1Nombre: j1, j2Nombre: j2, individual: individual,
       valor: valor, pagadoJ1: pagadoJ1, pagadoJ2: pagadoJ2,
       estadoPago: estadoPago, estadoIns: estadoIns,
       cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
@@ -2292,13 +2375,13 @@
     var i = inscripciones.find(function(x){ return x.id === insId; });
     if (!i) return;
     pagoInsActual = i;
-    var mitad = i.valor / 2;
+    var mitad = mitadDe(i);
     var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
     var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
 
     byId('pg_inscripcionId').value = insId;
     byId('pg_resumen').innerHTML =
-      '<strong>'+esc(i.j1Nombre)+' / '+(i.j2Nombre?esc(i.j2Nombre):'⏳ por confirmar')+'</strong> — '+esc(i.categoriaNombre)+'<br>' +
+      '<strong>'+(i.individual ? esc(i.j1Nombre) : esc(i.j1Nombre)+' / '+(i.j2Nombre?esc(i.j2Nombre):'⏳ por confirmar'))+'</strong> — '+esc(i.categoriaNombre)+'<br>' +
       'Total: '+money(i.valor)+' · '+esc(i.j1Nombre)+' debe '+money(saldoJ1) +
       (i.j2Nombre ? ' · '+esc(i.j2Nombre)+' debe '+money(saldoJ2) : '');
 
@@ -2316,7 +2399,7 @@
   byId('pg_quien').addEventListener('change', actualizarMontoPago);
   function actualizarMontoPago(){
     if (!pagoInsActual) return;
-    var mitad = pagoInsActual.valor / 2;
+    var mitad = mitadDe(pagoInsActual);
     var saldoJ1 = Math.max(0, mitad - (pagoInsActual.pagadoJ1||0));
     var saldoJ2 = pagoInsActual.j2Nombre ? Math.max(0, mitad - (pagoInsActual.pagadoJ2||0)) : 0;
     var quien = byId('pg_quien').value;
@@ -2335,7 +2418,7 @@
     var cuentaId = byId('pg_cuenta').value;
     if (!quien || monto <= 0 || !cuentaId) { alert('Selecciona quién paga, un monto mayor a 0 y la cuenta.'); return; }
 
-    var mitad = i.valor / 2;
+    var mitad = mitadDe(i);
     var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
     var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
     var deltaJ1 = 0, deltaJ2 = 0, quienTexto = '';
@@ -2416,16 +2499,41 @@
   }
 
   // ---------- semilla de datos por defecto para un torneo nuevo ----------
-  function seedDefaultData(ref){
+  function seedDefaultData(ref, datos){
     var batch = fsdb.batch();
-    var cats = [
-      {id:'cat-tercera', nombre:'Tercera', orden:1, valorInscripcion:250000},
-      {id:'cat-cuarta',  nombre:'Cuarta',  orden:2, valorInscripcion:200000},
-      {id:'cat-quinta',  nombre:'Quinta',  orden:3, valorInscripcion:180000},
-      {id:'cat-sexta',   nombre:'Sexta',   orden:4, valorInscripcion:150000},
-      {id:'cat-fem-b',   nombre:'Femenino B', orden:5, valorInscripcion:180000},
-      {id:'cat-fem-c',   nombre:'Femenino C', orden:6, valorInscripcion:150000}
-    ];
+    // Categorías de ejemplo: los nombres típicos de pádel (Tercera, Cuarta,
+    // Femenino B...) no tienen sentido para un torneo de tenis, así que se
+    // usa un set de ejemplo distinto según el deporte elegido al crearlo.
+    // El organizador puede renombrarlas o borrarlas de todas formas.
+    var modalidadTorneo = (datos && datos.modalidad) || 'PAREJAS';
+    var cats;
+    if (datos && datos.deporte === 'TENIS' && modalidadTorneo === 'AMBAS'){
+      // En un torneo AMBAS cada categoría trae su propia modalidad, así
+      // que las categorías de ejemplo ya vienen separadas en dobles/individual.
+      cats = [
+        {id:'cat-abs-a-dobles',      nombre:'Absoluto A - Dobles',     orden:1, valorInscripcion:150000, modalidad:'PAREJAS'},
+        {id:'cat-abs-a-individual',  nombre:'Absoluto A - Individual', orden:2, valorInscripcion:100000, modalidad:'INDIVIDUAL'},
+        {id:'cat-fem-a-dobles',      nombre:'Femenino A - Dobles',     orden:3, valorInscripcion:120000, modalidad:'PAREJAS'},
+        {id:'cat-fem-a-individual',  nombre:'Femenino A - Individual', orden:4, valorInscripcion:90000,  modalidad:'INDIVIDUAL'}
+      ];
+    } else if (datos && datos.deporte === 'TENIS'){
+      var modCat = modalidadTorneo === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'PAREJAS';
+      cats = [
+        {id:'cat-abs-a',   nombre:'Absoluto A', orden:1, valorInscripcion:150000, modalidad:modCat},
+        {id:'cat-abs-b',   nombre:'Absoluto B', orden:2, valorInscripcion:120000, modalidad:modCat},
+        {id:'cat-fem-a',   nombre:'Femenino A', orden:3, valorInscripcion:120000, modalidad:modCat},
+        {id:'cat-sub16',   nombre:'Sub-16', orden:4, valorInscripcion:80000, modalidad:modCat}
+      ];
+    } else {
+      cats = [
+        {id:'cat-tercera', nombre:'Tercera', orden:1, valorInscripcion:250000, modalidad:'PAREJAS'},
+        {id:'cat-cuarta',  nombre:'Cuarta',  orden:2, valorInscripcion:200000, modalidad:'PAREJAS'},
+        {id:'cat-quinta',  nombre:'Quinta',  orden:3, valorInscripcion:180000, modalidad:'PAREJAS'},
+        {id:'cat-sexta',   nombre:'Sexta',   orden:4, valorInscripcion:150000, modalidad:'PAREJAS'},
+        {id:'cat-fem-b',   nombre:'Femenino B', orden:5, valorInscripcion:180000, modalidad:'PAREJAS'},
+        {id:'cat-fem-c',   nombre:'Femenino C', orden:6, valorInscripcion:150000, modalidad:'PAREJAS'}
+      ];
+    }
     var cuentasSeed = [
       {id:'cta-principal', nombre:'Cuenta Principal'},
       {id:'cta-efectivo',  nombre:'Efectivo'},
@@ -2447,7 +2555,7 @@
       {id:'pl-proveedores',   tipo:'GASTO', concepto:'Proveedores', orden:9},
       {id:'pl-otros-gas',     tipo:'GASTO', concepto:'Otros gastos', orden:10}
     ];
-    cats.forEach(function(c){ batch.set(ref.collection('categorias').doc(c.id), {nombre:c.nombre, orden:c.orden, valorInscripcion:c.valorInscripcion}); });
+    cats.forEach(function(c){ batch.set(ref.collection('categorias').doc(c.id), {nombre:c.nombre, orden:c.orden, valorInscripcion:c.valorInscripcion, modalidad:c.modalidad}); });
     cuentasSeed.forEach(function(c){ batch.set(ref.collection('cuentas').doc(c.id), {nombre:c.nombre}); });
     presupuestoSeed.forEach(function(l){ batch.set(ref.collection('presupuesto').doc(l.id), {tipo:l.tipo, concepto:l.concepto, orden:l.orden, valorProyectado:0}); });
     return batch.commit();
@@ -2629,13 +2737,30 @@
     if (enElLimite) byId('limiteTorneoAviso').innerHTML = bloqueoProHtml('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear torneos ilimitados.');
   }
 
+  // El selector de Deporte decide si se muestra "Modalidad" (solo aplica a
+  // Tenis: Pádel siempre es por parejas) y ajusta el texto de "Cupos
+  // totales" para que diga lo correcto en cada caso.
+  function actualizarFormNuevoTorneo(){
+    var esTenis = byId('nt_deporte').value === 'TENIS';
+    byId('nt_modalidadWrap').style.display = esTenis ? 'flex' : 'none';
+    var modalidad = esTenis ? byId('nt_modalidad').value : 'PAREJAS';
+    byId('nt_cuposLabel').textContent =
+      modalidad === 'INDIVIDUAL' ? 'Cupos totales (jugadores)' :
+      modalidad === 'AMBAS' ? 'Cupos totales (inscritos)' : 'Cupos totales (parejas)';
+  }
+  byId('nt_deporte').addEventListener('change', actualizarFormNuevoTorneo);
+  byId('nt_modalidad').addEventListener('change', actualizarFormNuevoTorneo);
+
   byId('btnCrearTorneo').addEventListener('click', function(){
     if (!userRef) return;
     if (!esPro() && torneosCountCache >= 1) { alert('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear más.'); return; }
     var nombre = byId('nt_nombre').value.trim();
     if (!nombre) { alert('Escribe un nombre para el torneo.'); return; }
+    var deporte = byId('nt_deporte').value;
     var datos = {
       nombre: nombre,
+      deporte: deporte,
+      modalidad: deporte === 'TENIS' ? byId('nt_modalidad').value : 'PAREJAS',
       ciudad: byId('nt_ciudad').value.trim(),
       club: byId('nt_club').value.trim(),
       fechaInicio: byId('nt_fechaInicio').value,
@@ -2645,10 +2770,12 @@
       creadoEn: Date.now()
     };
     userRef.collection('torneos').add(datos).then(function(ref){
-      return seedDefaultData(ref).then(function(){ return ref; });
+      return seedDefaultData(ref, datos).then(function(){ return ref; });
     }).then(function(ref){
       ['nt_nombre','nt_ciudad','nt_club','nt_fechaInicio','nt_fechaFin'].forEach(function(id){ byId(id).value = ''; });
       byId('nt_cupos').value = 32;
+      byId('nt_deporte').value = 'PADEL';
+      actualizarFormNuevoTorneo();
       enterTorneo(ref.id, datos);
     }).catch(function(e){ alert('No se pudo crear el torneo: ' + e.message); });
   });
@@ -2699,6 +2826,10 @@
     applyBrand(torneoData.nombre || 'Mi Torneo');
     byId('torneoScreen').style.display = 'none';
     byId('appShell').classList.add('active');
+    // Sugerencia inicial de duración de partido en Viabilidad de Canchas:
+    // en tenis el formato a sets suele tomar más tiempo que un set único
+    // de pádel. El organizador puede ajustarlo libremente después.
+    byId('v_duracion').value = torneoDeporte() === 'TENIS' ? 100 : 75;
 
     subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
     subscribe('cuentas', function(a){ cuentas = a; });
