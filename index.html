@@ -409,6 +409,7 @@
     </div>
     <div style="padding:14px 22px 6px; overflow-y:auto;" id="movDetalleBody"></div>
     <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border); flex-shrink:0;">
+      <input type="file" id="movAdjuntoInput" accept="image/*,application/pdf" multiple style="display:none;">
       <button class="btn" id="btnAnularDesdeDetalle">Anular</button>
       <button class="btn btn-primary" id="btnCerrarMov2">Cerrar</button>
     </div>
@@ -781,6 +782,10 @@
           <div class="field"><label>Valor</label><input id="m_valor" type="number" placeholder="0"></div>
           <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
           <div class="field" style="grid-column:1/-1;"><label>Descripción (opcional)</label><input id="m_descripcion" placeholder="Ej: patrocinio de Nike, factura #123, detalle adicional..."></div>
+          <div class="field" style="grid-column:1/-1;"><label>Comprobante o factura (opcional) <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></label>
+            <input id="m_adjunto" type="file" accept="image/*,application/pdf" multiple>
+            <div class="muted" id="m_adjuntoHint" style="font-size:11.5px;margin-top:4px;">Hasta 3 archivos: fotos (se comprimen solas) o PDF de máx. 650 KB.</div>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="movimiento">Cancelar</button>
@@ -1226,6 +1231,82 @@
     var h = movHoraTs(m);
     return fmtDate(m.fecha) + (h ? ' · ' + fmtHora(h) : '');
   }
+  // ---------- comprobantes de movimientos (PRO) ----------
+  // Se guardan dentro de Firestore (sin Firebase Storage, que pide plan de pago):
+  // movimientos/{id}/adjuntos/{adjId} = {nombre, mime, dataUrl, bytes}. Cada
+  // documento de Firestore admite máx. 1 MiB, así que las fotos se comprimen
+  // y los PDF se limitan de tamaño. El movimiento guarda adjuntosN (contador)
+  // para mostrar el clip sin tener que descargar los archivos.
+  var MAX_ADJUNTOS = 3;
+  var MAX_PDF_BYTES = 650 * 1024;
+  var MAX_DATAURL_CHARS = 900 * 1024;
+  function leerComoDataUrl(file){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(r.result); };
+      r.onerror = function(){ rej(new Error('No se pudo leer el archivo "'+file.name+'".')); };
+      r.readAsDataURL(file);
+    });
+  }
+  function comprimirImagen(file){
+    return leerComoDataUrl(file).then(function(src){
+      return new Promise(function(res, rej){
+        var img = new Image();
+        img.onload = function(){
+          var lado = 1600, calidad = 0.75;
+          (function intentar(){
+            var factor = Math.min(1, lado / Math.max(img.width, img.height));
+            var c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.width * factor));
+            c.height = Math.max(1, Math.round(img.height * factor));
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            var out = c.toDataURL('image/jpeg', calidad);
+            if (out.length <= MAX_DATAURL_CHARS) return res(out);
+            if (calidad > 0.5) calidad -= 0.1; else lado = Math.round(lado * 0.8);
+            if (lado < 500) return rej(new Error('La imagen "'+file.name+'" es demasiado grande para comprimirla.'));
+            intentar();
+          })();
+        };
+        img.onerror = function(){ rej(new Error('No se pudo abrir la imagen "'+file.name+'". Usa JPG o PNG.')); };
+        img.src = src;
+      });
+    });
+  }
+  function prepararAdjunto(file){
+    if (file.type === 'application/pdf') {
+      if (file.size > MAX_PDF_BYTES) return Promise.reject(new Error('El PDF "'+file.name+'" pesa más de 650 KB. Tómale una foto o comprímelo antes de subirlo.'));
+      return leerComoDataUrl(file).then(function(d){ return { nombre: file.name, mime: 'application/pdf', dataUrl: d, bytes: file.size }; });
+    }
+    if (/^image\//.test(file.type)) {
+      return comprimirImagen(file).then(function(d){ return { nombre: file.name, mime: 'image/jpeg', dataUrl: d, bytes: Math.round(d.length * 0.75) }; });
+    }
+    return Promise.reject(new Error('"'+file.name+'": solo se aceptan fotos (JPG, PNG) o PDF.'));
+  }
+  function subirAdjuntos(movRef, files){
+    var lista = Array.prototype.slice.call(files), subidos = 0, errores = [], cadena = Promise.resolve();
+    lista.forEach(function(f){
+      cadena = cadena.then(function(){
+        return prepararAdjunto(f).then(function(adj){
+          adj.creadoEn = Date.now(); adj.subidoPor = currentUserEmail;
+          return movRef.collection('adjuntos').add(adj).then(function(){ subidos++; });
+        }).catch(function(e){ errores.push(e.message); });
+      });
+    });
+    return cadena.then(function(){
+      if (subidos) return movRef.update({ adjuntosN: firebase.firestore.FieldValue.increment(subidos) });
+    }).then(function(){
+      if (errores.length) alert('No se pudieron subir estos archivos:\n\n' + errores.join('\n'));
+      return subidos;
+    });
+  }
+  function abrirAdjunto(a){
+    fetch(a.dataUrl).then(function(r){ return r.blob(); }).then(function(b){
+      window.open(URL.createObjectURL(b), '_blank');
+    }).catch(function(){ alert('No se pudo abrir el archivo.'); });
+  }
+  function fmtBytes(n){ return n >= 1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1, Math.round(n/1024))+' KB'; }
   function fmtDateFull(ts){ if(!ts) return '—'; var d = new Date(ts + 'T12:00:00'); if (isNaN(d.getTime())) return '—'; return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}); }
   function diasRestantes(fechaInicio){
     if (!fechaInicio) return '';
@@ -1490,6 +1571,10 @@
 
   // ---------- render: financiero ----------
   function renderFinanciero(){
+    byId('m_adjunto').disabled = !esPro();
+    byId('m_adjuntoHint').textContent = esPro()
+      ? 'Hasta 3 archivos: fotos (se comprimen solas) o PDF de máx. 650 KB.'
+      : 'Adjuntar comprobantes es una función PRO.';
     var ing = totalIngresos(), gas = totalGastos(), util = ing-gas;
     var margen = ing>0 ? Math.round(util/ing*100) : 0;
     var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
@@ -1534,7 +1619,7 @@
       var hTs = movHoraTs(m);
       return '<tr data-mov-row="'+m.id+'" style="cursor:pointer;" title="Ver detalle">' +
         '<td class="muted" style="'+tachado+'white-space:nowrap;">'+fmtDate(m.fecha)+(hTs ? '<div style="font-size:11.5px;margin-top:1px;">'+fmtHora(hTs)+'</div>' : '')+'</td>' +
-        '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
+        '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' <span title="Tiene comprobante">📎</span>' : '')+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
           (m.descripcion ? ' — '+esc(m.descripcion) : '') +
           (anulado ? '<br><span style="color:var(--red-tx);">Anulado por '+esc(m.anuladoPor||'—')+' · '+esc(m.motivoAnulacion||'sin motivo')+'</span>' : '') +
           '</div></td>' +
@@ -1590,10 +1675,86 @@
       if (m.anuladoEn) html += fila('Anulado el', esc(fmtFechaHoraLarga(m.anuladoEn)));
       html += fila('Motivo', esc(m.motivoAnulacion || 'sin motivo'));
     }
+    html += '<div id="movAdjuntos" style="padding:14px 0 8px;"></div>';
     byId('movDetalleBody').innerHTML = html;
     byId('btnAnularDesdeDetalle').style.display = anulado ? 'none' : '';
     byId('movModal').classList.add('show');
+    cargarAdjuntosDetalle(movId);
   }
+
+  // Sección "Comprobantes" de la ventana de detalle: lista los archivos del
+  // movimiento (se leen de la subcolección solo al abrir) y permite adjuntar
+  // más (PRO) o quitar alguno.
+  function cargarAdjuntosDetalle(movId){
+    var box = byId('movAdjuntos');
+    var m = movimientos.find(function(x){ return x.id === movId; });
+    if (!box || !m) return;
+    var n = m.adjuntosN || 0, pro = esPro();
+    var movRef = torneoRef.collection('movimientos').doc(movId);
+    function cabecera(extra){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
+        '<div style="font-size:13px;font-weight:700;">Comprobantes <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></div>' + (extra||'') + '</div>';
+    }
+    var botonAdd = pro
+      ? (n < MAX_ADJUNTOS ? '<button class="btn" id="btnAdjuntarMov" style="padding:5px 10px;font-size:12px;">+ Adjuntar</button>' : '<span class="muted" style="font-size:11.5px;">Máximo '+MAX_ADJUNTOS+' archivos</span>')
+      : '';
+    if (!n) {
+      box.innerHTML = cabecera(botonAdd) + '<div class="muted" style="font-size:12.5px;">' +
+        (pro ? 'Este movimiento no tiene comprobante. Adjunta la factura o el recibo para dejar respaldo.' : 'Adjuntar facturas y recibos a cada movimiento es una función PRO.') + '</div>';
+      enlazarAdjuntar();
+      return;
+    }
+    box.innerHTML = cabecera(botonAdd) + '<div class="muted" style="font-size:12.5px;">Cargando…</div>';
+    enlazarAdjuntar();
+    movRef.collection('adjuntos').get().then(function(snap){
+      if (movDetalleId !== movId) return;   // se cerró o se abrió otro movimiento
+      var arr = [];
+      snap.forEach(function(d){ var a = d.data(); a.id = d.id; arr.push(a); });
+      arr.sort(function(a,b){ return (a.creadoEn||0)-(b.creadoEn||0); });
+      var filas = arr.map(function(a){
+        var esImg = /^image\//.test(a.mime || '');
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);">' +
+          (esImg ? '<img src="'+a.dataUrl+'" alt="" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex-shrink:0;">'
+                 : '<div style="width:46px;height:46px;border-radius:8px;background:var(--red-bg);color:var(--red-tx);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">PDF</div>') +
+          '<div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(a.nombre||'Archivo')+'</div>' +
+          '<div class="muted" style="font-size:11px;">'+fmtBytes(a.bytes||0)+(a.creadoEn ? ' · '+esc(fmtFechaHoraLarga(a.creadoEn)) : '')+'</div></div>' +
+          '<button class="btn" data-ver-adj="'+a.id+'" style="padding:5px 10px;font-size:12px;">Ver</button>' +
+          (pro ? '<button class="btn" data-del-adj="'+a.id+'" style="padding:5px 10px;font-size:12px;">Quitar</button>' : '') +
+          '</div>';
+      }).join('');
+      box.innerHTML = cabecera(botonAdd) + filas;
+      enlazarAdjuntar();
+      box.querySelectorAll('[data-ver-adj]').forEach(function(b){
+        b.addEventListener('click', function(){ abrirAdjunto(arr.find(function(a){ return a.id === b.dataset.verAdj; })); });
+      });
+      box.querySelectorAll('[data-del-adj]').forEach(function(b){
+        b.addEventListener('click', function(){
+          if (!confirm('¿Quitar este comprobante? No se puede deshacer.')) return;
+          movRef.collection('adjuntos').doc(b.dataset.delAdj).delete().then(function(){
+            return movRef.update({ adjuntosN: firebase.firestore.FieldValue.increment(-1) });
+          }).then(function(){ setTimeout(function(){ if (movDetalleId === movId) cargarAdjuntosDetalle(movId); }, 300); })
+            .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+        });
+      });
+    }).catch(function(e){
+      box.innerHTML = cabecera('') + '<div style="font-size:12.5px;color:var(--red-tx);">No se pudieron cargar los comprobantes: '+esc(e.message)+'</div>';
+    });
+    function enlazarAdjuntar(){
+      var btn = byId('btnAdjuntarMov');
+      if (btn) btn.onclick = function(){ byId('movAdjuntoInput').value = ''; byId('movAdjuntoInput').click(); };
+    }
+  }
+  byId('movAdjuntoInput').addEventListener('change', function(){
+    var id = movDetalleId, files = this.files;
+    if (!id || !files.length || !esPro()) return;
+    var m = movimientos.find(function(x){ return x.id === id; });
+    var actuales = (m && m.adjuntosN) || 0;
+    if (actuales + files.length > MAX_ADJUNTOS) { alert('Cada movimiento admite máximo '+MAX_ADJUNTOS+' comprobantes (ya tiene '+actuales+').'); return; }
+    var box = byId('movAdjuntos'); if (box) box.insertAdjacentHTML('beforeend', '<div class="muted" style="font-size:12px;margin-top:6px;">Subiendo…</div>');
+    subirAdjuntos(torneoRef.collection('movimientos').doc(id), files).then(function(){
+      setTimeout(function(){ if (movDetalleId === id) cargarAdjuntosDetalle(id); }, 400);
+    }).catch(function(e){ alert('No se pudo subir: ' + e.message); });
+  });
   function cerrarDetalleMovimiento(){ byId('movModal').classList.remove('show'); movDetalleId = null; }
   function dayKeyLocal(ts){ var d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   byId('btnCerrarMov').addEventListener('click', cerrarDetalleMovimiento);
@@ -1819,7 +1980,7 @@
       var cuenta = cuentaById(m.cuentaId);
       var esIng = m.tipo === 'INGRESO';
       return '<tr><td class="muted" style="white-space:nowrap;">'+esc(movFechaHoraTexto(m))+'</td>' +
-        '<td><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;">'+esc(m.categoria||'')+'</div></td>' +
+        '<td><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' 📎' : '')+'</div><div class="muted" style="font-size:11.5px;">'+esc(m.categoria||'')+'</div></td>' +
         '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
         '<td class="num" style="color:var(--green-tx);">'+(esIng?money(m.valor):'—')+'</td>' +
         '<td class="num" style="color:var(--red-tx);">'+(esIng?'—':money(m.valor))+'</td></tr>';
@@ -2583,16 +2744,26 @@
     var valor = parseFloat(byId('m_valor').value) || 0;
     var cuentaId = byId('m_cuenta').value;
     if (!concepto || valor <= 0 || !cuentaId) { alert('Completa concepto, valor y cuenta.'); return; }
+    var archivos = esPro() ? Array.prototype.slice.call(byId('m_adjunto').files) : [];
+    if (archivos.length > MAX_ADJUNTOS) { alert('Máximo '+MAX_ADJUNTOS+' comprobantes por movimiento.'); return; }
+    var btnGuardar = byId('btnGuardarMovimiento');
+    btnGuardar.disabled = true;
+    if (archivos.length) btnGuardar.textContent = 'Subiendo comprobante…';
+    function listo(){ btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Movimiento'; }
     torneoRef.collection('movimientos').add({
       tipo: byId('m_tipo').value, concepto: concepto,
       categoria: byId('m_categoria').value.trim(), valor: valor,
       descripcion: byId('m_descripcion').value.trim(),
       cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now(),
       creadoEn: Date.now(), registradoPor: currentUserEmail
+    }).then(function(ref){
+      return archivos.length ? subirAdjuntos(ref, archivos) : null;
     }).then(function(){
       byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = ''; byId('m_descripcion').value = '';
+      byId('m_adjunto').value = '';
+      listo();
       closeForm('movimiento');
-    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+    }).catch(function(e){ listo(); alert('No se pudo guardar: ' + e.message); });
   });
 
   byId('btnGuardarCuenta').addEventListener('click', function(){
@@ -2913,6 +3084,15 @@
   function eliminarTorneoCompleto(id){
     var ref = userRef.collection('torneos').doc(id);
     var cadena = Promise.resolve();
+    // Firestore no borra subcolecciones en cascada: primero los comprobantes
+    // (movimientos/{id}/adjuntos) y después los movimientos.
+    cadena = cadena.then(function(){
+      return ref.collection('movimientos').get().then(function(snap){
+        var p = Promise.resolve();
+        snap.forEach(function(d){ p = p.then(function(){ return eliminarColeccionCompleta(d.ref.collection('adjuntos')); }); });
+        return p;
+      });
+    });
     SUBCOLECCIONES_TORNEO.forEach(function(nombre){
       cadena = cadena.then(function(){ return eliminarColeccionCompleta(ref.collection(nombre)); });
     });
