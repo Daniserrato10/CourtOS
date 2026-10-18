@@ -247,6 +247,10 @@
   .noticebar { display: none; align-items: center; gap: 10px; background: var(--amber-bg); color: var(--amber-tx); border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
   .noticebar.show { display: flex; }
 
+  #movModal { display: none; }
+  #movModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  #movModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
+  @media (prefers-reduced-motion: reduce) { #movModal.show, #movModal.show .card { animation: none; } }
   #legalModal { display: none; align-items: center; }
   #legalModal .card { box-shadow: var(--shadow-md); }
   #legalModal.show { display: flex; animation: overlayIn 180ms ease-out; }
@@ -397,6 +401,20 @@
      Accesible sin iniciar sesión (enlaces en el login) y desde
      Configuración para quien ya tiene cuenta.
      ============================================================ -->
+<div id="movModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:440px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Detalle del movimiento</div>
+      <button class="logout-btn" id="btnCerrarMov" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:14px 22px 6px; overflow-y:auto;" id="movDetalleBody"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border); flex-shrink:0;">
+      <button class="btn" id="btnAnularDesdeDetalle">Anular</button>
+      <button class="btn btn-primary" id="btnCerrarMov2">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="legalModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; padding:24px;">
   <div class="card" style="width:100%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden; transform-origin:center;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
@@ -869,6 +887,7 @@
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="ingresos" checked> Ingresos por Categoría</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="gastos" checked> Gastos por Categoría</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="flujo" checked> Flujo de Caja</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="detalle" checked> Detalle de Movimientos</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="cxc" checked> Cuentas por Cobrar</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="presupuesto" checked> Presupuesto vs. Real</label>
         </div>
@@ -899,6 +918,14 @@
         <table class="datatable" style="margin-top:10px;">
           <thead><tr><th>Fecha</th><th style="text-align:right">Ingresos del día</th><th style="text-align:right">Gastos del día</th><th style="text-align:right">Saldo Acumulado</th></tr></thead>
           <tbody id="repFlujoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel" data-report-section="detalle">
+        <div class="panel-title">Detalle de Movimientos (con fecha y hora)</div>
+        <table class="datatable" style="margin-top:10px;">
+          <thead><tr><th>Fecha y hora</th><th>Concepto</th><th>Cuenta</th><th style="text-align:right">Ingreso</th><th style="text-align:right">Gasto</th></tr></thead>
+          <tbody id="repDetalleBody"></tbody>
         </table>
       </div>
 
@@ -1182,6 +1209,23 @@
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function byId(x){ return document.getElementById(x); }
   function fmtDate(ts){ if(!ts) return ''; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short'}); }
+  function fmtHora(ts){ if(!ts) return ''; return new Date(ts).toLocaleTimeString('es-CO', {hour:'numeric', minute:'2-digit', hour12:true}); }
+  function fmtFechaHoraLarga(ts){ if(!ts) return '—'; var d = new Date(ts); return d.toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'}) + ' · ' + fmtHora(ts); }
+  // Hora real en que ocurrió/se registró el movimiento. Devuelve null cuando
+  // la fecha se eligió a mano (se guarda a las 12:00 por defecto, no es hora real)
+  // o en movimientos antiguos que quedaron justo a las 12:00:00.
+  function movHoraTs(m){
+    if (!m || !m.fecha || m.fechaManual) return null;
+    if (!m.creadoEn) {
+      var d = new Date(m.fecha);
+      if (d.getHours() === 12 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0) return null;
+    }
+    return m.fecha;
+  }
+  function movFechaHoraTexto(m){
+    var h = movHoraTs(m);
+    return fmtDate(m.fecha) + (h ? ' · ' + fmtHora(h) : '');
+  }
   function fmtDateFull(ts){ if(!ts) return '—'; var d = new Date(ts + 'T12:00:00'); if (isNaN(d.getTime())) return '—'; return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}); }
   function diasRestantes(fechaInicio){
     if (!fechaInicio) return '';
@@ -1386,7 +1430,7 @@
       var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
       var sign = m.tipo === 'INGRESO' ? '+' : '−';
       return '<div class="row-item"><div><div style="font-size:13.5px;font-weight:600;">'+esc(m.concepto)+'</div>' +
-        '<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px;">'+fmtDate(m.fecha)+'</div></div>' +
+        '<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px;">'+esc(movFechaHoraTexto(m))+'</div></div>' +
         '<div style="font-weight:700;font-size:13.5px;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</div></div>';
     }).join('') : '<div class="muted" style="padding:20px 0;">Aún no hay movimientos registrados.</div>';
   }
@@ -1487,8 +1531,9 @@
       var sign = m.tipo === 'INGRESO' ? '+' : '−';
       var cuenta = cuentaById(m.cuentaId);
       var tachado = anulado ? 'text-decoration:line-through;opacity:.6;' : '';
-      return '<tr>' +
-        '<td class="muted" style="'+tachado+'">'+fmtDate(m.fecha)+'</td>' +
+      var hTs = movHoraTs(m);
+      return '<tr data-mov-row="'+m.id+'" style="cursor:pointer;" title="Ver detalle">' +
+        '<td class="muted" style="'+tachado+'white-space:nowrap;">'+fmtDate(m.fecha)+(hTs ? '<div style="font-size:11.5px;margin-top:1px;">'+fmtHora(hTs)+'</div>' : '')+'</td>' +
         '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
           (m.descripcion ? ' — '+esc(m.descripcion) : '') +
           (anulado ? '<br><span style="color:var(--red-tx);">Anulado por '+esc(m.anuladoPor||'—')+' · '+esc(m.motivoAnulacion||'sin motivo')+'</span>' : '') +
@@ -1500,9 +1545,63 @@
     }).join('');
 
     document.querySelectorAll('[data-anular-mov]').forEach(function(btn){
-      btn.addEventListener('click', function(){ anularMovimiento(btn.dataset.anularMov); });
+      btn.addEventListener('click', function(e){ e.stopPropagation(); anularMovimiento(btn.dataset.anularMov); });
+    });
+    document.querySelectorAll('[data-mov-row]').forEach(function(tr){
+      tr.addEventListener('click', function(){ abrirDetalleMovimiento(tr.dataset.movRow); });
     });
   }
+
+  // ---------- detalle de un movimiento (clic en la fila) ----------
+  var movDetalleId = null;
+  function abrirDetalleMovimiento(movId){
+    var m = movimientos.find(function(x){ return x.id === movId; });
+    if (!m) return;
+    movDetalleId = movId;
+    var anulado = m.estado === 'ANULADO';
+    var esIng = m.tipo === 'INGRESO';
+    var cuenta = cuentaById(m.cuentaId);
+    var hTs = movHoraTs(m);
+    function fila(k, v){
+      return '<div style="display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">' +
+        '<span class="muted" style="flex-shrink:0;">'+k+'</span><span style="text-align:right;font-weight:600;word-break:break-word;">'+v+'</span></div>';
+    }
+    var html = '';
+    html += '<div style="text-align:center;padding:4px 0 14px;">' +
+      '<span style="display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:5px;background:'+(anulado?'var(--gray-200)':(esIng?'var(--green-bg)':'var(--red-bg)'))+';color:'+(anulado?'var(--gray-500)':(esIng?'var(--green-tx)':'var(--red-tx)'))+';">'+(anulado?'ANULADO · ':'')+(esIng?'INGRESO':'GASTO')+'</span>' +
+      '<div style="font-size:28px;font-weight:800;margin-top:8px;'+(anulado?'text-decoration:line-through;color:var(--gray-500);':'color:'+(esIng?'var(--green-tx)':'var(--red-tx)')+';')+'">'+(esIng?'+':'−')+money(m.valor).replace('-','')+'</div>' +
+      '<div style="font-weight:600;margin-top:4px;">'+esc(m.concepto)+'</div></div>';
+    html += fila('Fecha del movimiento', esc(fmtDateFull(dayKeyLocal(m.fecha))));
+    html += fila('Hora', hTs ? esc(fmtHora(hTs)) : '<span class="muted" style="font-weight:500;">No registrada (fecha elegida a mano)</span>');
+    if (m.creadoEn) html += fila('Registrado el', esc(fmtFechaHoraLarga(m.creadoEn)));
+    html += fila('Registrado por', m.registradoPor ? esc(m.registradoPor) : '<span class="muted" style="font-weight:500;">No disponible</span>');
+    html += fila('Categoría', m.categoria ? esc(m.categoria) : '<span class="muted" style="font-weight:500;">Sin categoría</span>');
+    html += fila('Cuenta', cuenta ? esc(cuenta.nombre) : '<span class="muted" style="font-weight:500;">—</span>');
+    if (m.descripcion) html += fila('Descripción', esc(m.descripcion));
+    if (m.observacion) html += fila('Observación', esc(m.observacion));
+    if (m.sourceType === 'INSCRIPCION') {
+      var ins = inscripciones.find(function(x){ return x.id === m.sourceId; });
+      html += fila('Origen', ins ? 'Inscripción · ' + esc(ins.j1Nombre) + (ins.j2Nombre ? ' / ' + esc(ins.j2Nombre) : '') : 'Pago de una inscripción');
+    } else {
+      html += fila('Origen', 'Movimiento manual');
+    }
+    if (anulado) {
+      html += fila('Anulado por', esc(m.anuladoPor || '—'));
+      if (m.anuladoEn) html += fila('Anulado el', esc(fmtFechaHoraLarga(m.anuladoEn)));
+      html += fila('Motivo', esc(m.motivoAnulacion || 'sin motivo'));
+    }
+    byId('movDetalleBody').innerHTML = html;
+    byId('btnAnularDesdeDetalle').style.display = anulado ? 'none' : '';
+    byId('movModal').classList.add('show');
+  }
+  function cerrarDetalleMovimiento(){ byId('movModal').classList.remove('show'); movDetalleId = null; }
+  function dayKeyLocal(ts){ var d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  byId('btnCerrarMov').addEventListener('click', cerrarDetalleMovimiento);
+  byId('btnCerrarMov2').addEventListener('click', cerrarDetalleMovimiento);
+  byId('movModal').addEventListener('click', function(e){ if (e.target === byId('movModal')) cerrarDetalleMovimiento(); });
+  byId('btnAnularDesdeDetalle').addEventListener('click', function(){
+    var id = movDetalleId; cerrarDetalleMovimiento(); if (id) anularMovimiento(id);
+  });
 
   // Anular un movimiento en vez de borrarlo: pide motivo, lo marca como
   // ANULADO (deja de contar en cualquier total pero sigue visible para
@@ -1655,7 +1754,7 @@
     var margen = ing.total > 0 ? Math.round(util/ing.total*100) : 0;
 
     byId('repPrintTitulo').textContent = (torneoData.nombre || 'Torneo') + ' — Reporte Financiero';
-    byId('repPrintFecha').textContent = 'Generado el ' + new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'});
+    byId('repPrintFecha').textContent = 'Generado el ' + new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'}) + ' a las ' + fmtHora(Date.now());
 
     byId('repKpis').innerHTML =
       kpiCard('Ingresos', money(ing.total)) +
@@ -1713,6 +1812,18 @@
         '<td class="num" style="color:var(--red-tx);">'+(porDia[k].gas?money(porDia[k].gas):'—')+'</td>' +
         '<td class="num" style="font-weight:700;">'+money(acumulado)+'</td></tr>';
     }).join('') : '<tr class="empty-row"><td colspan="4">Sin movimientos en este rango.</td></tr>';
+
+    // ---- Detalle de movimientos: uno por uno, con fecha y hora ----
+    var detalle = enRango.slice().sort(function(a,b){ return (a.fecha||0)-(b.fecha||0); });
+    byId('repDetalleBody').innerHTML = detalle.length ? detalle.map(function(m){
+      var cuenta = cuentaById(m.cuentaId);
+      var esIng = m.tipo === 'INGRESO';
+      return '<tr><td class="muted" style="white-space:nowrap;">'+esc(movFechaHoraTexto(m))+'</td>' +
+        '<td><div style="font-weight:600;">'+esc(m.concepto)+'</div><div class="muted" style="font-size:11.5px;">'+esc(m.categoria||'')+'</div></td>' +
+        '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
+        '<td class="num" style="color:var(--green-tx);">'+(esIng?money(m.valor):'—')+'</td>' +
+        '<td class="num" style="color:var(--red-tx);">'+(esIng?'—':money(m.valor))+'</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="5">Sin movimientos en este rango.</td></tr>';
 
     // Cuentas por cobrar: saldo pendiente de cada inscripción activa, a hoy
     // (no se filtra por fecha — es una foto del estado actual).
@@ -2349,7 +2460,7 @@
           categoria: 'Inscripciones', valor: pagado, cuentaId: cuentaId,
           sourceType: 'INSCRIPCION', sourceId: ref.id,
           attribJ1: pagadoJ1, attribJ2: pagadoJ2,
-          estado: 'ACTIVO', fecha: Date.now()
+          estado: 'ACTIVO', fecha: Date.now(), creadoEn: Date.now(), registradoPor: currentUserEmail
         });
       }
     }).then(function(){
@@ -2391,7 +2502,7 @@
     if (i.j2Nombre && saldoJ1 > 0 && saldoJ2 > 0) opciones += '<option value="AMBOS">Ambos (pago conjunto) — debe '+money(saldoJ1+saldoJ2)+'</option>';
     byId('pg_quien').innerHTML = opciones;
 
-    byId('pg_fecha').value = new Date().toISOString().slice(0,10);
+    byId('pg_fecha').value = dayKeyLocal(Date.now());  // fecha local (toISOString daba el día siguiente después de las 7 p. m. en Colombia)
     byId('pg_obs').value = '';
     actualizarMontoPago();
     openForm('pago');
@@ -2442,7 +2553,9 @@
     var nuevoEstadoIns = nuevoEstadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'PENDIENTE' ? 'PENDIENTE' : i.estadoIns);
 
     var fechaStr = byId('pg_fecha').value;
-    var fechaTs = fechaStr ? new Date(fechaStr + 'T12:00:00').getTime() : Date.now();
+    // Si la fecha es hoy se guarda el instante real (con hora); si es otro día, a las 12:00 y se marca como manual.
+    var fechaManual = !!fechaStr && fechaStr !== dayKeyLocal(Date.now());
+    var fechaTs = fechaManual ? new Date(fechaStr + 'T12:00:00').getTime() : Date.now();
     var obs = byId('pg_obs').value.trim();
 
     torneoRef.collection('movimientos').add({
@@ -2451,7 +2564,8 @@
       categoria: 'Inscripciones', valor: monto, cuentaId: cuentaId,
       sourceType: 'INSCRIPCION', sourceId: insId, observacion: obs || '',
       attribJ1: deltaJ1, attribJ2: deltaJ2,
-      estado: 'ACTIVO', fecha: fechaTs
+      estado: 'ACTIVO', fecha: fechaTs, fechaManual: fechaManual,
+      creadoEn: Date.now(), registradoPor: currentUserEmail
     }).then(function(){
       var update = { estadoPago: nuevoEstadoPago, estadoIns: nuevoEstadoIns };
       if (deltaJ1 > 0) update.pagadoJ1 = firebase.firestore.FieldValue.increment(deltaJ1);
@@ -2473,7 +2587,8 @@
       tipo: byId('m_tipo').value, concepto: concepto,
       categoria: byId('m_categoria').value.trim(), valor: valor,
       descripcion: byId('m_descripcion').value.trim(),
-      cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now()
+      cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now(),
+      creadoEn: Date.now(), registradoPor: currentUserEmail
     }).then(function(){
       byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = ''; byId('m_descripcion').value = '';
       closeForm('movimiento');
