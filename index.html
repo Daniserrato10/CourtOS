@@ -783,7 +783,10 @@
           <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
           <div class="field" style="grid-column:1/-1;"><label>Descripción (opcional)</label><input id="m_descripcion" placeholder="Ej: patrocinio de Nike, factura #123, detalle adicional..."></div>
           <div class="field" style="grid-column:1/-1;"><label>Comprobante o factura (opcional) <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></label>
-            <input id="m_adjunto" type="file" accept="image/*,application/pdf" multiple>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input id="m_adjunto" type="file" accept="image/*,application/pdf" multiple style="flex:1;min-width:0;">
+              <button type="button" class="btn" id="btnQuitarAdjuntoForm" style="display:none;padding:5px 10px;font-size:12px;flex-shrink:0;">Quitar archivos</button>
+            </div>
             <div class="muted" id="m_adjuntoHint" style="font-size:11.5px;margin-top:4px;">Hasta 3 archivos: fotos (se comprimen solas) o PDF de máx. 650 KB.</div>
           </div>
         </div>
@@ -2738,6 +2741,20 @@
     }).catch(function(e){ alert('No se pudo registrar el pago: ' + e.message); });
   });
 
+  // Adjuntos elegidos en el formulario de nuevo movimiento: botón para quitarlos
+  // antes de guardar, y se limpian solos al cancelar.
+  function limpiarAdjuntoForm(){
+    byId('m_adjunto').value = '';
+    byId('btnQuitarAdjuntoForm').style.display = 'none';
+  }
+  byId('m_adjunto').addEventListener('change', function(){
+    byId('btnQuitarAdjuntoForm').style.display = this.files.length ? '' : 'none';
+  });
+  byId('btnQuitarAdjuntoForm').addEventListener('click', limpiarAdjuntoForm);
+  document.querySelectorAll('[data-close-form="movimiento"]').forEach(function(b){
+    b.addEventListener('click', limpiarAdjuntoForm);
+  });
+
   byId('btnGuardarMovimiento').addEventListener('click', function(){
     if (!torneoRef) return;
     var concepto = byId('m_concepto').value.trim();
@@ -2760,7 +2777,7 @@
       return archivos.length ? subirAdjuntos(ref, archivos) : null;
     }).then(function(){
       byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = ''; byId('m_descripcion').value = '';
-      byId('m_adjunto').value = '';
+      limpiarAdjuntoForm();
       listo();
       closeForm('movimiento');
     }).catch(function(e){ listo(); alert('No se pudo guardar: ' + e.message); });
