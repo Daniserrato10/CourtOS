@@ -247,6 +247,13 @@
   .noticebar { display: none; align-items: center; gap: 10px; background: var(--amber-bg); color: var(--amber-tx); border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
   .noticebar.show { display: flex; }
 
+  #saveBar { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 20px); z-index: 150; display: flex; align-items: center; gap: 12px; background: var(--ink); color: #fff; padding: 10px 12px 10px 18px; border-radius: 12px; box-shadow: var(--shadow-md); font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms ease, transform 160ms ease; max-width: calc(100vw - 24px); }
+  #saveBar.show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  #saveBar .btn { padding: 6px 12px; font-size: 12.5px; }
+  #saveBar .btn-ghost { background: transparent; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
+  #saveToast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150; background: var(--green-tx); color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
+  #saveToast.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { #saveBar, #saveToast { transition: none; } }
   #movModal { display: none; }
   #movModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #movModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
@@ -401,6 +408,13 @@
      Accesible sin iniciar sesión (enlaces en el login) y desde
      Configuración para quien ya tiene cuenta.
      ============================================================ -->
+<div id="saveBar" role="status">
+  <span id="saveBarTxt">Tienes cambios sin guardar</span>
+  <button class="btn btn-ghost" id="btnDescartarCambios">Descartar</button>
+  <button class="btn btn-primary" id="btnGuardarCambios">Guardar cambios</button>
+</div>
+<div id="saveToast" role="status"></div>
+
 <div id="movModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; align-items:center; padding:24px;">
   <div class="card" style="width:100%; max-width:440px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
@@ -691,7 +705,7 @@
         <div class="formgrid">
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
           <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
-          <div class="field"><label>Valor inscripción <span class="muted" style="font-weight:500;">(editable)</span></label><input id="i_valor" type="number" min="0" step="1000"><div class="muted" id="i_valorHint" style="font-size:11.5px;margin-top:4px;"></div></div>
+          <div class="field"><label>Valor inscripción</label><input id="i_valor" type="number" min="0" step="1000"><div class="muted" id="i_valorHint" style="font-size:11.5px;margin-top:4px;"></div></div>
           <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
           <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
           <datalist id="jugadoresSuggestions"></datalist>
@@ -707,6 +721,14 @@
             </select>
           </div>
           <div class="field"><label>Monto pagado ahora</label><input id="i_pagado" type="number" value="0"></div>
+          <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
+            <select id="i_quien">
+              <option value="J1">Jugador 1</option>
+              <option value="J2">Jugador 2</option>
+              <option value="AMBOS">Los dos (mitad y mitad)</option>
+            </select>
+            <div class="muted" id="i_quienHint" style="font-size:11.5px;margin-top:4px;"></div>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="inscripcion">Cancelar</button>
@@ -1225,6 +1247,64 @@
   // completo — si no, quedaría cobrando solo la mitad de lo que debe.
   function mitadDe(i){ return i.individual ? i.valor : i.valor / 2; }
 
+  // ---------- cambios pendientes (guardado explícito) ----------
+  // Las ediciones "en línea" (precios, nombres, tarifa vigente, presupuesto...)
+  // no se escriben solas: quedan pendientes y aparece una barra con
+  // "Guardar cambios" / "Descartar". pendientes[clave] = { val, run } donde
+  // val es lo que se muestra mientras tanto y run() hace la escritura real.
+  var pendientes = {};
+  function pend(clave, val, run){ pendientes[clave] = { val: val, run: run }; actualizarBarraCambios(); }
+  function pendVal(clave, guardado){ return pendientes[clave] ? pendientes[clave].val : guardado; }
+  // Deja el cambio pendiente, salvo que el nuevo valor sea igual al guardado
+  // (en ese caso el usuario deshizo su edición y ya no hay nada que guardar).
+  function pendCambio(clave, guardado, nuevo, run){
+    if (String(nuevo) === String(guardado == null ? '' : guardado)) { delete pendientes[clave]; actualizarBarraCambios(); }
+    else pend(clave, nuevo, run);
+  }
+  function quitarPendPrefijo(pref){ Object.keys(pendientes).forEach(function(k){ if (k.indexOf(pref) === 0) delete pendientes[k]; }); actualizarBarraCambios(); }
+  function limpiarPendientes(){ pendientes = {}; actualizarBarraCambios(); }
+  function actualizarBarraCambios(){
+    var n = Object.keys(pendientes).length, bar = byId('saveBar');
+    if (!bar) return;
+    bar.classList.toggle('show', n > 0);
+    byId('saveBarTxt').textContent = n === 1 ? 'Tienes 1 cambio sin guardar' : 'Tienes ' + n + ' cambios sin guardar';
+  }
+  function guardarPendientes(){
+    var claves = Object.keys(pendientes);
+    if (!claves.length) return;
+    var btn = byId('btnGuardarCambios');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    var fallos = [];
+    var cadena = Promise.resolve();
+    claves.forEach(function(k){
+      var p = pendientes[k];
+      cadena = cadena.then(function(){ return p.run(); }).then(function(){
+        if (pendientes[k] === p) delete pendientes[k];
+      }, function(e){ fallos.push(e && e.message ? e.message : String(e)); });
+    });
+    return cadena.then(function(){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      actualizarBarraCambios();
+      if (fallos.length) alert('No se pudieron guardar ' + fallos.length + ' cambio(s):\n' + fallos.join('\n') + '\n\nSiguen pendientes: puedes volver a intentar.');
+      else flashBarra('✓ Cambios guardados');
+      renderAll();
+    });
+  }
+  function flashBarra(txt){
+    var t = byId('saveToast'); if (!t) return;
+    t.textContent = txt; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 1800);
+  }
+  window.addEventListener('beforeunload', function(e){
+    if (Object.keys(pendientes).length) { e.preventDefault(); e.returnValue = ''; }
+  });
+  byId('btnGuardarCambios').addEventListener('click', guardarPendientes);
+  byId('btnDescartarCambios').addEventListener('click', function(){
+    if (!confirm('¿Descartar los cambios sin guardar?')) return;
+    limpiarPendientes();
+    renderAll();
+  });
+
   // ---------- tarifas de inscripción (Regular, Preventa, ...) ----------
   // Cada categoría tiene su precio base (valorInscripcion = tarifa "Regular") y
   // opcionalmente un precio por cada tarifa extra (categoria.precios[tarifaId]).
@@ -1531,7 +1611,31 @@
       if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = precio;
     }
     actualizarFormInscripcionSegunCategoria();
+    actualizarQuienPago();
   }
+  // "¿Quién pagó?": solo aparece en inscripciones de pareja cuando se paga una
+  // parte (abono). Si pagó todo o no pagó nada, no hay nada que elegir.
+  function actualizarQuienPago(){
+    var cat = categoriaById(byId('i_categoria').value);
+    var individual = categoriaEsIndividual(cat);
+    var valor = parseFloat(byId('i_valor').value) || 0;
+    var pagado = parseFloat(byId('i_pagado').value) || 0;
+    var mostrar = !individual && pagado > 0 && pagado < valor;
+    byId('i_quienWrap').style.display = mostrar ? '' : 'none';
+    if (!mostrar) return;
+    var j1 = byId('i_j1').value.trim(), j2 = byId('i_j2').value.trim();
+    var sel = byId('i_quien');
+    sel.options[0].textContent = j1 ? 'Jugador 1 — ' + j1 : 'Jugador 1';
+    sel.options[1].textContent = j2 ? 'Jugador 2 — ' + j2 : 'Jugador 2 (escribe su nombre primero)';
+    sel.options[1].disabled = !j2;
+    sel.options[2].disabled = !j2;
+    if (!j2 && sel.value !== 'J1') sel.value = 'J1';
+    byId('i_quienHint').textContent = j2 ? '' : 'Para marcar que pagó el Jugador 2, escribe su nombre arriba.';
+  }
+  ['i_pagado','i_valor','i_j1','i_j2'].forEach(function(id){ byId(id).addEventListener('input', actualizarQuienPago); });
+  byId('i_estadoPago').addEventListener('change', actualizarQuienPago);
+  byId('i_categoria').addEventListener('change', actualizarQuienPago);
+  byId('i_tarifa').addEventListener('change', actualizarQuienPago);
   var valorManual = false;
   byId('i_categoria').addEventListener('change', function(){ valorManual = false; updateValorInscripcion(); });
   byId('i_tarifa').addEventListener('change', function(){ valorManual = false; fillCategoriaSelect(); });
@@ -1695,7 +1799,7 @@
           '</div></td>' +
         '<td class="muted" style="'+tachado+'">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
         '<td class="num" style="font-weight:700;color:'+color+';'+tachado+'">'+sign+money(m.valor).replace('-','')+'</td>' +
-        '<td>'+(anulado ? '' : '<button class="btn" data-anular-mov="'+m.id+'" style="padding:5px 10px;font-size:12px;">Anular</button>')+'</td>' +
+        '<td>'+((anulado || !isAdminMode) ? '' : '<button class="btn" data-anular-mov="'+m.id+'" style="padding:5px 10px;font-size:12px;">Anular</button>')+'</td>' +
         '</tr>';
     }).join('');
 
@@ -1747,7 +1851,7 @@
     }
     html += '<div id="movAdjuntos" style="padding:14px 0 8px;"></div>';
     byId('movDetalleBody').innerHTML = html;
-    byId('btnAnularDesdeDetalle').style.display = anulado ? 'none' : '';
+    byId('btnAnularDesdeDetalle').style.display = (anulado || !isAdminMode) ? 'none' : '';
     byId('movModal').classList.add('show');
     cargarAdjuntosDetalle(movId);
   }
@@ -1839,6 +1943,7 @@
   // trazabilidad), y si venía de un pago de inscripción le revierte a esa
   // pareja justo lo que ese movimiento le había abonado.
   function anularMovimiento(movId){
+    if (!isAdminMode) { alert('Anular un movimiento solo se puede en modo administrador (Configuración → Activar).'); return; }
     var m = movimientos.find(function(x){ return x.id === movId; });
     if (!m) return;
     var motivo = prompt('¿Por qué se anula este movimiento?\n"'+m.concepto+'" — '+money(m.valor));
@@ -1916,7 +2021,7 @@
           (l.descripcion ? '<div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(l.descripcion)+'</div>' : '') +
           '</td>' +
         '<td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
-        '<td class="num"><input type="number" value="'+(l.valorProyectado||0)+'" data-linea-id="'+l.id+'" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
+        '<td class="num"><input type="number" value="'+pendVal('pres:'+l.id, l.valorProyectado||0)+'" data-linea-id="'+l.id+'" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
         '<td class="num">'+money(real)+'</td>' +
         '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td>' +
         '<td><button class="logout-btn" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
@@ -1927,8 +2032,10 @@
       inp.addEventListener('change', function(){
         var id = inp.dataset.lineaId;
         var val = parseFloat(inp.value) || 0;
-        torneoRef.collection('presupuesto').doc(id).update({ valorProyectado: val })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        var linea = presupuesto.find(function(x){ return x.id === id; });
+        pendCambio('pres:'+id, linea ? (linea.valorProyectado||0) : '', val, function(){
+          return torneoRef.collection('presupuesto').doc(id).update({ valorProyectado: val });
+        });
       });
     });
     document.querySelectorAll('[data-del-linea]').forEach(function(btn){
@@ -2386,7 +2493,7 @@
   function renderTarifasAdmin(){
     var box = byId('tarifasAdmin');
     var prevNueva = byId('tarifa_nueva') ? byId('tarifa_nueva').value : '';
-    var tarifas = tarifasTorneo(), act = tarifaActivaId();
+    var tarifas = tarifasTorneo(), act = pendVal('torneo:tarifaActiva', tarifaActivaId());
     var inpCss = 'border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;';
     box.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
@@ -2410,7 +2517,13 @@
       '</div>' +
       '<div class="muted" style="font-size:11.5px;margin-top:10px;">Cada categoría tiene un precio por tarifa (columnas de abajo). Si dejas vacío el precio de una tarifa, se usa el precio de Regular.</div>';
 
-    byId('tarifaActivaSel').addEventListener('change', function(){ guardarTarifasTorneo({ tarifaActiva: this.value }); });
+    byId('tarifaActivaSel').addEventListener('change', function(){
+      var nueva = this.value;
+      if (nueva === tarifaActivaId()) { delete pendientes['torneo:tarifaActiva']; actualizarBarraCambios(); return; }
+      pend('torneo:tarifaActiva', nueva, function(){
+        return torneoRef.set({ tarifaActiva: nueva }, { merge: true }).then(function(){ torneoData = Object.assign({}, torneoData, { tarifaActiva: nueva }); });
+      });
+    });
     byId('btnAgregarTarifa').addEventListener('click', function(){
       var nombre = byId('tarifa_nueva').value.trim();
       if (!nombre) { alert('Escribe el nombre de la tarifa (ej: Preventa).'); return; }
@@ -2450,52 +2563,60 @@
     byId('categoriasAdminList').innerHTML = lista.length ? lista.map(function(c){
       var priceCss = 'border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;width:120px;text-align:right;';
       return '<div class="row-item" style="flex-wrap:wrap;gap:8px;">' +
-        '<input value="'+esc(c.nombre)+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;min-width:140px;margin-right:2px;">' +
+        '<input value="'+esc(pendVal('cat:'+c.id+':nombre', c.nombre))+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;min-width:140px;margin-right:2px;">' +
         tarifasCat.map(function(t){
           var esBase = t.id === TARIFA_BASE_ID;
-          var v = esBase ? (c.valorInscripcion||0) : ((c.precios && c.precios[t.id] != null) ? c.precios[t.id] : '');
+          var v = esBase ? pendVal('cat:'+c.id+':valor', c.valorInscripcion||0)
+                         : pendVal('cat:'+c.id+':precio:'+t.id, (c.precios && c.precios[t.id] != null) ? c.precios[t.id] : '');
           return '<label style="display:flex;flex-direction:column;gap:2px;font-size:10.5px;font-weight:600;color:var(--gray-500);">' + esc(t.nombre) +
             '<input type="number" value="'+v+'" ' + (esBase ? 'data-cat-valor="'+c.id+'"' : 'data-cat-precio="'+c.id+'" data-tarifa="'+t.id+'" placeholder="'+(c.valorInscripcion||0)+'"') + ' style="'+priceCss+'"></label>';
         }).join('') +
-        (ambas ? '<select data-cat-modalidad="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;margin-right:10px;">' +
-          '<option value="PAREJAS"'+(c.modalidad!=='INDIVIDUAL'?' selected':'')+'>Dobles</option>' +
-          '<option value="INDIVIDUAL"'+(c.modalidad==='INDIVIDUAL'?' selected':'')+'>Individual</option>' +
-        '</select>' : '') +
+        (ambas ? (function(){ var mod = pendVal('cat:'+c.id+':modalidad', c.modalidad); return '<select data-cat-modalidad="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;margin-right:10px;">' +
+          '<option value="PAREJAS"'+(mod!=='INDIVIDUAL'?' selected':'')+'>Dobles</option>' +
+          '<option value="INDIVIDUAL"'+(mod==='INDIVIDUAL'?' selected':'')+'>Individual</option>' +
+        '</select>'; })() : '') +
         '<button class="logout-btn" data-del-cat="'+c.id+'" title="Eliminar categoría">✕</button>' +
         '</div>';
     }).join('') : '<div class="muted" style="padding:10px 0;">Sin categorías todavía.</div>';
 
+    // Las ediciones quedan pendientes hasta pulsar "Guardar cambios".
     document.querySelectorAll('[data-cat-nombre]').forEach(function(inp){
       inp.addEventListener('change', function(){
-        torneoRef.collection('categorias').doc(inp.dataset.catNombre).update({ nombre: inp.value.trim() })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        var id = inp.dataset.catNombre, c = categoriaById(id), nuevo = inp.value.trim();
+        if (!nuevo) { alert('El nombre de la categoría no puede estar vacío.'); inp.value = pendVal('cat:'+id+':nombre', c ? c.nombre : ''); return; }
+        pendCambio('cat:'+id+':nombre', c && c.nombre, nuevo, function(){ return torneoRef.collection('categorias').doc(id).update({ nombre: nuevo }); });
       });
     });
     document.querySelectorAll('[data-cat-valor]').forEach(function(inp){
       inp.addEventListener('change', function(){
-        var val = parseFloat(inp.value) || 0;
-        torneoRef.collection('categorias').doc(inp.dataset.catValor).update({ valorInscripcion: val })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        var id = inp.dataset.catValor, c = categoriaById(id), val = parseFloat(inp.value) || 0;
+        pendCambio('cat:'+id+':valor', c && (c.valorInscripcion||0), val, function(){ return torneoRef.collection('categorias').doc(id).update({ valorInscripcion: val }); });
       });
     });
     document.querySelectorAll('[data-cat-precio]').forEach(function(inp){
       inp.addEventListener('change', function(){
-        var up = {};
-        up['precios.' + inp.dataset.tarifa] = inp.value === '' ? firebase.firestore.FieldValue.delete() : (parseFloat(inp.value) || 0);
-        torneoRef.collection('categorias').doc(inp.dataset.catPrecio).update(up)
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        var id = inp.dataset.catPrecio, tid = inp.dataset.tarifa, c = categoriaById(id);
+        var guardado = (c && c.precios && c.precios[tid] != null) ? c.precios[tid] : '';
+        var nuevo = inp.value === '' ? '' : (parseFloat(inp.value) || 0);
+        pendCambio('cat:'+id+':precio:'+tid, guardado, nuevo, function(){
+          var up = {};
+          up['precios.' + tid] = nuevo === '' ? firebase.firestore.FieldValue.delete() : nuevo;
+          return torneoRef.collection('categorias').doc(id).update(up);
+        });
       });
     });
     document.querySelectorAll('[data-cat-modalidad]').forEach(function(sel){
       sel.addEventListener('change', function(){
-        torneoRef.collection('categorias').doc(sel.dataset.catModalidad).update({ modalidad: sel.value })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+        var id = sel.dataset.catModalidad, c = categoriaById(id), nuevo = sel.value;
+        pendCambio('cat:'+id+':modalidad', c && c.modalidad, nuevo, function(){ return torneoRef.collection('categorias').doc(id).update({ modalidad: nuevo }); });
       });
     });
     document.querySelectorAll('[data-del-cat]').forEach(function(btn){
       btn.addEventListener('click', function(){
         if (!confirm('¿Eliminar esta categoría? Las inscripciones que ya la usan no se ven afectadas.')) return;
-        torneoRef.collection('categorias').doc(btn.dataset.delCat).delete()
+        var id = btn.dataset.delCat;
+        quitarPendPrefijo('cat:' + id + ':');
+        torneoRef.collection('categorias').doc(id).delete()
           .catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
       });
     });
@@ -2776,8 +2897,22 @@
     // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
     // (misma regla que usa "Confirmar Pago" más abajo). En modalidad
     // individual no hay Jugador 2, así que "mitad" ya es el valor completo.
-    var pagadoJ1 = Math.min(pagado, mitad);
-    var pagadoJ2 = Math.max(0, pagado - mitad);
+    // Si es un abono en una pareja, el organizador indica quién pagó
+    // ("¿Quién pagó?"): Jugador 1, Jugador 2 o los dos mitad y mitad.
+    var quien = (!individual && pagado > 0 && pagado < valor) ? byId('i_quien').value : 'J1';
+    if (quien !== 'J1' && !j2) quien = 'J1';
+    var pagadoJ1, pagadoJ2;
+    if (quien === 'J2') {
+      pagadoJ2 = Math.min(pagado, mitad);
+      pagadoJ1 = Math.max(0, pagado - mitad);
+    } else if (quien === 'AMBOS') {
+      pagadoJ1 = Math.min(pagado / 2, mitad);
+      pagadoJ2 = Math.min(pagado - pagadoJ1, mitad);
+    } else {
+      pagadoJ1 = Math.min(pagado, mitad);
+      pagadoJ2 = Math.max(0, pagado - mitad);
+    }
+    var quienTexto = quien === 'J2' ? j2 : (quien === 'AMBOS' ? j1 + ' y ' + j2 : j1);
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE';
 
     torneoRef.collection('inscripciones').add({
@@ -2795,6 +2930,7 @@
           categoria: 'Inscripciones', valor: pagado, cuentaId: cuentaId,
           sourceType: 'INSCRIPCION', sourceId: ref.id,
           attribJ1: pagadoJ1, attribJ2: pagadoJ2,
+          observacion: (!individual && pagado < valor) ? 'Abono de ' + quienTexto : '',
           estado: 'ACTIVO', fecha: Date.now(), creadoEn: Date.now(), registradoPor: currentUserEmail
         });
       }
@@ -2806,8 +2942,10 @@
       ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
       byId('i_pagado').value = 0;
       valorManual = false;
+      byId('i_quien').value = 'J1';
       fillTarifaSelect();
       fillCategoriaSelect();
+      actualizarQuienPago();
       closeForm('inscripcion');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
@@ -3141,7 +3279,10 @@
     });
   });
 
-  byId('btnLogout').addEventListener('click', function(){ if (auth) auth.signOut(); });
+  byId('btnLogout').addEventListener('click', function(){
+    if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cierras sesión se perderán.\n\n¿Cerrar sesión de todas formas?')) return;
+    if (auth) auth.signOut();
+  });
   byId('btnLogoutFromTorneos').addEventListener('click', function(){ if (auth) auth.signOut(); });
 
   // ============================================================
@@ -3329,6 +3470,7 @@
   }
 
   byId('btnCambiarTorneo').addEventListener('click', function(){
+    if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cambias de torneo se perderán.\n\n¿Cambiar de torneo de todas formas?')) return;
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
     showTorneoScreen();
@@ -3348,6 +3490,7 @@
     unsubs.forEach(function(u){ try { u(); } catch(e){} });
     unsubs = [];
     categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
+    limpiarPendientes();
   }
 
   function teardownTorneoList(){
