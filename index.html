@@ -329,6 +329,10 @@
     .torneo-card-main { flex-basis: 100% !important; }
     .torneo-card-actions { margin-left: auto; }
   }
+  .perm-hide { display: none !important; }
+  .share-member { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+  .share-member select, #compartirCard select { border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 12.5px; font-family: inherit; background: #fff; }
+  #sharedBadge { margin: 0 14px 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.85); font-size: 11.5px; line-height: 1.35; }
 </style>
 </head>
 <body>
@@ -504,7 +508,12 @@
       <div style="font-weight:800; font-size:24px; letter-spacing:-0.02em;">Tus torneos</div>
       <div class="muted" style="font-size:13px; margin-top:2px;">Elige uno para entrar, o crea uno nuevo abajo.</div>
     </div>
+    <div id="invitacionesBox" style="display:none; flex-direction:column; gap:10px;"></div>
     <div id="torneoList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div id="compartidosBox" style="display:none; flex-direction:column; gap:10px;">
+      <div style="font-weight:700; font-size:16px; margin-top:6px;">Compartidos conmigo</div>
+      <div id="compartidosList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
 
     <div id="limiteTorneoAviso" style="display:none;"></div>
 
@@ -571,6 +580,7 @@
         <div class="brand-mark" id="brandMark">T</div>
         <div class="brand-name" id="brandName">Mi Torneo</div>
       </div>
+      <div id="sharedBadge" class="perm-hide"></div>
       <nav class="navlist" id="navlist">
         <button class="navitem" data-view="dashboard">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
@@ -674,7 +684,7 @@
         </div>
         <div class="actions">
           <button class="btn" id="btnAbrirCategorias" data-toggle-form="categorias" style="display:none;">Categorías</button>
-          <button class="btn btn-primary" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
+          <button class="btn btn-primary" data-w="inscripciones" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
         </div>
       </div>
 
@@ -781,8 +791,8 @@
           <div class="page-sub">Movimientos de este torneo</div>
         </div>
         <div class="actions">
-          <button class="btn" data-toggle-form="cuenta">+ Nueva Cuenta</button>
-          <button class="btn btn-primary" data-toggle-form="movimiento">+ Nuevo Movimiento</button>
+          <button class="btn" data-w="dueno" data-toggle-form="cuenta">+ Nueva Cuenta</button>
+          <button class="btn btn-primary" data-w="financiero" data-toggle-form="movimiento">+ Nuevo Movimiento</button>
         </div>
       </div>
 
@@ -847,7 +857,7 @@
           <div class="page-title">Presupuesto <span style="font-size:10px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Proyecta tus ingresos y gastos antes del torneo — lo "Real" se toma de Financiero</div>
         </div>
-        <button class="btn btn-primary" id="btnAgregarLineaToggle" data-toggle-form="linea">+ Agregar Línea</button>
+        <button class="btn btn-primary" id="btnAgregarLineaToggle" data-w="presupuesto" data-toggle-form="linea">+ Agregar Línea</button>
       </div>
 
       <div id="presupuestoLock" style="display:none;"></div>
@@ -1084,7 +1094,7 @@
           <div class="page-title">Notas</div>
           <div class="page-sub">Recordatorios y pendientes de este torneo</div>
         </div>
-        <button class="btn btn-primary" id="btnNuevaNota" data-toggle-form="nota">+ Nueva Nota</button>
+        <button class="btn btn-primary" id="btnNuevaNota" data-w="notas" data-toggle-form="nota">+ Nueva Nota</button>
       </div>
 
       <div class="formpanel" id="formNota">
@@ -1161,6 +1171,31 @@
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
       </div>
 
+      <div class="card" id="compartirCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
+        <div>
+          <div style="font-weight:700; font-size:14px;">👥 Compartir este torneo</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px;">Invita a otra persona por su correo. Tú decides qué puede ver y qué puede editar, y puedes cambiarlo o quitarle el acceso cuando quieras. Nadie más que tú puede eliminar el torneo, cambiar el PIN, anular movimientos ni eliminar inscripciones.</div>
+        </div>
+        <div id="compartirLock" style="display:none;"></div>
+        <div id="compartirContenido" style="display:flex; flex-direction:column; gap:14px;">
+          <div class="formgrid">
+            <div class="field"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
+            <div class="field"><label>Rol</label>
+              <select id="sh_rol">
+                <option value="LECTOR">Lector — solo puede ver</option>
+                <option value="EDITOR">Editor — puede editar lo que tú elijas</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px; margin-bottom:4px;">Qué puede hacer en cada parte</div>
+            <div id="sh_permisos"></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" id="btnInvitar">Enviar invitación</button></div>
+          <div id="sh_lista" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+      </div>
+
       <div class="muted" style="font-size:12px; max-width:640px;">
         <a href="#" data-open-legal="terminos" style="color:inherit;text-decoration:underline;">Términos y Condiciones</a>
         &nbsp;·&nbsp;
@@ -1211,6 +1246,30 @@
   var unsubUserDoc = null;
   var userPlan = 'FREE';      // FREE | PRO — se activa manualmente desde la consola de Firebase (ver campo "plan" en users/{uid})
   function esPro(){ return userPlan === 'PRO'; }
+
+  // ---------- torneos compartidos: dueño, rol y permisos ----------
+  var currentUid = '';
+  var torneoOwnerUid = null;   // uid del dueño del torneo activo (yo, o quien me lo compartió)
+  var torneoOwnerEmail = '';
+  var MODULOS = [
+    { id: 'inscripciones', label: 'Inscripciones' },
+    { id: 'financiero',    label: 'Financiero y Reportes' },
+    { id: 'presupuesto',   label: 'Presupuesto' },
+    { id: 'notas',         label: 'Notas' },
+    { id: 'viabilidad',    label: 'Viabilidad de Canchas' }
+  ];
+  function esDueno(){ return !!currentUid && torneoOwnerUid === currentUid; }
+  function miMembresia(){ return (!esDueno() && torneoData && torneoData.miembros) ? (torneoData.miembros[currentUid] || null) : null; }
+  // 'NO' | 'VER' | 'EDITAR'. El dueño siempre puede todo ('dueno' = cosas que solo él hace).
+  function nivelModulo(m){
+    if (esDueno()) return 'EDITAR';
+    var mb = miMembresia();
+    return (mb && mb.permisos && mb.permisos[m]) || 'NO';
+  }
+  function puedeVer(m){ return nivelModulo(m) !== 'NO'; }
+  function puedeEditar(m){ return nivelModulo(m) === 'EDITAR'; }
+  // El plan PRO de un torneo compartido es el de su dueño (lo deja anotado en el torneo).
+  function esProT(){ return esDueno() ? esPro() : !!(torneoData && torneoData.ownerPro === true); }
 
   // ---------- state ----------
   var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
@@ -1660,12 +1719,13 @@
     var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
     var parejas = torneoCuposOcupados();
     var cuposTotales = torneoData.cuposTotales || 0;
+    var finOk = puedeVer('financiero'), insOk = puedeVer('inscripciones') || puedeVer('financiero');
 
     byId('dashKpis').innerHTML =
-      kpiCard('Ingresos Totales', money(ing), ing>0 ? '' : 'Aún sin movimientos') +
-      kpiCard('Utilidad Neta', money(util), gas>0 ? ('Gastos: '+money(gas)) : '') +
-      kpiCard(torneoEsAmbas() ? 'Inscritos' : (labelUnidadPlural()+' Inscrit'+(torneoEsIndividual()?'os':'as')), String(parejas), cuposTotales ? (parejas+' / '+cuposTotales+' cupos') : '') +
-      kpiCard('Saldo en Cuentas', money(saldoTotal), cuentas.length+' cuenta(s)');
+      kpiCard('Ingresos Totales', finOk ? money(ing) : '—', !finOk ? 'Sin acceso a Financiero' : (ing>0 ? '' : 'Aún sin movimientos')) +
+      kpiCard('Utilidad Neta', finOk ? money(util) : '—', finOk && gas>0 ? ('Gastos: '+money(gas)) : '') +
+      kpiCard(torneoEsAmbas() ? 'Inscritos' : (labelUnidadPlural()+' Inscrit'+(torneoEsIndividual()?'os':'as')), insOk ? String(parejas) : '—', insOk && cuposTotales ? (parejas+' / '+cuposTotales+' cupos') : '') +
+      kpiCard('Saldo en Cuentas', finOk ? money(saldoTotal) : '—', finOk ? (cuentas.length+' cuenta(s)') : '');
 
     byId('dashEstadoChip').innerHTML = chip(ESTADO_TORNEO, torneoData.estado || 'PLANIFICADA');
 
@@ -1675,18 +1735,18 @@
       '<div class="row-item" style="align-items:flex-start;"><span class="muted" style="flex-shrink:0;padding-top:1px;">Fechas</span><span style="font-weight:600;text-align:right;margin-left:12px;">'+fmtDateFull(torneoData.fechaInicio)+(torneoData.fechaFin?' – '+fmtDateFull(torneoData.fechaFin):'')+'</span></div>' +
       '<div class="row-item"><span class="muted">Tiempo restante</span><span class="dash-days-pill">'+esc(diasRestantes(torneoData.fechaInicio))+'</span></div>' +
       '<div style="padding:14px 0;">' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:700;color:var(--accent);">'+parejas+' / '+(cuposTotales||'—')+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span class="muted">Cupos ocupados</span><span style="font-weight:700;color:var(--accent);">'+(insOk ? parejas : '—')+' / '+(cuposTotales||'—')+'</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;"></div></div>' +
       '</div>';
 
-    var recientes = movimientos.filter(movActivo).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,5);
+    var recientes = !finOk ? [] : movimientos.filter(movActivo).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,5);
     byId('dashActividad').innerHTML = recientes.length ? recientes.map(function(m){
       var color = m.tipo === 'INGRESO' ? 'var(--green-tx)' : 'var(--red-tx)';
       var sign = m.tipo === 'INGRESO' ? '+' : '−';
       return '<div class="row-item"><div><div style="font-size:13.5px;font-weight:600;">'+esc(m.concepto)+'</div>' +
         '<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px;">'+esc(movFechaHoraTexto(m))+'</div></div>' +
         '<div style="font-weight:700;font-size:13.5px;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</div></div>';
-    }).join('') : '<div class="muted" style="padding:20px 0;">Aún no hay movimientos registrados.</div>';
+    }).join('') : '<div class="muted" style="padding:20px 0;">'+(finOk ? 'Aún no hay movimientos registrados.' : 'No tienes acceso a los movimientos de este torneo.')+'</div>';
   }
   function kpiCard(lbl, val, sub){
     return '<div class="kpi"><div class="kpi-lbl">'+esc(lbl)+'</div><div class="kpi-val">'+val+'</div>' + (sub?'<div class="kpi-sub">'+esc(sub)+'</div>':'') + '</div>';
@@ -1720,7 +1780,7 @@
         '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
         '<td style="display:flex;gap:6px;">' +
-          (puedeCobrar ? '<button class="btn" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
+          (puedeCobrar ? '<button class="btn" data-w="inscripciones" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
           (isAdminMode ? '<button class="logout-btn" data-del-ins="'+i.id+'" title="Eliminar inscripción">✕</button>' : '') +
         '</td>' +
         '</tr>';
@@ -1746,8 +1806,8 @@
 
   // ---------- render: financiero ----------
   function renderFinanciero(){
-    byId('m_adjunto').disabled = !esPro();
-    byId('m_adjuntoHint').textContent = esPro()
+    byId('m_adjunto').disabled = !esProT();
+    byId('m_adjuntoHint').textContent = esProT()
       ? 'Hasta 3 archivos: fotos (se comprimen solas) o PDF de máx. 650 KB.'
       : 'Adjuntar comprobantes es una función PRO.';
     var ing = totalIngresos(), gas = totalGastos(), util = ing-gas;
@@ -1864,13 +1924,13 @@
     var box = byId('movAdjuntos');
     var m = movimientos.find(function(x){ return x.id === movId; });
     if (!box || !m) return;
-    var n = m.adjuntosN || 0, pro = esPro();
+    var n = m.adjuntosN || 0, pro = esProT();
     var movRef = torneoRef.collection('movimientos').doc(movId);
     function cabecera(extra){
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
         '<div style="font-size:13px;font-weight:700;">Comprobantes <span style="font-size:9px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></div>' + (extra||'') + '</div>';
     }
-    var botonAdd = pro
+    var botonAdd = (pro && puedeEditar('financiero'))
       ? (n < MAX_ADJUNTOS ? '<button class="btn" id="btnAdjuntarMov" style="padding:5px 10px;font-size:12px;">+ Adjuntar</button>' : '<span class="muted" style="font-size:11.5px;">Máximo '+MAX_ADJUNTOS+' archivos</span>')
       : '';
     if (!n) {
@@ -1894,7 +1954,7 @@
           '<div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(a.nombre||'Archivo')+'</div>' +
           '<div class="muted" style="font-size:11px;">'+fmtBytes(a.bytes||0)+(a.creadoEn ? ' · '+esc(fmtFechaHoraLarga(a.creadoEn)) : '')+'</div></div>' +
           '<button class="btn" data-ver-adj="'+a.id+'" style="padding:5px 10px;font-size:12px;">Ver</button>' +
-          (pro ? '<button class="btn" data-del-adj="'+a.id+'" style="padding:5px 10px;font-size:12px;">Quitar</button>' : '') +
+          ((pro && puedeEditar('financiero')) ? '<button class="btn" data-del-adj="'+a.id+'" style="padding:5px 10px;font-size:12px;">Quitar</button>' : '') +
           '</div>';
       }).join('');
       box.innerHTML = cabecera(botonAdd) + filas;
@@ -1921,7 +1981,7 @@
   }
   byId('movAdjuntoInput').addEventListener('change', function(){
     var id = movDetalleId, files = this.files;
-    if (!id || !files.length || !esPro()) return;
+    if (!id || !files.length || !esProT()) return;
     var m = movimientos.find(function(x){ return x.id === id; });
     var actuales = (m && m.adjuntosN) || 0;
     if (actuales + files.length > MAX_ADJUNTOS) { alert('Cada movimiento admite máximo '+MAX_ADJUNTOS+' comprobantes (ya tiene '+actuales+').'); return; }
@@ -2022,10 +2082,10 @@
           (l.descripcion ? '<div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(l.descripcion)+'</div>' : '') +
           '</td>' +
         '<td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
-        '<td class="num"><input type="number" value="'+pendVal('pres:'+l.id, l.valorProyectado||0)+'" data-linea-id="'+l.id+'" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
+        '<td class="num"><input type="number" value="'+pendVal('pres:'+l.id, l.valorProyectado||0)+'" data-linea-id="'+l.id+'" data-wdis="presupuesto" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
         '<td class="num">'+money(real)+'</td>' +
         '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td>' +
-        '<td><button class="logout-btn" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
+        '<td><button class="logout-btn" data-w="presupuesto" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
         '</tr>';
     }).join('');
 
@@ -2214,7 +2274,7 @@
     renderReportes();
   });
   byId('btnImprimirReporte').addEventListener('click', function(){
-    if (!esPro()) { alert('Exportar a PDF es una función PRO. Actívala para poder descargar tus reportes.'); return; }
+    if (!esProT()) { alert('Exportar a PDF es una función PRO. Actívala para poder descargar tus reportes.'); return; }
     window.print();
   });
 
@@ -2223,7 +2283,7 @@
   // de fechas para cubrir la vida completa del torneo, marca todas las
   // secciones para exportar, y abre el diálogo de impresión/PDF.
   byId('btnReporteGeneral').addEventListener('click', function(){
-    if (!esPro()) { alert('El Reporte General es una función PRO. Actívala para poder generarlo.'); return; }
+    if (!esProT()) { alert('El Reporte General es una función PRO. Actívala para poder generarlo.'); return; }
     byId('rep_desde').value = ''; byId('rep_hasta').value = '';
     document.querySelectorAll('[data-report-toggle]').forEach(function(cb){ cb.checked = true; });
     aplicarSeleccionReporte();
@@ -2783,7 +2843,7 @@
   // así el historial y las categorías habituales se arman solos, y
   // sobreviven aunque el torneo donde jugaron ya no exista.
   function sincronizarJugador(nombre, categoriaNombre, insId){
-    if (!nombre) return Promise.resolve();
+    if (!nombre || !esDueno()) return Promise.resolve(); // la base de jugadores es de cada cuenta: lo que hace un invitado no se guarda en la del dueño
     var existente = jugadoresGlobal.find(function(j){ return normalizaTexto(j.nombre) === normalizaTexto(nombre); });
     var entradaHistorial = { torneo: torneoData.nombre || 'Torneo', categoria: categoriaNombre, fecha: Date.now() };
     if (insId) entradaHistorial.insId = insId;
@@ -2806,6 +2866,7 @@
     return cats;
   }
   function quitarInscripcionDeJugadores(ins){
+    if (!esDueno()) return Promise.resolve();
     var tNombre = torneoData.nombre || 'Torneo';
     var tareas = [ins.j1Nombre, ins.j2Nombre].filter(Boolean).map(function(nombre){
       var j = jugadoresGlobal.find(function(x){ return normalizaTexto(x.nombre) === normalizaTexto(nombre); });
@@ -2872,13 +2933,13 @@
       return '<div class="card" style="padding:16px 18px;display:flex;flex-direction:column;gap:8px;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
           '<div style="font-weight:700;font-size:14px;">'+esc(n.titulo)+'</div>' +
-          '<button class="logout-btn" data-del-nota="'+n.id+'">✕</button>' +
+          '<button class="logout-btn" data-w="notas" data-del-nota="'+n.id+'">✕</button>' +
         '</div>' +
         (n.contenido ? '<div style="font-size:13px;color:var(--gray-700);white-space:pre-wrap;">'+esc(n.contenido)+'</div>' : '') +
         (n.recordatorio ? '<div><span class="chip" style="background:'+(vencida?'var(--red-bg)':hoy?'var(--amber-bg)':'var(--gray-200)')+';color:'+(vencida?'var(--red-tx)':hoy?'var(--amber-tx)':'var(--gray-700)')+';">'+(vencida?'Vencido · ':hoy?'Hoy · ':'')+fmtDateFull(n.recordatorio)+'</span></div>' : '') +
         (items.length ? '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">' + items.map(function(it, idx){
           return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;'+(it.hecho?'color:var(--gray-500);text-decoration:line-through;':'')+'">' +
-            '<input type="checkbox" data-nota-toggle="'+n.id+'" data-item-idx="'+idx+'"'+(it.hecho?' checked':'')+'> '+esc(it.texto)+'</label>';
+            '<input type="checkbox" data-wdis="notas" data-nota-toggle="'+n.id+'" data-item-idx="'+idx+'"'+(it.hecho?' checked':'')+'> '+esc(it.texto)+'</label>';
         }).join('') + '</div>' : '') +
         '</div>';
     }).join('');
@@ -2918,6 +2979,8 @@
     renderConfiguracion();
     renderJugadores();
     renderNotas();
+    renderCompartir();
+    aplicarPermisos();
   }
 
   // ---------- write actions ----------
@@ -3121,7 +3184,7 @@
     var valor = parseFloat(byId('m_valor').value) || 0;
     var cuentaId = byId('m_cuenta').value;
     if (!concepto || valor <= 0 || !cuentaId) { alert('Completa concepto, valor y cuenta.'); return; }
-    var archivos = esPro() ? Array.prototype.slice.call(byId('m_adjunto').files) : [];
+    var archivos = esProT() ? Array.prototype.slice.call(byId('m_adjunto').files) : [];
     if (archivos.length > MAX_ADJUNTOS) { alert('Máximo '+MAX_ADJUNTOS+' comprobantes por movimiento.'); return; }
     var btnGuardar = byId('btnGuardarMovimiento');
     btnGuardar.disabled = true;
@@ -3479,6 +3542,282 @@
     return cadena.then(function(){ return ref.delete(); });
   }
 
+  // ============================================================
+  // COMPARTIR TORNEO — invitar por correo, roles y permisos por módulo
+  // ============================================================
+  // Modelo de datos:
+  //  · users/{dueño}/torneos/{id}.miembros = { uid: { email, rol, permisos:{modulo:'NO'|'VER'|'EDITAR'}, desde } }
+  //  · invitaciones/{dueño_torneo_correo} = invitación pendiente/aceptada/rechazada
+  //  · users/{invitado}/compartidos/{dueño_torneo} = atajo para listar "Compartidos conmigo"
+  // La seguridad real la ponen las reglas de Firestore (firestore.rules); la
+  // interfaz solo esconde lo que la persona no puede usar.
+  var unsubCompartidos = null, unsubInvRecibidas = null, compartidosSeq = 0;
+  var VISTA_MODULO = { inscripciones: 'inscripciones', viabilidad: 'viabilidad', notas: 'notas', financiero: 'financiero', presupuesto: 'presupuesto', reportes: 'financiero' };
+  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formLinea: 'presupuesto', formNota: 'notas' };
+  var NIVEL_TXT = { NO: 'Sin acceso', VER: 'Solo ver', EDITAR: 'Puede editar' };
+
+  function aplicarPermisos(){
+    if (!torneoRef) return;
+    var dueno = esDueno();
+    document.querySelectorAll('.navitem[data-view]').forEach(function(b){
+      var v = b.dataset.view, ocultar = false;
+      if (!dueno) {
+        if (v === 'configuracion' || v === 'jugadores') ocultar = true;
+        else if (VISTA_MODULO[v]) ocultar = !puedeVer(VISTA_MODULO[v]);
+      }
+      b.classList.toggle('perm-hide', ocultar);
+    });
+    document.querySelectorAll('[data-w]').forEach(function(el){ el.classList.toggle('perm-hide', !puedeEditar(el.dataset.w)); });
+    Object.keys(FORM_MODULO).forEach(function(id){
+      var el = byId(id); if (el && !puedeEditar(FORM_MODULO[id])) { el.classList.remove('open'); el.classList.add('perm-hide'); } else if (el) el.classList.remove('perm-hide');
+    });
+    document.querySelectorAll('[data-wdis]').forEach(function(el){ el.disabled = !puedeEditar(el.dataset.wdis); });
+    if (!puedeEditar('viabilidad')) {
+      document.querySelectorAll('[data-viab-formato],[data-viab-parejas],[data-viab-grupos],[data-viab-jpg],[data-viab-elim],[data-vd-activo],[data-vd-inicio],[data-vd-fin]').forEach(function(el){ el.disabled = true; });
+    }
+    var activo = document.querySelector('.navitem.active');
+    if (activo && activo.classList.contains('perm-hide')) setView('dashboard');
+    var badge = byId('sharedBadge');
+    if (dueno) { badge.classList.add('perm-hide'); }
+    else {
+      var mb = miMembresia();
+      badge.classList.remove('perm-hide');
+      badge.innerHTML = 'Compartido por <strong>' + esc(torneoOwnerEmail || 'otra cuenta') + '</strong><br>' + (mb && mb.rol === 'EDITOR' ? 'Editor' : 'Lector');
+    }
+  }
+
+  // ---- panel del dueño (Configuración → Compartir este torneo)
+  function permisosPorDefecto(rol){
+    var p = {};
+    MODULOS.forEach(function(m){ p[m.id] = (rol === 'EDITOR' && m.id === 'inscripciones') ? 'EDITAR' : 'VER'; });
+    return p;
+  }
+  function rolDesdePermisos(p){ return MODULOS.some(function(m){ return p[m.id] === 'EDITAR'; }) ? 'EDITOR' : 'LECTOR'; }
+  function filasPermisosHtml(prefix, rol, permisos){
+    return MODULOS.map(function(m){
+      var opts = ['NO', 'VER'].concat(rol === 'EDITOR' ? ['EDITAR'] : []);
+      var actual = (permisos && permisos[m.id]) || 'VER';
+      if (opts.indexOf(actual) < 0) actual = 'VER';
+      return '<div class="row-item" style="padding:6px 0;"><span style="font-size:13px;">' + esc(m.label) + '</span>' +
+        '<select id="' + prefix + '_' + m.id + '">' +
+        opts.map(function(o){ return '<option value="' + o + '"' + (o === actual ? ' selected' : '') + '>' + NIVEL_TXT[o] + '</option>'; }).join('') +
+        '</select></div>';
+    }).join('');
+  }
+  function leerPermisos(prefix){
+    var p = {};
+    MODULOS.forEach(function(m){ var el = byId(prefix + '_' + m.id); p[m.id] = el ? el.value : 'NO'; });
+    return p;
+  }
+  function resumenPermisos(p){
+    return MODULOS.filter(function(m){ return p && p[m.id] && p[m.id] !== 'NO'; })
+      .map(function(m){ return m.label + (p[m.id] === 'EDITAR' ? ' (edita)' : ''); }).join(' · ') || 'Sin acceso';
+  }
+
+  var compartirSig = null;
+  function renderCompartir(){
+    var card = byId('compartirCard');
+    var visible = !!torneoRef && esDueno() && isAdminMode;
+    card.style.display = visible ? 'flex' : 'none';
+    if (!visible) { compartirSig = null; return; }
+    var pro = esPro();
+    byId('compartirLock').style.display = pro ? 'none' : 'block';
+    byId('compartirContenido').style.display = pro ? 'flex' : 'none';
+    if (!pro) { byId('compartirLock').innerHTML = bloqueoProHtml('Comparte tus torneos con otras personas y decide qué puede ver y editar cada una. Actívalo con el plan PRO.'); return; }
+    if (!byId('shn_inscripciones')) byId('sh_permisos').innerHTML = filasPermisosHtml('shn', byId('sh_rol').value, permisosPorDefecto(byId('sh_rol').value));
+
+    // La lista solo se vuelve a dibujar si cambió (para no borrar permisos que estés editando).
+    var miembros = torneoData.miembros || {};
+    var sig = JSON.stringify([miembros, invitacionesTorneo.map(function(i){ return [i.id, i.estado, i.permisos]; })]);
+    if (sig === compartirSig) return;
+    compartirSig = sig;
+    var html = '';
+    var uids = Object.keys(miembros);
+    if (uids.length) {
+      html += '<div style="font-weight:700;font-size:13px;">Personas con acceso</div>';
+      html += uids.map(function(uid){
+        var m = miembros[uid];
+        return '<div class="share-member">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;">' + esc(m.email || uid) + '</span>' +
+          '<span class="chip" style="background:var(--accent-bg);color:var(--accent);">' + (m.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</span></div>' +
+          filasPermisosHtml('shm_' + uid, m.rol, m.permisos) +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+          '<button class="btn btn-primary" data-sh-guardar="' + uid + '" style="padding:6px 12px;font-size:12.5px;">Guardar permisos</button>' +
+          '<button class="btn" data-sh-quitar="' + uid + '" style="padding:6px 12px;font-size:12.5px;">Quitar acceso</button></div>' +
+          '</div>';
+      }).join('');
+    }
+    var pend = invitacionesTorneo.filter(function(i){ return i.estado === 'PENDIENTE' || i.estado === 'RECHAZADA'; });
+    if (pend.length) {
+      html += '<div style="font-weight:700;font-size:13px;">Invitaciones</div>';
+      html += pend.map(function(i){
+        return '<div class="share-member" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<div style="min-width:0;"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;">' + esc(i.emailInvitado) + '</div>' +
+          '<div class="muted" style="font-size:12px;">' + (i.estado === 'RECHAZADA' ? 'Rechazó la invitación' : 'Pendiente — la verá al entrar a CourtOS con ese correo') + ' · ' + esc(resumenPermisos(i.permisos)) + '</div></div>' +
+          '<button class="btn" data-sh-cancelar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;flex-shrink:0;">' + (i.estado === 'RECHAZADA' ? 'Quitar' : 'Cancelar') + '</button></div>';
+      }).join('');
+    }
+    if (!html) html = '<div class="muted" style="font-size:12.5px;">Aún no has compartido este torneo con nadie.</div>';
+    byId('sh_lista').innerHTML = html;
+
+    byId('sh_lista').querySelectorAll('[data-sh-guardar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var uid = b.dataset.shGuardar, m = (torneoData.miembros || {})[uid];
+        if (!m) return;
+        var permisos = leerPermisos('shm_' + uid);
+        if (MODULOS.every(function(x){ return permisos[x.id] === 'NO'; })) { alert('Si no va a ver nada, mejor usa "Quitar acceso".'); return; }
+        var upd = {}; upd['miembros.' + uid + '.permisos'] = permisos; upd['miembros.' + uid + '.rol'] = rolDesdePermisos(permisos);
+        torneoRef.update(upd).then(function(){ flashBarra('Permisos guardados'); })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    byId('sh_lista').querySelectorAll('[data-sh-quitar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var uid = b.dataset.shQuitar, m = (torneoData.miembros || {})[uid];
+        if (!m || !confirm('¿Quitarle el acceso a ' + (m.email || 'esta persona') + '? Dejará de ver el torneo de inmediato.')) return;
+        var upd = {}; upd['miembros.' + uid] = firebase.firestore.FieldValue.delete();
+        torneoRef.update(upd).then(function(){
+          if (m.email) return fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + String(m.email).toLowerCase()).delete().catch(function(){});
+        }).then(function(){ flashBarra('Acceso quitado'); })
+          .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+      });
+    });
+    byId('sh_lista').querySelectorAll('[data-sh-cancelar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        fsdb.collection('invitaciones').doc(b.dataset.shCancelar).delete()
+          .catch(function(e){ alert('No se pudo cancelar: ' + e.message); });
+      });
+    });
+  }
+  byId('sh_rol').addEventListener('change', function(){
+    var rol = byId('sh_rol').value;
+    byId('sh_permisos').innerHTML = filasPermisosHtml('shn', rol, permisosPorDefecto(rol));
+  });
+
+  byId('btnInvitar').addEventListener('click', function(){
+    if (!torneoRef || !esDueno()) return;
+    if (!esPro()) { alert('Compartir torneos es una función PRO.'); return; }
+    var email = byId('sh_email').value.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { alert('Escribe un correo válido.'); return; }
+    if (email === (currentUserEmail || '').toLowerCase()) { alert('Ese es tu propio correo.'); return; }
+    var miembros = torneoData.miembros || {};
+    var yaTiene = Object.keys(miembros).some(function(u){ return String(miembros[u].email || '').toLowerCase() === email; });
+    if (yaTiene) { alert('Esa persona ya tiene acceso. Cambia sus permisos en la lista de abajo.'); return; }
+    var permisos = leerPermisos('shn');
+    if (MODULOS.every(function(m){ return permisos[m.id] === 'NO'; })) { alert('Elige al menos una parte que pueda ver.'); return; }
+    var btn = byId('btnInvitar'); btn.disabled = true;
+    fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + email).set({
+      ownerUid: currentUid, ownerEmail: currentUserEmail, torneoId: torneoId, torneoNombre: torneoData.nombre || 'Torneo',
+      emailInvitado: email, rol: rolDesdePermisos(permisos), permisos: permisos, estado: 'PENDIENTE', creadoEn: Date.now()
+    }).then(function(){
+      byId('sh_email').value = '';
+      flashBarra('Invitación enviada a ' + email);
+    }).catch(function(e){ alert('No se pudo enviar la invitación: ' + e.message); })
+      .then(function(){ btn.disabled = false; });
+  });
+
+  function suscribirInvitacionesDelTorneo(){
+    if (unsubInvTorneo) { try { unsubInvTorneo(); } catch(e){} }
+    unsubInvTorneo = fsdb.collection('invitaciones').where('ownerUid', '==', currentUid).where('torneoId', '==', torneoId).onSnapshot(function(snap){
+      var arr = [];
+      snap.forEach(function(d){ var x = d.data(); x.id = d.id; if (x.ownerUid === currentUid && x.torneoId === torneoId) arr.push(x); });
+      invitacionesTorneo = arr;
+      renderCompartir();
+    }, function(err){ console.error('invitaciones torneo', err); });
+  }
+
+  // ---- lado de la persona invitada
+  function suscribirInvitacionesRecibidas(){
+    if (unsubInvRecibidas || !userRef) return;
+    var mail = (currentUserEmail || '').toLowerCase();
+    if (!mail) return;
+    unsubInvRecibidas = fsdb.collection('invitaciones').where('emailInvitado', '==', mail).onSnapshot(function(snap){
+      var arr = [];
+      snap.forEach(function(d){ var x = d.data(); x.id = d.id; if (x.estado === 'PENDIENTE' && x.emailInvitado === mail) arr.push(x); });
+      renderInvitacionesRecibidas(arr);
+    }, function(err){ console.error('invitaciones recibidas', err); });
+  }
+  function renderInvitacionesRecibidas(arr){
+    var box = byId('invitacionesBox');
+    if (!arr.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'flex';
+    box.innerHTML = '<div style="font-weight:700;font-size:16px;">Invitaciones</div>' + arr.map(function(inv){
+      return '<div class="card" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-color:var(--accent-bg);">' +
+        '<div style="font-size:13.5px;"><strong>' + esc(inv.ownerEmail) + '</strong> te invitó al torneo <strong>' + esc(inv.torneoNombre) + '</strong> como <strong>' + (inv.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</strong>.</div>' +
+        '<div class="muted" style="font-size:12px;">' + esc(resumenPermisos(inv.permisos)) + '</div>' +
+        '<div style="display:flex;gap:8px;"><button class="btn btn-primary" data-inv-aceptar="' + esc(inv.id) + '" style="padding:6px 14px;font-size:12.5px;">Aceptar</button>' +
+        '<button class="btn" data-inv-rechazar="' + esc(inv.id) + '" style="padding:6px 14px;font-size:12.5px;">Rechazar</button></div></div>';
+    }).join('');
+    function buscar(id){ return arr.find(function(x){ return x.id === id; }); }
+    box.querySelectorAll('[data-inv-aceptar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var inv = buscar(b.dataset.invAceptar); if (!inv) return;
+        b.disabled = true;
+        var upd = {}; upd['miembros.' + currentUid] = { email: (currentUserEmail || '').toLowerCase(), rol: inv.rol, permisos: inv.permisos, desde: Date.now() };
+        fsdb.collection('users').doc(inv.ownerUid).collection('torneos').doc(inv.torneoId).update(upd).then(function(){
+          return fsdb.collection('invitaciones').doc(inv.id).update({ estado: 'ACEPTADA' });
+        }).then(function(){
+          return userRef.collection('compartidos').doc(inv.ownerUid + '_' + inv.torneoId).set({ ownerUid: inv.ownerUid, torneoId: inv.torneoId, torneoNombre: inv.torneoNombre, ownerEmail: inv.ownerEmail, desde: Date.now() });
+        }).catch(function(e){ b.disabled = false; alert('No se pudo aceptar la invitación: ' + e.message); });
+      });
+    });
+    box.querySelectorAll('[data-inv-rechazar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('¿Rechazar esta invitación?')) return;
+        fsdb.collection('invitaciones').doc(b.dataset.invRechazar).update({ estado: 'RECHAZADA' })
+          .catch(function(e){ alert('No se pudo rechazar: ' + e.message); });
+      });
+    });
+  }
+
+  function suscribirCompartidos(){
+    if (unsubCompartidos || !userRef) return;
+    unsubCompartidos = userRef.collection('compartidos').onSnapshot(function(snap){
+      var items = [];
+      snap.forEach(function(d){ var x = d.data(); x.id = d.id; items.push(x); });
+      var seq = ++compartidosSeq;
+      Promise.all(items.map(function(c){
+        return fsdb.collection('users').doc(c.ownerUid).collection('torneos').doc(c.torneoId).get().then(function(doc){
+          var t = doc.exists ? doc.data() : null;
+          if (!t || !t.miembros || !t.miembros[currentUid]) { userRef.collection('compartidos').doc(c.id).delete().catch(function(){}); return null; }
+          t.id = c.torneoId; t.ownerUid = c.ownerUid; t.ownerEmail = c.ownerEmail || '';
+          return t;
+        }).catch(function(e){
+          if (e && e.code === 'permission-denied') userRef.collection('compartidos').doc(c.id).delete().catch(function(){});
+          return null;
+        });
+      })).then(function(lista){ if (seq === compartidosSeq) renderCompartidos(lista.filter(Boolean)); });
+    }, function(err){ console.error('compartidos', err); });
+  }
+  function renderCompartidos(lista){
+    var box = byId('compartidosBox');
+    box.style.display = lista.length ? 'flex' : 'none';
+    byId('compartidosList').innerHTML = lista.map(function(t){
+      var mb = t.miembros[currentUid];
+      return '<div class="torneo-card" style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 10px 8px 12px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-sm);">' +
+        '<button data-comp-entrar="' + esc(t.ownerUid + '_' + t.id) + '" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;gap:12px;padding:6px 0;min-width:0;">' +
+          '<div style="width:34px;height:34px;border-radius:9px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">' + esc((t.nombre || '?').trim().charAt(0).toUpperCase()) + '</div>' +
+          '<div style="min-width:0;flex:1;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(t.nombre || 'Sin nombre') + '</div>' +
+          '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">De ' + esc(t.ownerEmail || 'otra cuenta') + ' · ' + (mb.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</div></div>' +
+        '</button>' +
+        '<button class="btn" data-comp-salir="' + esc(t.ownerUid + '_' + t.id) + '" style="padding:6px 12px;font-size:12px;flex-shrink:0;">Salir</button></div>';
+    }).join('');
+    function buscar(k){ return lista.find(function(t){ return t.ownerUid + '_' + t.id === k; }); }
+    box.querySelectorAll('[data-comp-entrar]').forEach(function(b){
+      b.addEventListener('click', function(){ var t = buscar(b.dataset.compEntrar); if (t) enterTorneo(t.id, t, t.ownerUid); });
+    });
+    box.querySelectorAll('[data-comp-salir]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var t = buscar(b.dataset.compSalir); if (!t) return;
+        if (!confirm('¿Salir de "' + (t.nombre || 'este torneo') + '"? Dejarás de verlo; el dueño puede volver a invitarte.')) return;
+        var upd = {}; upd['miembros.' + currentUid] = firebase.firestore.FieldValue.delete();
+        fsdb.collection('users').doc(t.ownerUid).collection('torneos').doc(t.id).update(upd).catch(function(){})
+          .then(function(){ return userRef.collection('compartidos').doc(t.ownerUid + '_' + t.id).delete(); })
+          .catch(function(e){ alert('No se pudo salir: ' + e.message); });
+      });
+    });
+  }
+
   function showTorneoScreen(){
     byId('appShell').classList.remove('active');
     byId('torneoScreen').style.display = 'flex';
@@ -3491,13 +3830,18 @@
         renderTorneoList(arr);
       }, function(err){ console.error('torneos', err); });
     }
+    suscribirCompartidos();
+    suscribirInvitacionesRecibidas();
   }
 
-  function enterTorneo(id, data){
+  function enterTorneo(id, data, ownerUid){
+    torneoOwnerUid = ownerUid || currentUid;
+    torneoOwnerEmail = (data && data.ownerEmail) || '';
     torneoId = id;
-    torneoRef = userRef.collection('torneos').doc(id);
+    torneoRef = fsdb.collection('users').doc(torneoOwnerUid).collection('torneos').doc(id);
     torneoData = data || {};
     isAdminMode = false;
+    permSig = null;
     applyBrand(torneoData.nombre || 'Mi Torneo');
     byId('torneoScreen').style.display = 'none';
     byId('appShell').classList.add('active');
@@ -3506,21 +3850,70 @@
     // de pádel. El organizador puede ajustarlo libremente después.
     byId('v_duracion').value = torneoDeporte() === 'TENIS' ? 100 : 75;
 
-    subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
-    subscribe('cuentas', function(a){ cuentas = a; });
-    subscribe('inscripciones', function(a){ inscripciones = a; });
-    subscribe('movimientos', function(a){ movimientos = a; });
-    subscribe('presupuesto', function(a){ presupuesto = a; });
-    subscribe('notas', function(a){ notas = a; });
+    suscribirTorneoDoc();
+    if (esDueno()) suscribirInvitacionesDelTorneo();
 
     setView('dashboard');
     renderAll();
   }
 
+  // Mantiene el documento del torneo al día (permisos, miembros, plan del dueño)
+  // y (re)suscribe las colecciones según lo que esta persona puede ver.
+  var permSig = null;
+  var unsubTorneoDoc = null, unsubInvTorneo = null, unsubCols = [];
+  var invitacionesTorneo = [];
+  function suscribirTorneoDoc(){
+    unsubTorneoDoc = torneoRef.onSnapshot(function(doc){
+      if (!torneoRef) return;
+      if (!doc.exists) {
+        if (!esDueno()) salirPorAcceso('Este torneo ya no existe o no tienes acceso.');
+        else if (permSig === null) { permSig = 'dueno'; suscribirColecciones(); }
+        return;
+      }
+      var d = doc.data(); d.id = torneoId;
+      if (torneoOwnerEmail && !d.ownerEmail) d.ownerEmail = torneoOwnerEmail;
+      if (!esDueno() && !(d.miembros && d.miembros[currentUid])) { salirPorAcceso('Ya no tienes acceso a este torneo.'); return; }
+      torneoData = d;
+      var sig = esDueno() ? 'dueno' : JSON.stringify(d.miembros[currentUid].permisos || {});
+      if (sig !== permSig) { permSig = sig; suscribirColecciones(); }
+      aplicarRestriccionesPlan();
+      renderAll();
+    }, function(err){
+      console.error('torneo', err);
+      if (!esDueno() && torneoRef) salirPorAcceso('No se pudo abrir este torneo. Puede que te hayan quitado el acceso.');
+    });
+  }
+
+  function suscribirColecciones(){
+    unsubCols.forEach(function(u){ try { u(); } catch(e){} });
+    unsubCols = [];
+    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
+    var ver = puedeVer('inscripciones') || puedeVer('financiero');
+    subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
+    if (ver) {
+      subscribe('cuentas', function(a){ cuentas = a; });
+      subscribe('inscripciones', function(a){ inscripciones = a; });
+    }
+    if (puedeVer('financiero')) subscribe('movimientos', function(a){ movimientos = a; });
+    if (puedeVer('presupuesto') || puedeVer('financiero')) subscribe('presupuesto', function(a){ presupuesto = a; });
+    if (puedeVer('notas')) subscribe('notas', function(a){ notas = a; });
+    renderAll();
+  }
+
+  function salirPorAcceso(msg){
+    if (!torneoRef) return;
+    var enlace = torneoOwnerUid + '_' + torneoId;
+    teardownSubscriptions();
+    torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
+    if (userRef) userRef.collection('compartidos').doc(enlace).delete().catch(function(){});
+    alert(msg);
+    showTorneoScreen();
+  }
+
   byId('btnCambiarTorneo').addEventListener('click', function(){
     if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cambias de torneo se perderán.\n\n¿Cambiar de torneo de todas formas?')) return;
     teardownSubscriptions();
-    torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
+    torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
     showTorneoScreen();
   });
 
@@ -3531,18 +3924,26 @@
       onData(arr);
       renderAll();
     }, function(err){ console.error(collectionName, err); });
-    unsubs.push(unsub);
+    unsubCols.push(unsub);
   }
 
   function teardownSubscriptions(){
     unsubs.forEach(function(u){ try { u(); } catch(e){} });
     unsubs = [];
+    unsubCols.forEach(function(u){ try { u(); } catch(e){} });
+    unsubCols = [];
+    if (unsubTorneoDoc) { try { unsubTorneoDoc(); } catch(e){} unsubTorneoDoc = null; }
+    if (unsubInvTorneo) { try { unsubInvTorneo(); } catch(e){} unsubInvTorneo = null; }
+    invitacionesTorneo = [];
     categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
     limpiarPendientes();
   }
 
   function teardownTorneoList(){
     if (unsubTorneos) { try { unsubTorneos(); } catch(e){} unsubTorneos = null; }
+    if (unsubCompartidos) { try { unsubCompartidos(); } catch(e){} unsubCompartidos = null; }
+    if (unsubInvRecibidas) { try { unsubInvRecibidas(); } catch(e){} unsubInvRecibidas = null; }
+    compartidosSeq++;
   }
 
   // Jugadores vive a nivel de cuenta: se suscribe una sola vez al iniciar
@@ -3606,15 +4007,22 @@
     if (!pro) byId('jugadoresLock').innerHTML = bloqueoProHtml('Guarda un historial de jugadores que se comparte entre todos tus torneos, con sus categorías habituales y en qué torneos han jugado. Actívalo con el plan PRO.');
     byId('btnNuevoJugador').style.display = pro ? 'inline-flex' : 'none';
 
-    // Presupuesto
-    byId('presupuestoContenido').style.display = pro ? 'block' : 'none';
-    byId('presupuestoLock').style.display = pro ? 'none' : 'block';
-    if (!pro) byId('presupuestoLock').innerHTML = bloqueoProHtml('Proyecta tus ingresos y gastos antes del torneo y compáralos con lo real, automáticamente. Actívalo con el plan PRO.');
-    byId('btnAgregarLineaToggle').style.display = pro ? 'inline-flex' : 'none';
+    // Presupuesto (en un torneo compartido manda el plan de su dueño)
+    var proT = torneoRef ? esProT() : pro;
+    byId('presupuestoContenido').style.display = proT ? 'block' : 'none';
+    byId('presupuestoLock').style.display = proT ? 'none' : 'block';
+    if (!proT) byId('presupuestoLock').innerHTML = bloqueoProHtml('Proyecta tus ingresos y gastos antes del torneo y compáralos con lo real, automáticamente. Actívalo con el plan PRO.');
+    byId('btnAgregarLineaToggle').style.display = proT ? 'inline-flex' : 'none';
 
     // Exportar Reportes a PDF
-    byId('btnImprimirReporte').disabled = !pro;
-    byId('btnImprimirReporte').style.opacity = pro ? '1' : '.6';
+    byId('btnImprimirReporte').disabled = !proT;
+    byId('btnImprimirReporte').style.opacity = proT ? '1' : '.6';
+
+    // El dueño deja anotado su plan en el torneo, para que quienes lo ven compartido tengan las mismas funciones PRO.
+    if (torneoRef && esDueno() && torneoData && torneoData.ownerPro !== pro) {
+      torneoData.ownerPro = pro;
+      torneoRef.set({ ownerPro: pro }, { merge: true }).catch(function(){});
+    }
 
     // Torneos ilimitados: se resuelve por separado en renderTorneoList(),
     // porque depende de cuántos torneos existen en ese momento.
@@ -3624,6 +4032,7 @@
     auth.onAuthStateChanged(function(user){
       if (user) {
         userRef = fsdb.collection('users').doc(user.uid);
+        currentUid = user.uid;
         byId('authScreen').style.display = 'none';
         byId('userEmail').textContent = user.email || '';
         currentUserEmail = user.email || '';
@@ -3636,7 +4045,7 @@
         teardownTorneoList();
         teardownJugadores();
         teardownUserDoc();
-        userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false;
+        userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false; currentUid = ''; torneoOwnerUid = null; permSig = null;
         byId('appShell').classList.remove('active');
         byId('torneoScreen').style.display = 'none';
         byId('authScreen').style.display = 'flex';
