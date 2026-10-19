@@ -1779,10 +1779,10 @@
           (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
         '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
-        '<td style="display:flex;gap:6px;">' +
+        '<td><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;">' +
           (puedeCobrar ? '<button class="btn" data-w="inscripciones" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
           (isAdminMode ? '<button class="logout-btn" data-del-ins="'+i.id+'" title="Eliminar inscripción">✕</button>' : '') +
-        '</td>' +
+        '</div></td>' +
         '</tr>';
     }).join('');
 
