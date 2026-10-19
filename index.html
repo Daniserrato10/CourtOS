@@ -668,10 +668,11 @@
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div class="panel-title">Categorías</div>
         </div>
+        <div id="tarifasAdmin" style="margin:6px 0 12px;padding:12px 14px;background:var(--sidebar);border:1px solid var(--border);border-radius:10px;"></div>
         <div id="categoriasAdminList" style="margin-top:4px;"></div>
         <div class="formgrid" style="margin-top:14px;">
           <div class="field"><label>Nueva categoría</label><input id="cat_nombre" placeholder="Ej: Sexta"></div>
-          <div class="field"><label>Valor inscripción</label><input id="cat_valor" type="number" placeholder="0"></div>
+          <div class="field"><label>Valor inscripción (tarifa Regular)</label><input id="cat_valor" type="number" placeholder="0"></div>
           <div class="field" id="cat_modalidadWrap" style="display:none;"><label>Modalidad</label>
             <select id="cat_modalidad">
               <option value="PAREJAS">Dobles (parejas)</option>
@@ -689,7 +690,8 @@
         <div class="panel-title">Nueva Inscripción</div>
         <div class="formgrid">
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
-          <div class="field"><label>Valor inscripción</label><input id="i_valor" readonly></div>
+          <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
+          <div class="field"><label>Valor inscripción <span class="muted" style="font-weight:500;">(editable)</span></label><input id="i_valor" type="number" min="0" step="1000"><div class="muted" id="i_valorHint" style="font-size:11.5px;margin-top:4px;"></div></div>
           <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
           <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
           <datalist id="jugadoresSuggestions"></datalist>
@@ -896,6 +898,7 @@
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="gastos" checked> Gastos por Categoría</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="flujo" checked> Flujo de Caja</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="detalle" checked> Detalle de Movimientos</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="tarifas" checked> Inscripciones por Tarifa</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="cxc" checked> Cuentas por Cobrar</label>
           <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="presupuesto" checked> Presupuesto vs. Real</label>
         </div>
@@ -934,6 +937,14 @@
         <table class="datatable" style="margin-top:10px;">
           <thead><tr><th>Fecha y hora</th><th>Concepto</th><th>Cuenta</th><th style="text-align:right">Ingreso</th><th style="text-align:right">Gasto</th></tr></thead>
           <tbody id="repDetalleBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel" data-report-section="tarifas">
+        <div class="panel-title">Inscripciones por Tarifa (todas las inscripciones activas)</div>
+        <table class="datatable" style="margin-top:10px;">
+          <thead><tr><th>Tarifa</th><th style="text-align:right">Inscripciones</th><th style="text-align:right">Valor total</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Por cobrar</th></tr></thead>
+          <tbody id="repTarifasBody"></tbody>
         </table>
       </div>
 
@@ -1213,6 +1224,32 @@
   // segundo jugador, así que toda la "mitad" de Jugador 1 es el valor
   // completo — si no, quedaría cobrando solo la mitad de lo que debe.
   function mitadDe(i){ return i.individual ? i.valor : i.valor / 2; }
+
+  // ---------- tarifas de inscripción (Regular, Preventa, ...) ----------
+  // Cada categoría tiene su precio base (valorInscripcion = tarifa "Regular") y
+  // opcionalmente un precio por cada tarifa extra (categoria.precios[tarifaId]).
+  // El torneo guarda las tarifas extra (torneoData.tarifas) y cuál está vigente
+  // (torneoData.tarifaActiva). Cada inscripción guarda el valor con el que se
+  // cobró, así que cambiar de tarifa no altera las inscripciones anteriores.
+  var TARIFA_BASE_ID = 'regular';
+  function tarifasTorneo(){
+    var extra = (torneoData && torneoData.tarifas) || [];
+    return [{ id: TARIFA_BASE_ID, nombre: (torneoData && torneoData.tarifaBaseNombre) || 'Regular' }].concat(extra);
+  }
+  function tarifaActivaId(){
+    var id = torneoData && torneoData.tarifaActiva;
+    return tarifasTorneo().some(function(t){ return t.id === id; }) ? id : TARIFA_BASE_ID;
+  }
+  function tarifaById(id){
+    var l = tarifasTorneo();
+    return l.find(function(t){ return t.id === id; }) || l[0];
+  }
+  function precioCategoria(cat, tarifaId){
+    if (!cat) return 0;
+    if (!tarifaId || tarifaId === TARIFA_BASE_ID) return cat.valorInscripcion || 0;
+    var p = cat.precios && cat.precios[tarifaId];
+    return (p === undefined || p === null) ? (cat.valorInscripcion || 0) : p;
+  }
   function money(n){ n = Math.round(n||0); return (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('es-CO'); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function byId(x){ return document.getElementById(x); }
@@ -1458,9 +1495,21 @@
   function fillCategoriaSelect(){
     var el = byId('i_categoria');
     var prev = el.value;
-    el.innerHTML = categorias.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' — '+money(c.valorInscripcion)+'</option>'; }).join('');
+    var tid = byId('i_tarifa').value || tarifaActivaId();
+    el.innerHTML = categorias.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' — '+money(precioCategoria(c, tid))+'</option>'; }).join('');
     if (prev && categorias.some(function(c){return c.id===prev;})) el.value = prev;
     updateValorInscripcion();
+  }
+  // Select de tarifa del formulario de inscripción: arranca en la tarifa
+  // vigente del torneo, y se reinicia a ella si el organizador la cambia.
+  var ultimaTarifaActiva = null;
+  function fillTarifaSelect(){
+    var el = byId('i_tarifa'), prev = el.value, act = tarifaActivaId();
+    el.innerHTML = tarifasTorneo().map(function(t){ return '<option value="'+t.id+'">'+esc(t.nombre)+(t.id===act?' (vigente)':'')+'</option>'; }).join('');
+    var valido = prev && tarifasTorneo().some(function(t){ return t.id === prev; });
+    el.value = (valido && act === ultimaTarifaActiva) ? prev : act;
+    ultimaTarifaActiva = act;
+    el.closest('.field').style.display = tarifasTorneo().length > 1 ? '' : 'none';
   }
   function fillCuentaSelects(){
     var opts = cuentas.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' ('+money(cuentaSaldo(c.id))+')</option>'; }).join('');
@@ -1473,14 +1522,31 @@
   }
   function updateValorInscripcion(){
     var cat = categoriaById(byId('i_categoria').value);
-    byId('i_valor').value = cat ? money(cat.valorInscripcion) : '';
-    if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = cat.valorInscripcion;
+    var precio = cat ? precioCategoria(cat, byId('i_tarifa').value) : 0;
+    // valorManual: si el organizador ya escribió un valor a mano, los
+    // re-renders por datos nuevos (que llaman a esta función) no deben pisarlo.
+    if (!valorManual) {
+      byId('i_valor').value = cat ? precio : '';
+      byId('i_valorHint').textContent = '';
+      if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = precio;
+    }
     actualizarFormInscripcionSegunCategoria();
   }
-  byId('i_categoria').addEventListener('change', updateValorInscripcion);
-  byId('i_estadoPago').addEventListener('change', function(){
+  var valorManual = false;
+  byId('i_categoria').addEventListener('change', function(){ valorManual = false; updateValorInscripcion(); });
+  byId('i_tarifa').addEventListener('change', function(){ valorManual = false; fillCategoriaSelect(); });
+  // Si el organizador ajusta el valor a mano, se avisa y el pago "completo" lo sigue.
+  byId('i_valor').addEventListener('input', function(){
+    valorManual = true;
     var cat = categoriaById(byId('i_categoria').value);
-    if (this.value === 'APROBADO' && cat) byId('i_pagado').value = cat.valorInscripcion;
+    var lista = cat ? precioCategoria(cat, byId('i_tarifa').value) : 0;
+    var v = parseFloat(this.value) || 0;
+    byId('i_valorHint').textContent = (cat && v !== lista) ? 'Precio ajustado (el de la tarifa es ' + money(lista) + ')' : '';
+    if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = v;
+  });
+  byId('i_estadoPago').addEventListener('change', function(){
+    var v = parseFloat(byId('i_valor').value) || 0;
+    if (this.value === 'APROBADO') byId('i_pagado').value = v;
     if (this.value === 'PENDIENTE') byId('i_pagado').value = 0;
   });
 
@@ -1545,7 +1611,8 @@
       return '<tr>' +
         '<td style="font-weight:600;">'+nombreUnidad+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="num">'+money(i.valor)+'</td>' +
+        '<td class="num">'+money(i.valor)+
+          (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
         '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
         '<td style="display:flex;gap:6px;">' +
@@ -1989,6 +2056,22 @@
         '<td class="num" style="color:var(--red-tx);">'+(esIng?'—':money(m.valor))+'</td></tr>';
     }).join('') : '<tr class="empty-row"><td colspan="5">Sin movimientos en este rango.</td></tr>';
 
+    // ---- Inscripciones por tarifa (preventa, regular, ...): foto del estado actual ----
+    var porTarifa = {}, ordenTarifas = [];
+    inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).forEach(function(i){
+      var k = i.tarifaNombre || 'Sin tarifa registrada';
+      if (!porTarifa[k]) { porTarifa[k] = { n: 0, valor: 0, cobrado: 0 }; ordenTarifas.push(k); }
+      porTarifa[k].n++; porTarifa[k].valor += (i.valor||0); porTarifa[k].cobrado += pagadoTotalIns(i);
+    });
+    var totT = { n: 0, valor: 0, cobrado: 0 };
+    byId('repTarifasBody').innerHTML = ordenTarifas.length ? ordenTarifas.map(function(k){
+      var r = porTarifa[k]; totT.n += r.n; totT.valor += r.valor; totT.cobrado += r.cobrado;
+      return '<tr><td style="font-weight:600;">'+esc(k)+'</td><td class="num">'+r.n+'</td><td class="num">'+money(r.valor)+'</td>' +
+        '<td class="num" style="color:var(--green-tx);">'+money(r.cobrado)+'</td><td class="num" style="color:var(--amber-tx);">'+money(Math.max(0, r.valor-r.cobrado))+'</td></tr>';
+    }).join('') + '<tr><td style="font-weight:800;">Total</td><td class="num" style="font-weight:800;">'+totT.n+'</td><td class="num" style="font-weight:800;">'+money(totT.valor)+'</td>' +
+        '<td class="num" style="font-weight:800;color:var(--green-tx);">'+money(totT.cobrado)+'</td><td class="num" style="font-weight:800;color:var(--amber-tx);">'+money(Math.max(0, totT.valor-totT.cobrado))+'</td></tr>'
+      : '<tr class="empty-row"><td colspan="5">Aún no hay inscripciones.</td></tr>';
+
     // Cuentas por cobrar: saldo pendiente de cada inscripción activa, a hoy
     // (no se filtra por fecha — es una foto del estado actual).
     var pendientes = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA' && i.valor > pagadoTotalIns(i); });
@@ -2293,14 +2376,87 @@
     byId('reporteGeneralCard').style.display = (torneoData.estado === 'FINALIZADA') ? 'flex' : 'none';
   }
 
+  // Panel de tarifas (Regular, Preventa, ...): tarifa vigente + alta/renombre/baja.
+  function guardarTarifasTorneo(patch){
+    return torneoRef.set(patch, { merge: true }).then(function(){
+      torneoData = Object.assign({}, torneoData, patch);
+      renderAll();
+    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  }
+  function renderTarifasAdmin(){
+    var box = byId('tarifasAdmin');
+    var prevNueva = byId('tarifa_nueva') ? byId('tarifa_nueva').value : '';
+    var tarifas = tarifasTorneo(), act = tarifaActivaId();
+    var inpCss = 'border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;';
+    box.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+        '<span style="font-weight:700;font-size:13px;">Tarifa vigente</span>' +
+        '<select id="tarifaActivaSel" style="'+inpCss+'font-weight:600;">' +
+          tarifas.map(function(t){ return '<option value="'+t.id+'"'+(t.id===act?' selected':'')+'>'+esc(t.nombre)+'</option>'; }).join('') +
+        '</select>' +
+        '<span class="muted" style="font-size:12px;">Las nuevas inscripciones se cobran con esta tarifa; las anteriores no cambian.</span>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+        tarifas.map(function(t){
+          var esBase = t.id === TARIFA_BASE_ID;
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:3px 6px 3px 12px;font-size:12.5px;font-weight:600;">' +
+            esc(t.nombre) +
+            '<button class="logout-btn" data-ren-tarifa="'+t.id+'" title="Cambiar nombre" style="padding:2px 6px;">✎</button>' +
+            (esBase ? '' : '<button class="logout-btn" data-del-tarifa="'+t.id+'" title="Eliminar tarifa" style="padding:2px 6px;">✕</button>') +
+          '</span>';
+        }).join('') +
+        '<input id="tarifa_nueva" placeholder="Nueva tarifa (ej: Preventa)" value="'+esc(prevNueva)+'" style="'+inpCss+'min-width:200px;">' +
+        '<button class="btn" id="btnAgregarTarifa" style="padding:6px 12px;font-size:12.5px;">+ Agregar tarifa</button>' +
+      '</div>' +
+      '<div class="muted" style="font-size:11.5px;margin-top:10px;">Cada categoría tiene un precio por tarifa (columnas de abajo). Si dejas vacío el precio de una tarifa, se usa el precio de Regular.</div>';
+
+    byId('tarifaActivaSel').addEventListener('change', function(){ guardarTarifasTorneo({ tarifaActiva: this.value }); });
+    byId('btnAgregarTarifa').addEventListener('click', function(){
+      var nombre = byId('tarifa_nueva').value.trim();
+      if (!nombre) { alert('Escribe el nombre de la tarifa (ej: Preventa).'); return; }
+      if (tarifasTorneo().some(function(t){ return t.nombre.toLowerCase() === nombre.toLowerCase(); })) { alert('Ya existe una tarifa con ese nombre.'); return; }
+      var nueva = { id: 't' + Date.now().toString(36), nombre: nombre };
+      byId('tarifa_nueva').value = '';
+      guardarTarifasTorneo({ tarifas: (torneoData.tarifas || []).concat([nueva]) });
+    });
+    box.querySelectorAll('[data-ren-tarifa]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = b.dataset.renTarifa, t = tarifaById(id);
+        var nombre = prompt('Nuevo nombre para la tarifa:', t.nombre);
+        if (nombre === null) return;
+        nombre = nombre.trim();
+        if (!nombre) return;
+        if (id === TARIFA_BASE_ID) guardarTarifasTorneo({ tarifaBaseNombre: nombre });
+        else guardarTarifasTorneo({ tarifas: (torneoData.tarifas || []).map(function(x){ return x.id === id ? { id: x.id, nombre: nombre } : x; }) });
+      });
+    });
+    box.querySelectorAll('[data-del-tarifa]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = b.dataset.delTarifa, t = tarifaById(id);
+        if (!confirm('¿Eliminar la tarifa "'+t.nombre+'"? Las inscripciones ya registradas con ella conservan su valor y su nombre de tarifa.')) return;
+        var patch = { tarifas: (torneoData.tarifas || []).filter(function(x){ return x.id !== id; }) };
+        if (tarifaActivaId() === id) patch.tarifaActiva = TARIFA_BASE_ID;
+        guardarTarifasTorneo(patch);
+      });
+    });
+  }
+
   function renderCategoriasAdmin(){
+    renderTarifasAdmin();
     var ambas = torneoEsAmbas();
     byId('cat_modalidadWrap').style.display = ambas ? 'flex' : 'none';
+    var tarifasCat = tarifasTorneo();
     var lista = categorias.slice().sort(function(a,b){ return (a.orden||0)-(b.orden||0); });
     byId('categoriasAdminList').innerHTML = lista.length ? lista.map(function(c){
-      return '<div class="row-item">' +
-        '<input value="'+esc(c.nombre)+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;margin-right:10px;">' +
-        '<input type="number" value="'+(c.valorInscripcion||0)+'" data-cat-valor="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;width:130px;text-align:right;margin-right:10px;">' +
+      var priceCss = 'border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;width:120px;text-align:right;';
+      return '<div class="row-item" style="flex-wrap:wrap;gap:8px;">' +
+        '<input value="'+esc(c.nombre)+'" data-cat-nombre="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;flex:1;min-width:140px;margin-right:2px;">' +
+        tarifasCat.map(function(t){
+          var esBase = t.id === TARIFA_BASE_ID;
+          var v = esBase ? (c.valorInscripcion||0) : ((c.precios && c.precios[t.id] != null) ? c.precios[t.id] : '');
+          return '<label style="display:flex;flex-direction:column;gap:2px;font-size:10.5px;font-weight:600;color:var(--gray-500);">' + esc(t.nombre) +
+            '<input type="number" value="'+v+'" ' + (esBase ? 'data-cat-valor="'+c.id+'"' : 'data-cat-precio="'+c.id+'" data-tarifa="'+t.id+'" placeholder="'+(c.valorInscripcion||0)+'"') + ' style="'+priceCss+'"></label>';
+        }).join('') +
         (ambas ? '<select data-cat-modalidad="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-weight:600;font-family:inherit;margin-right:10px;">' +
           '<option value="PAREJAS"'+(c.modalidad!=='INDIVIDUAL'?' selected':'')+'>Dobles</option>' +
           '<option value="INDIVIDUAL"'+(c.modalidad==='INDIVIDUAL'?' selected':'')+'>Individual</option>' +
@@ -2319,6 +2475,14 @@
       inp.addEventListener('change', function(){
         var val = parseFloat(inp.value) || 0;
         torneoRef.collection('categorias').doc(inp.dataset.catValor).update({ valorInscripcion: val })
+          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+      });
+    });
+    document.querySelectorAll('[data-cat-precio]').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var up = {};
+        up['precios.' + inp.dataset.tarifa] = inp.value === '' ? firebase.firestore.FieldValue.delete() : (parseFloat(inp.value) || 0);
+        torneoRef.collection('categorias').doc(inp.dataset.catPrecio).update(up)
           .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
       });
     });
@@ -2573,6 +2737,7 @@
 
   // ---------- render all ----------
   function renderAll(){
+    fillTarifaSelect();
     fillCategoriaSelect();
     fillCuentaSelects();
     fillCategoriaDatalist();
@@ -2600,7 +2765,12 @@
     if (!categoriaId || !j1 || !cuentaId) { alert('Completa categoría, '+(individual?'jugador':'jugador 1')+' y cuenta.'); return; }
     var estadoPago = byId('i_estadoPago').value;
     var pagado = parseFloat(byId('i_pagado').value) || 0;
-    var valor = cat.valorInscripcion;
+    var tarifaId = byId('i_tarifa').value || TARIFA_BASE_ID;
+    var tarifa = tarifaById(tarifaId);
+    var valorLista = precioCategoria(cat, tarifaId);
+    var valor = parseFloat(byId('i_valor').value);
+    if (!(valor > 0)) { alert('El valor de la inscripción debe ser mayor a 0.'); return; }
+    if (pagado > valor) { alert('El monto pagado ('+money(pagado)+') supera el valor de la inscripción ('+money(valor)+').'); return; }
     var mitad = mitadDe({ valor: valor, individual: individual });
     // El monto pagado al crear no distingue jugador todavía: se reparte
     // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
@@ -2614,6 +2784,7 @@
       categoriaId: categoriaId, categoriaNombre: cat.nombre,
       j1Nombre: j1, j2Nombre: j2, individual: individual,
       valor: valor, pagadoJ1: pagadoJ1, pagadoJ2: pagadoJ2,
+      tarifaId: tarifaId, tarifaNombre: tarifa.nombre, valorLista: valorLista, precioAjustado: valor !== valorLista,
       estadoPago: estadoPago, estadoIns: estadoIns,
       cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
       fecha: Date.now()
@@ -2634,6 +2805,9 @@
     }).then(function(){
       ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
       byId('i_pagado').value = 0;
+      valorManual = false;
+      fillTarifaSelect();
+      fillCategoriaSelect();
       closeForm('inscripcion');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
