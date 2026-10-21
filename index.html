@@ -3630,7 +3630,7 @@
   function textoInvitacion(inv){
     var quien = inv.ownerNombre || nombreRemitente() || inv.ownerEmail || 'Un organizador';
     var rol = inv.rol === 'EDITOR' ? 'Editor' : 'Lector (solo ver)';
-    return 'Hola 👋 ' + quien + ' te invitó al torneo *' + (inv.torneoNombre || 'Torneo') + '* en CourtOS como ' + rol + '.\n\n' +
+    return 'Hola, ' + quien + ' te invitó al torneo *' + (inv.torneoNombre || 'Torneo') + '* en CourtOS como ' + rol + '.\n\n' +
       '1) Entra a ' + APP_URL + '\n' +
       '2) Crea tu cuenta gratis (o inicia sesión) con este correo: *' + inv.emailInvitado + '*\n' +
       '3) Arriba te va a salir la invitación: toca "Aceptar".';
