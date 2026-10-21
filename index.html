@@ -1184,6 +1184,7 @@
         <div id="compartirContenido" style="display:flex; flex-direction:column; gap:14px;">
           <div class="formgrid">
             <div class="field"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
+            <div class="field" style="grid-column:1/-1;"><label>Tu nombre (para el mensaje de la invitación)</label><input id="sh_miNombre" placeholder="Ej: Daniel Serrato"></div>
             <div class="field"><label>Rol</label>
               <select id="sh_rol">
                 <option value="LECTOR">Lector — solo puede ver</option>
@@ -3620,6 +3621,20 @@
       .map(function(m){ return m.label + (p[m.id] === 'EDITAR' ? ' (edita)' : ''); }).join(' · ') || 'Sin acceso';
   }
 
+  var APP_URL = 'https://court-os-chi.vercel.app';
+  function nombreRemitente(){
+    var n = (byId('sh_miNombre') && byId('sh_miNombre').value.trim()) || '';
+    if (!n) { try { n = localStorage.getItem('courtos_miNombre') || ''; } catch(e){} }
+    return n;
+  }
+  function textoInvitacion(inv){
+    var quien = inv.ownerNombre || nombreRemitente() || inv.ownerEmail || 'Un organizador';
+    var rol = inv.rol === 'EDITOR' ? 'Editor' : 'Lector (solo ver)';
+    return 'Hola 👋 ' + quien + ' te invitó al torneo *' + (inv.torneoNombre || 'Torneo') + '* en CourtOS como ' + rol + '.\n\n' +
+      '1) Entra a ' + APP_URL + '\n' +
+      '2) Crea tu cuenta gratis (o inicia sesión) con este correo: *' + inv.emailInvitado + '*\n' +
+      '3) Arriba te va a salir la invitación: toca "Aceptar".';
+  }
   var compartirSig = null;
   function renderCompartir(){
     var card = byId('compartirCard');
@@ -3630,6 +3645,7 @@
     byId('compartirLock').style.display = pro ? 'none' : 'block';
     byId('compartirContenido').style.display = pro ? 'flex' : 'none';
     if (!pro) { byId('compartirLock').innerHTML = bloqueoProHtml('Comparte tus torneos con otras personas y decide qué puede ver y editar cada una. Actívalo con el plan PRO.'); return; }
+    if (!byId('sh_miNombre').value) { try { byId('sh_miNombre').value = localStorage.getItem('courtos_miNombre') || ''; } catch(e){} }
     if (!byId('shn_inscripciones')) byId('sh_permisos').innerHTML = filasPermisosHtml('shn', byId('sh_rol').value, permisosPorDefecto(byId('sh_rol').value));
 
     // La lista solo se vuelve a dibujar si cambió (para no borrar permisos que estés editando).
@@ -3660,7 +3676,10 @@
         return '<div class="share-member" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">' +
           '<div style="min-width:0;"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;">' + esc(i.emailInvitado) + '</div>' +
           '<div class="muted" style="font-size:12px;">' + (i.estado === 'RECHAZADA' ? 'Rechazó la invitación' : 'Pendiente — la verá al entrar a CourtOS con ese correo') + ' · ' + esc(resumenPermisos(i.permisos)) + '</div></div>' +
-          '<button class="btn" data-sh-cancelar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;flex-shrink:0;">' + (i.estado === 'RECHAZADA' ? 'Quitar' : 'Cancelar') + '</button></div>';
+          '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">' +
+          (i.estado === 'PENDIENTE' ? '<button class="btn btn-primary" data-sh-wa="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">WhatsApp</button>' +
+            '<button class="btn" data-sh-copiar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">Copiar mensaje</button>' : '') +
+          '<button class="btn" data-sh-cancelar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">' + (i.estado === 'RECHAZADA' ? 'Quitar' : 'Cancelar') + '</button></div></div>';
       }).join('');
     }
     if (!html) html = '<div class="muted" style="font-size:12.5px;">Aún no has compartido este torneo con nadie.</div>';
@@ -3688,6 +3707,22 @@
           .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
       });
     });
+    function invPorId(id){ return invitacionesTorneo.find(function(x){ return x.id === id; }); }
+    byId('sh_lista').querySelectorAll('[data-sh-wa]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var inv = invPorId(b.dataset.shWa); if (!inv) return;
+        window.open('https://wa.me/?text=' + encodeURIComponent(textoInvitacion(inv)), '_blank', 'noopener');
+      });
+    });
+    byId('sh_lista').querySelectorAll('[data-sh-copiar]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var inv = invPorId(b.dataset.shCopiar); if (!inv) return;
+        var txt = textoInvitacion(inv);
+        function listo(){ flashBarra('Mensaje copiado'); }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(listo, function(){ window.prompt('Copia este mensaje:', txt); });
+        else window.prompt('Copia este mensaje:', txt);
+      });
+    });
     byId('sh_lista').querySelectorAll('[data-sh-cancelar]').forEach(function(b){
       b.addEventListener('click', function(){
         fsdb.collection('invitaciones').doc(b.dataset.shCancelar).delete()
@@ -3712,12 +3747,14 @@
     var permisos = leerPermisos('shn');
     if (MODULOS.every(function(m){ return permisos[m.id] === 'NO'; })) { alert('Elige al menos una parte que pueda ver.'); return; }
     var btn = byId('btnInvitar'); btn.disabled = true;
+    var miNombre = nombreRemitente();
+    try { localStorage.setItem('courtos_miNombre', miNombre); } catch(e){}
     fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + email).set({
-      ownerUid: currentUid, ownerEmail: currentUserEmail, torneoId: torneoId, torneoNombre: torneoData.nombre || 'Torneo',
+      ownerUid: currentUid, ownerEmail: currentUserEmail, ownerNombre: miNombre, torneoId: torneoId, torneoNombre: torneoData.nombre || 'Torneo',
       emailInvitado: email, rol: rolDesdePermisos(permisos), permisos: permisos, estado: 'PENDIENTE', creadoEn: Date.now()
     }).then(function(){
       byId('sh_email').value = '';
-      flashBarra('Invitación enviada a ' + email);
+      flashBarra('Invitación guardada. Ahora mándale el mensaje por WhatsApp.');
     }).catch(function(e){ alert('No se pudo enviar la invitación: ' + e.message); })
       .then(function(){ btn.disabled = false; });
   });
@@ -3749,7 +3786,7 @@
     box.style.display = 'flex';
     box.innerHTML = '<div style="font-weight:700;font-size:16px;">Invitaciones</div>' + arr.map(function(inv){
       return '<div class="card" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-color:var(--accent-bg);">' +
-        '<div style="font-size:13.5px;"><strong>' + esc(inv.ownerEmail) + '</strong> te invitó al torneo <strong>' + esc(inv.torneoNombre) + '</strong> como <strong>' + (inv.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</strong>.</div>' +
+        '<div style="font-size:13.5px;"><strong>' + esc(inv.ownerNombre || inv.ownerEmail) + '</strong> te invitó al torneo <strong>' + esc(inv.torneoNombre) + '</strong> como <strong>' + (inv.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</strong>.</div>' +
         '<div class="muted" style="font-size:12px;">' + esc(resumenPermisos(inv.permisos)) + '</div>' +
         '<div style="display:flex;gap:8px;"><button class="btn btn-primary" data-inv-aceptar="' + esc(inv.id) + '" style="padding:6px 14px;font-size:12.5px;">Aceptar</button>' +
         '<button class="btn" data-inv-rechazar="' + esc(inv.id) + '" style="padding:6px 14px;font-size:12.5px;">Rechazar</button></div></div>';
