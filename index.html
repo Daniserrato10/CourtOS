@@ -735,6 +735,15 @@
             </select>
           </div>
           <div class="field"><label>Monto pagado ahora</label><input id="i_pagado" type="number" value="0"></div>
+          <div class="field"><label>Cortesía (regalada o exenta)</label>
+            <select id="i_cortesia">
+              <option value="NINGUNA">Sin cortesía</option>
+              <option value="J1">La mitad de Jugador 1</option>
+              <option value="J2">La mitad de Jugador 2</option>
+              <option value="AMBOS">Toda la inscripción</option>
+            </select>
+          </div>
+          <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
           <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
             <select id="i_quien">
               <option value="J1">Jugador 1</option>
@@ -767,6 +776,20 @@
         <div class="form-actions">
           <button class="btn" data-close-form="pago">Cancelar</button>
           <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+        </div>
+      </div>
+
+      <div class="formpanel" id="formCortesia">
+        <div class="panel-title">Cortesía (regalar o exentar)</div>
+        <div id="cx_resumen" class="muted" style="font-size:13px;"></div>
+        <div class="formgrid">
+          <div class="field"><label>Qué se regala</label><select id="cx_tipo"></select></div>
+          <div class="field"><label>Motivo (opcional)</label><input id="cx_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
+        </div>
+        <input type="hidden" id="cx_inscripcionId">
+        <div class="form-actions">
+          <button class="btn" data-close-form="cortesia">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarCortesia">Guardar cortesía</button>
         </div>
       </div>
 
@@ -982,6 +1005,7 @@
           <thead><tr><th>Tarifa</th><th style="text-align:right">Inscripciones</th><th style="text-align:right">Valor total</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Por cobrar</th></tr></thead>
           <tbody id="repTarifasBody"></tbody>
         </table>
+        <div class="muted" id="repCortesias" style="font-size:12.5px;margin-top:10px;"></div>
       </div>
 
       <div class="panel" data-report-section="cxc">
@@ -1310,6 +1334,17 @@
   // segundo jugador, así que toda la "mitad" de Jugador 1 es el valor
   // completo — si no, quedaría cobrando solo la mitad de lo que debe.
   function mitadDe(i){ return i.individual ? i.valor : i.valor / 2; }
+  // Cortesía (inscripción regalada o exenta): el valor de la inscripción no cambia,
+  // pero la parte exenta de cada jugador no se cobra ni cuenta como saldo pendiente.
+  function exentoDe(i, n){ return n === 1 ? !!i.exentoJ1 : !!i.exentoJ2; }
+  function mitadJ(i, n){ return exentoDe(i, n) ? 0 : mitadDe(i); }
+  function valorCobrable(i){ return i.individual ? mitadJ(i, 1) : mitadJ(i, 1) + mitadJ(i, 2); }
+  function valorCortesia(i){ return Math.max(0, (i.valor || 0) - valorCobrable(i)); }
+  function textoCortesia(i){
+    if (!valorCortesia(i)) return '';
+    if (i.individual || (i.exentoJ1 && i.exentoJ2)) return 'Cortesía total';
+    return 'Cortesía: ' + (i.exentoJ1 ? i.j1Nombre : (i.j2Nombre || 'Jugador 2'));
+  }
 
   // ---------- cambios pendientes (guardado explícito) ----------
   // Las ediciones "en línea" (precios, nombres, tarifa vigente, presupuesto...)
@@ -1615,6 +1650,7 @@
     byId('i_j2Wrap').style.display = individual ? 'none' : 'flex';
     byId('i_j1Label').textContent = individual ? 'Jugador' : 'Jugador 1';
     if (individual) byId('i_j2').value = '';
+    if (byId('i_cortesia')) actualizarCortesiaForm();
   }
   document.querySelectorAll('[data-close-form]').forEach(function(btn){
     btn.addEventListener('click', function(){ closeForm(btn.dataset.closeForm); });
@@ -1664,6 +1700,37 @@
       if (prev && cuentas.some(function(c){return c.id===prev;})) el.value = prev;
     });
   }
+  // Cortesía en el formulario de nueva inscripción
+  function exencionesForm(){
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
+    var c = byId('i_cortesia').value;
+    if (ind) return { j1: c === 'AMBOS', j2: false };
+    return { j1: c === 'J1' || c === 'AMBOS', j2: c === 'J2' || c === 'AMBOS' };
+  }
+  function cobrableForm(){
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
+    var valor = parseFloat(byId('i_valor').value) || 0, ex = exencionesForm();
+    if (ind) return ex.j1 ? 0 : valor;
+    return (ex.j1 ? 0 : valor / 2) + (ex.j2 ? 0 : valor / 2);
+  }
+  function actualizarCortesiaForm(){
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
+    var sel = byId('i_cortesia');
+    var j1 = byId('i_j1').value.trim(), j2 = byId('i_j2').value.trim();
+    sel.options[1].textContent = 'La mitad de ' + (j1 || 'Jugador 1');
+    sel.options[2].textContent = 'La mitad de ' + (j2 || 'Jugador 2');
+    sel.options[3].textContent = 'Toda la inscripción';
+    [1, 2].forEach(function(k){ sel.options[k].hidden = ind; sel.options[k].disabled = ind; });
+    if (ind && (sel.value === 'J1' || sel.value === 'J2')) sel.value = 'NINGUNA';
+    byId('i_motivoWrap').style.display = sel.value === 'NINGUNA' ? 'none' : '';
+    var cobrable = cobrableForm();
+    if (cobrable <= 0 && sel.value !== 'NINGUNA') { byId('i_estadoPago').value = 'APROBADO'; byId('i_pagado').value = 0; }
+    else if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = cobrable;
+    actualizarQuienPago();
+  }
+  byId('i_cortesia').addEventListener('change', actualizarCortesiaForm);
+  ['i_j1', 'i_j2'].forEach(function(id){ byId(id).addEventListener('input', actualizarCortesiaForm); });
+
   function updateValorInscripcion(){
     var cat = categoriaById(byId('i_categoria').value);
     var precio = cat ? precioCategoria(cat, byId('i_tarifa').value) : 0;
@@ -1672,7 +1739,7 @@
     if (!valorManual) {
       byId('i_valor').value = cat ? precio : '';
       byId('i_valorHint').textContent = '';
-      if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = precio;
+      if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = cobrableForm();
     }
     actualizarFormInscripcionSegunCategoria();
     actualizarQuienPago();
@@ -1682,9 +1749,10 @@
   function actualizarQuienPago(){
     var cat = categoriaById(byId('i_categoria').value);
     var individual = categoriaEsIndividual(cat);
-    var valor = parseFloat(byId('i_valor').value) || 0;
+    var valor = cobrableForm();
+    var ex = exencionesForm();
     var pagado = parseFloat(byId('i_pagado').value) || 0;
-    var mostrar = !individual && pagado > 0 && pagado < valor;
+    var mostrar = !individual && !ex.j1 && !ex.j2 && pagado > 0 && pagado < valor;
     byId('i_quienWrap').style.display = mostrar ? '' : 'none';
     if (!mostrar) return;
     var j1 = byId('i_j1').value.trim(), j2 = byId('i_j2').value.trim();
@@ -1710,11 +1778,11 @@
     var lista = cat ? precioCategoria(cat, byId('i_tarifa').value) : 0;
     var v = parseFloat(this.value) || 0;
     byId('i_valorHint').textContent = (cat && v !== lista) ? 'Precio ajustado (el de la tarifa es ' + money(lista) + ')' : '';
-    if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = v;
+    if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = cobrableForm();
   });
   byId('i_estadoPago').addEventListener('change', function(){
     var v = parseFloat(byId('i_valor').value) || 0;
-    if (this.value === 'APROBADO') byId('i_pagado').value = v;
+    if (this.value === 'APROBADO') byId('i_pagado').value = cobrableForm();
     if (this.value === 'PENDIENTE') byId('i_pagado').value = 0;
   });
 
@@ -1780,17 +1848,22 @@
       return '<tr>' +
         '<td style="font-weight:600;">'+nombreUnidad+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="num">'+money(i.valor)+
+        '<td class="num">'+money(valorCobrable(i))+
+          (valorCortesia(i) ? '<div style="font-size:11px;font-weight:600;color:var(--accent);" title="'+esc(i.motivoExencion||'')+'">'+esc(textoCortesia(i))+' · −'+money(valorCortesia(i))+'</div>' : '')+
           (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
-        '<td class="num" style="font-weight:600;color:'+(pagado>=i.valor?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
+        '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
         '<td><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;">' +
+          (i.estadoIns !== 'CANCELADA' ? '<button class="btn" data-w="inscripciones" data-cortesia="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cortesía</button>' : '') +
           (puedeCobrar ? '<button class="btn" data-w="inscripciones" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
           (isAdminMode ? '<button class="logout-btn" data-del-ins="'+i.id+'" title="Eliminar inscripción">✕</button>' : '') +
         '</div></td>' +
         '</tr>';
     }).join('');
 
+    document.querySelectorAll('[data-cortesia]').forEach(function(btn){
+      btn.addEventListener('click', function(){ abrirFormCortesia(btn.dataset.cortesia); });
+    });
     document.querySelectorAll('[data-cobrar]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormPago(btn.dataset.cobrar); });
     });
@@ -2030,11 +2103,10 @@
   function revertirPagoInscripcion(insId, attribJ1, attribJ2){
     var i = inscripciones.find(function(x){ return x.id === insId; });
     if (!i) return Promise.resolve();
-    var mitad = mitadDe(i);
     var nuevoPagadoJ1 = Math.max(0, (i.pagadoJ1||0) - attribJ1);
     var nuevoPagadoJ2 = Math.max(0, (i.pagadoJ2||0) - attribJ2);
-    var completoJ1 = nuevoPagadoJ1 >= mitad - 1;
-    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitad - 1;
+    var completoJ1 = nuevoPagadoJ1 >= mitadJ(i, 1) - 1;
+    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitadJ(i, 2) - 1;
     var nuevoEstadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : ((nuevoPagadoJ1>0||nuevoPagadoJ2>0) ? 'PARCIAL' : 'PENDIENTE');
     var nuevoEstadoIns = nuevoEstadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
     var update = { estadoPago: nuevoEstadoPago, estadoIns: nuevoEstadoIns };
@@ -2234,7 +2306,7 @@
     inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).forEach(function(i){
       var k = i.tarifaNombre || 'Sin tarifa registrada';
       if (!porTarifa[k]) { porTarifa[k] = { n: 0, valor: 0, cobrado: 0 }; ordenTarifas.push(k); }
-      porTarifa[k].n++; porTarifa[k].valor += (i.valor||0); porTarifa[k].cobrado += pagadoTotalIns(i);
+      porTarifa[k].n++; porTarifa[k].valor += valorCobrable(i); porTarifa[k].cobrado += pagadoTotalIns(i);
     });
     var totT = { n: 0, valor: 0, cobrado: 0 };
     byId('repTarifasBody').innerHTML = ordenTarifas.length ? ordenTarifas.map(function(k){
@@ -2245,15 +2317,20 @@
         '<td class="num" style="font-weight:800;color:var(--green-tx);">'+money(totT.cobrado)+'</td><td class="num" style="font-weight:800;color:var(--amber-tx);">'+money(Math.max(0, totT.valor-totT.cobrado))+'</td></tr>'
       : '<tr class="empty-row"><td colspan="5">Aún no hay inscripciones.</td></tr>';
 
+    var cortesias = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA' && valorCortesia(i) > 0; });
+    byId('repCortesias').textContent = cortesias.length
+      ? 'Cortesías otorgadas: ' + cortesias.length + ' inscripci' + (cortesias.length === 1 ? 'ón' : 'ones') + ' · ' + money(cortesias.reduce(function(s,i){ return s + valorCortesia(i); }, 0)) + ' que no se cobran (ya descontados del "Valor total" de arriba).'
+      : '';
+
     // Cuentas por cobrar: saldo pendiente de cada inscripción activa, a hoy
     // (no se filtra por fecha — es una foto del estado actual).
-    var pendientes = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA' && i.valor > pagadoTotalIns(i); });
-    var totalCxC = pendientes.reduce(function(s,i){ return s + (i.valor - pagadoTotalIns(i)); }, 0);
+    var pendientes = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA' && valorCobrable(i) > pagadoTotalIns(i); });
+    var totalCxC = pendientes.reduce(function(s,i){ return s + (valorCobrable(i) - pagadoTotalIns(i)); }, 0);
     byId('repCxCTotal').textContent = money(totalCxC);
     byId('repCxCBody').innerHTML = pendientes.length ? pendientes.map(function(i){
       var j2 = i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">⏳ por confirmar</span>';
       return '<tr><td style="font-weight:600;">'+esc(i.j1Nombre)+' / '+j2+'</td><td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="num" style="font-weight:700;color:var(--amber-tx);">'+money(i.valor-pagadoTotalIns(i))+'</td></tr>';
+        '<td class="num" style="font-weight:700;color:var(--amber-tx);">'+money(valorCobrable(i)-pagadoTotalIns(i))+'</td></tr>';
     }).join('') : '<tr class="empty-row"><td colspan="3">No hay saldos pendientes — todo está al día.</td></tr>';
 
     // Presupuesto vs Real (reutiliza exactamente la misma lógica del
@@ -3005,26 +3082,30 @@
     var valorLista = precioCategoria(cat, tarifaId);
     var valor = parseFloat(byId('i_valor').value);
     if (!(valor > 0)) { alert('El valor de la inscripción debe ser mayor a 0.'); return; }
-    if (pagado > valor) { alert('El monto pagado ('+money(pagado)+') supera el valor de la inscripción ('+money(valor)+').'); return; }
+    var ex = exencionesForm();
+    var cobrable = cobrableForm();
+    if (pagado > cobrable) { alert('El monto pagado ('+money(pagado)+') supera lo que se cobra en esta inscripción ('+money(cobrable)+').'); return; }
     var mitad = mitadDe({ valor: valor, individual: individual });
+    var mJ1 = ex.j1 ? 0 : mitad, mJ2 = (individual || ex.j2) ? 0 : mitad;
+    if (cobrable <= 0) estadoPago = 'APROBADO';
     // El monto pagado al crear no distingue jugador todavía: se reparte
     // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
     // (misma regla que usa "Confirmar Pago" más abajo). En modalidad
     // individual no hay Jugador 2, así que "mitad" ya es el valor completo.
     // Si es un abono en una pareja, el organizador indica quién pagó
     // ("¿Quién pagó?"): Jugador 1, Jugador 2 o los dos mitad y mitad.
-    var quien = (!individual && pagado > 0 && pagado < valor) ? byId('i_quien').value : 'J1';
+    var quien = (!individual && !ex.j1 && !ex.j2 && pagado > 0 && pagado < cobrable) ? byId('i_quien').value : 'J1';
     if (quien !== 'J1' && !j2) quien = 'J1';
     var pagadoJ1, pagadoJ2;
     if (quien === 'J2') {
-      pagadoJ2 = Math.min(pagado, mitad);
-      pagadoJ1 = Math.max(0, pagado - mitad);
+      pagadoJ2 = Math.min(pagado, mJ2);
+      pagadoJ1 = Math.min(Math.max(0, pagado - mJ2), mJ1);
     } else if (quien === 'AMBOS') {
-      pagadoJ1 = Math.min(pagado / 2, mitad);
-      pagadoJ2 = Math.min(pagado - pagadoJ1, mitad);
+      pagadoJ1 = Math.min(pagado / 2, mJ1);
+      pagadoJ2 = Math.min(pagado - pagadoJ1, mJ2);
     } else {
-      pagadoJ1 = Math.min(pagado, mitad);
-      pagadoJ2 = Math.max(0, pagado - mitad);
+      pagadoJ1 = Math.min(pagado, mJ1);
+      pagadoJ2 = Math.min(Math.max(0, pagado - mJ1), mJ2);
     }
     var quienTexto = quien === 'J2' ? j2 : (quien === 'AMBOS' ? j1 + ' y ' + j2 : j1);
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE';
@@ -3034,6 +3115,7 @@
       categoriaId: categoriaId, categoriaNombre: cat.nombre,
       j1Nombre: j1, j2Nombre: j2, individual: individual,
       valor: valor, pagadoJ1: pagadoJ1, pagadoJ2: pagadoJ2,
+      exentoJ1: ex.j1, exentoJ2: ex.j2, motivoExencion: (ex.j1 || ex.j2) ? byId('i_motivo').value.trim() : '',
       tarifaId: tarifaId, tarifaNombre: tarifa.nombre, valorLista: valorLista, precioAjustado: valor !== valorLista,
       estadoPago: estadoPago, estadoIns: estadoIns,
       cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
@@ -3046,7 +3128,7 @@
           categoria: 'Inscripciones', valor: pagado, cuentaId: cuentaId,
           sourceType: 'INSCRIPCION', sourceId: ref.id,
           attribJ1: pagadoJ1, attribJ2: pagadoJ2,
-          observacion: (!individual && pagado < valor) ? 'Abono de ' + quienTexto : '',
+          observacion: (!individual && pagado < cobrable) ? 'Abono de ' + quienTexto : '',
           estado: 'ACTIVO', fecha: Date.now(), creadoEn: Date.now(), registradoPor: currentUserEmail
         });
       }
@@ -3057,6 +3139,7 @@
     }).then(function(){
       ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
       byId('i_pagado').value = 0;
+      byId('i_cortesia').value = 'NINGUNA'; byId('i_motivo').value = '';
       valorManual = false;
       byId('i_quien').value = 'J1';
       fillTarifaSelect();
@@ -3064,6 +3147,48 @@
       actualizarQuienPago();
       closeForm('inscripcion');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+
+  // ============================================================
+  // CORTESÍA sobre una inscripción ya creada
+  // ============================================================
+  function abrirFormCortesia(insId){
+    var i = inscripciones.find(function(x){ return x.id === insId; });
+    if (!i) return;
+    byId('cx_inscripcionId').value = insId;
+    byId('cx_resumen').innerHTML = '<strong>' + (i.individual ? esc(i.j1Nombre) : esc(i.j1Nombre) + ' / ' + (i.j2Nombre ? esc(i.j2Nombre) : 'Jugador 2 por confirmar')) + '</strong> — ' + esc(i.categoriaNombre) +
+      '<br>Valor: ' + money(i.valor) + ' · Pagado: ' + money(pagadoTotalIns(i));
+    var opts = '<option value="NINGUNA">Sin cortesía</option>';
+    if (!i.individual) {
+      opts += '<option value="J1">La mitad de ' + esc(i.j1Nombre) + '</option>';
+      opts += '<option value="J2">La mitad de ' + esc(i.j2Nombre || 'Jugador 2') + '</option>';
+    }
+    opts += '<option value="AMBOS">Toda la inscripción</option>';
+    byId('cx_tipo').innerHTML = opts;
+    byId('cx_tipo').value = (i.exentoJ1 && (i.individual || i.exentoJ2)) ? 'AMBOS' : (i.exentoJ1 ? 'J1' : (i.exentoJ2 ? 'J2' : 'NINGUNA'));
+    byId('cx_motivo').value = i.motivoExencion || '';
+    openForm('cortesia');
+  }
+  byId('btnGuardarCortesia').addEventListener('click', function(){
+    if (!torneoRef) return;
+    var id = byId('cx_inscripcionId').value;
+    var i = inscripciones.find(function(x){ return x.id === id; });
+    if (!i) { alert('Esta inscripción ya no existe.'); closeForm('cortesia'); return; }
+    var t = byId('cx_tipo').value;
+    var ex1 = (t === 'J1' || t === 'AMBOS'), ex2 = !i.individual && (t === 'J2' || t === 'AMBOS');
+    if (ex1 && !i.exentoJ1 && (i.pagadoJ1 || 0) > 0) { alert(i.j1Nombre + ' ya pagó ' + money(i.pagadoJ1) + '. Para regalarle su parte, primero anula ese pago en Financiero.'); return; }
+    if (ex2 && !i.exentoJ2 && (i.pagadoJ2 || 0) > 0) { alert((i.j2Nombre || 'El Jugador 2') + ' ya pagó ' + money(i.pagadoJ2) + '. Para regalarle su parte, primero anula ese pago en Financiero.'); return; }
+    var nuevo = Object.assign({}, i, { exentoJ1: ex1, exentoJ2: ex2 });
+    var completoJ1 = (i.pagadoJ1 || 0) >= mitadJ(nuevo, 1) - 1;
+    var completoJ2 = !i.j2Nombre ? (i.individual || true) && (ex2 || i.individual || true) : (i.pagadoJ2 || 0) >= mitadJ(nuevo, 2) - 1;
+    if (!i.individual && !i.j2Nombre) completoJ2 = ex2;   // sin Jugador 2 aún, su mitad queda pendiente salvo que sea cortesía
+    var estadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : (pagadoTotalIns(i) > 0 ? 'PARCIAL' : 'PENDIENTE');
+    var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
+    torneoRef.collection('inscripciones').doc(id).update({
+      exentoJ1: ex1, exentoJ2: ex2, motivoExencion: (ex1 || ex2) ? byId('cx_motivo').value.trim() : '',
+      estadoPago: estadoPago, estadoIns: estadoIns
+    }).then(function(){ closeForm('cortesia'); flashBarra('Cortesía guardada'); })
+      .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
   // ============================================================
@@ -3078,15 +3203,14 @@
     var i = inscripciones.find(function(x){ return x.id === insId; });
     if (!i) return;
     pagoInsActual = i;
-    var mitad = mitadDe(i);
-    var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
-    var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
+    var saldoJ1 = Math.max(0, mitadJ(i, 1) - (i.pagadoJ1||0));
+    var saldoJ2 = i.j2Nombre ? Math.max(0, mitadJ(i, 2) - (i.pagadoJ2||0)) : 0;
 
     byId('pg_inscripcionId').value = insId;
     byId('pg_resumen').innerHTML =
       '<strong>'+(i.individual ? esc(i.j1Nombre) : esc(i.j1Nombre)+' / '+(i.j2Nombre?esc(i.j2Nombre):'⏳ por confirmar'))+'</strong> — '+esc(i.categoriaNombre)+'<br>' +
-      'Total: '+money(i.valor)+' · '+esc(i.j1Nombre)+' debe '+money(saldoJ1) +
-      (i.j2Nombre ? ' · '+esc(i.j2Nombre)+' debe '+money(saldoJ2) : '');
+      'Total a cobrar: '+money(valorCobrable(i))+(valorCortesia(i) ? ' ('+esc(textoCortesia(i))+' de '+money(valorCortesia(i))+')' : '')+' · '+esc(i.j1Nombre)+(i.exentoJ1 ? ': cortesía' : ' debe '+money(saldoJ1)) +
+      (i.j2Nombre ? ' · '+esc(i.j2Nombre)+(i.exentoJ2 ? ': cortesía' : ' debe '+money(saldoJ2)) : (i.exentoJ2 ? ' · Jugador 2: cortesía' : ''));
 
     var opciones = '';
     if (saldoJ1 > 0) opciones += '<option value="J1">'+esc(i.j1Nombre)+' — debe '+money(saldoJ1)+'</option>';
@@ -3102,9 +3226,8 @@
   byId('pg_quien').addEventListener('change', actualizarMontoPago);
   function actualizarMontoPago(){
     if (!pagoInsActual) return;
-    var mitad = mitadDe(pagoInsActual);
-    var saldoJ1 = Math.max(0, mitad - (pagoInsActual.pagadoJ1||0));
-    var saldoJ2 = pagoInsActual.j2Nombre ? Math.max(0, mitad - (pagoInsActual.pagadoJ2||0)) : 0;
+    var saldoJ1 = Math.max(0, mitadJ(pagoInsActual, 1) - (pagoInsActual.pagadoJ1||0));
+    var saldoJ2 = pagoInsActual.j2Nombre ? Math.max(0, mitadJ(pagoInsActual, 2) - (pagoInsActual.pagadoJ2||0)) : 0;
     var quien = byId('pg_quien').value;
     var monto = quien === 'J1' ? saldoJ1 : quien === 'J2' ? saldoJ2 : quien === 'AMBOS' ? saldoJ1+saldoJ2 : 0;
     byId('pg_monto').value = Math.round(monto);
@@ -3121,9 +3244,8 @@
     var cuentaId = byId('pg_cuenta').value;
     if (!quien || monto <= 0 || !cuentaId) { alert('Selecciona quién paga, un monto mayor a 0 y la cuenta.'); return; }
 
-    var mitad = mitadDe(i);
-    var saldoJ1 = Math.max(0, mitad - (i.pagadoJ1||0));
-    var saldoJ2 = i.j2Nombre ? Math.max(0, mitad - (i.pagadoJ2||0)) : 0;
+    var saldoJ1 = Math.max(0, mitadJ(i, 1) - (i.pagadoJ1||0));
+    var saldoJ2 = i.j2Nombre ? Math.max(0, mitadJ(i, 2) - (i.pagadoJ2||0)) : 0;
     var deltaJ1 = 0, deltaJ2 = 0, quienTexto = '';
 
     if (quien === 'J1') {
@@ -3139,8 +3261,8 @@
 
     var nuevoPagadoJ1 = (i.pagadoJ1||0) + deltaJ1;
     var nuevoPagadoJ2 = (i.pagadoJ2||0) + deltaJ2;
-    var completoJ1 = nuevoPagadoJ1 >= mitad - 1;
-    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitad - 1;
+    var completoJ1 = nuevoPagadoJ1 >= mitadJ(i, 1) - 1;
+    var completoJ2 = !i.j2Nombre || nuevoPagadoJ2 >= mitadJ(i, 2) - 1;
     var nuevoEstadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : 'PARCIAL';
     var nuevoEstadoIns = nuevoEstadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'PENDIENTE' ? 'PENDIENTE' : i.estadoIns);
 
@@ -3558,7 +3680,7 @@
   // interfaz solo esconde lo que la persona no puede usar.
   var unsubCompartidos = null, unsubInvRecibidas = null, compartidosSeq = 0;
   var VISTA_MODULO = { inscripciones: 'inscripciones', viabilidad: 'viabilidad', notas: 'notas', financiero: 'financiero', presupuesto: 'presupuesto', reportes: 'financiero' };
-  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formLinea: 'presupuesto', formNota: 'notas' };
+  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formCortesia: 'inscripciones', formLinea: 'presupuesto', formNota: 'notas' };
   var NIVEL_TXT = { NO: 'Sin acceso', VER: 'Solo ver', EDITAR: 'Puede editar' };
 
   function aplicarPermisos(){
