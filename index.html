@@ -1099,9 +1099,12 @@
           </div>
         </div>
 
-        <div class="no-print" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;max-width:320px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="jug_buscar" type="text" placeholder="Buscar jugador..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
+        <div class="no-print" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;width:320px;max-width:100%;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="jug_buscar" type="text" placeholder="Buscar jugador..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
+          </div>
+          <select id="jug_filtroCat" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13px;"><option value="">Todas las categorías</option></select>
         </div>
 
         <div class="card table-wrap" style="flex:1;">
@@ -2849,10 +2852,21 @@
   function renderJugadores(){
     var q = normalizaTexto(byId('jug_buscar').value);
     var lista = jugadoresGlobal.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
+    // filtro por categoría (se arma con las categorías de todos los jugadores)
+    var selCat = byId('jug_filtroCat'), catSel = selCat.value, catsSet = {};
+    function catsDe(j){ var r = (j.categorias || []).slice(); (j.historial || []).forEach(function(h){ if (h.categoria) r.push(h.categoria); }); return r; }
+    jugadoresGlobal.forEach(function(j){ catsDe(j).forEach(function(c){ catsSet[c] = 1; }); });
+    var catsOrd = Object.keys(catsSet).sort(function(a,b){ return a.localeCompare(b); });
+    if (selCat.options.length - 1 !== catsOrd.length || catsOrd.some(function(c, k){ return selCat.options[k+1].value !== c; })) {
+      selCat.innerHTML = '<option value="">Todas las categorías</option>' + catsOrd.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+      selCat.value = catsSet[catSel] ? catSel : '';
+      catSel = selCat.value;
+    }
     if (q) lista = lista.filter(function(j){ return normalizaTexto(j.nombre).indexOf(q) >= 0; });
+    if (catSel) lista = lista.filter(function(j){ return catsDe(j).indexOf(catSel) >= 0; });
 
     if (!lista.length){
-      byId('jugadoresBody').innerHTML = '<tr class="empty-row"><td colspan="5">'+(jugadoresGlobal.length?'Sin resultados para esa búsqueda.':'Aún no hay jugadores. Se van agregando solos cuando los inscribes, o créalos aquí a mano.')+'</td></tr>';
+      byId('jugadoresBody').innerHTML = '<tr class="empty-row"><td colspan="5">'+(jugadoresGlobal.length?'Sin resultados para ese filtro.':'Aún no hay jugadores. Se van agregando solos cuando los inscribes, o créalos aquí a mano.')+'</td></tr>';
       return;
     }
     byId('jugadoresBody').innerHTML = lista.map(function(j){
@@ -2905,6 +2919,7 @@
     });
   }
   byId('jug_buscar').addEventListener('input', renderJugadores);
+  byId('jug_filtroCat').addEventListener('change', renderJugadores);
 
   byId('btnGuardarJugador').addEventListener('click', function(){
     if (!userRef) return;
