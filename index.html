@@ -256,6 +256,8 @@
   #saveToast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150; background: var(--green-tx); color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
   #saveToast.show { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { #saveBar, #saveToast { transition: none; } }
+  #planModal, #admModal { display: none; }
+  #admModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #planModal { display: none; }
   #planModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #planModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
@@ -283,8 +285,14 @@
     .no-print { display: none !important; }
     .print-only { display: block !important; }
     .print-hide { display: none !important; }
-    #sidebar { display: none !important; }
-    #content { height: auto !important; overflow: visible !important; }
+    #sidebar, #mobileTopbar, #sidebarOverlay, #planAviso { display: none !important; }
+    /* Para que el PDF salga en todas sus páginas (sin esto solo sale la primera) */
+    html, body { height: auto !important; overflow: visible !important; }
+    #appShell.active { display: block !important; height: auto !important; overflow: visible !important; }
+    #content { height: auto !important; overflow: visible !important; display: block !important; width: 100% !important; }
+    .view { min-height: 0 !important; }
+    .table-wrap { overflow: visible !important; }
+    tr, .kpi, .panel { break-inside: avoid; }
     .view { padding: 10px !important; }
     body { background: #fff; }
     .panel, .card, .kpi { box-shadow: none !important; }
@@ -521,7 +529,10 @@
   <div style="width:100%; max-width:640px; display:flex; flex-direction:column; gap:24px;">
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <span class="wordmark" style="font-size:18px;">Court<span class="os">OS</span></span>
-      <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn" id="btnIrAdmin" style="display:none;background:var(--sidebar);color:#fff;border-color:var(--sidebar);padding:7px 14px;font-size:12.5px;">Admin</button>
+        <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
+      </div>
     </div>
     <div>
       <div style="font-weight:800; font-size:24px; letter-spacing:-0.02em;">Tus torneos</div>
@@ -569,6 +580,86 @@
       </div>
       <div class="form-actions">
         <button class="btn btn-primary" id="btnCrearTorneo">+ Crear Torneo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="adminScreen" style="display:none; min-height:100vh; flex-direction:column; align-items:center; background:var(--bg); padding:32px 24px 60px;">
+  <div style="width:100%; max-width:980px; display:flex; flex-direction:column; gap:18px;">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <button class="btn" id="btnAdminVolver">← Mis torneos</button>
+      <div style="font-weight:800;font-size:24px;letter-spacing:-0.02em;">Admin</div>
+    </div>
+    <div class="tabs" id="adminTabs">
+      <button class="tab-btn active" data-admtab="usuarios">Usuarios</button>
+      <button class="tab-btn" data-admtab="pagos">Pagos</button>
+      <button class="tab-btn" data-admtab="ajustes">Ajustes</button>
+    </div>
+
+    <div id="admPanel_usuarios" style="display:flex;flex-direction:column;gap:16px;">
+      <div id="admKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input id="adm_buscar" type="text" placeholder="Buscar por correo..." style="flex:1;min-width:200px;max-width:340px;border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13.5px;background:#fff;">
+        <select id="adm_filtro" style="border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13.5px;background:#fff;">
+          <option value="">Todos</option><option value="PRO">PRO activo</option><option value="POR_VENCER">Vencen en 7 días</option><option value="VENCIDO">Vencidos</option><option value="GRATIS">Gratis</option>
+        </select>
+      </div>
+      <div class="card table-wrap"><table class="datatable">
+        <thead><tr><th>Correo</th><th>Plan</th><th>Vence</th><th></th></tr></thead>
+        <tbody id="admUsuariosBody"></tbody>
+      </table></div>
+    </div>
+
+    <div id="admPanel_pagos" style="display:none;flex-direction:column;gap:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div id="admPagosKpis" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+        <button class="btn" id="btnAdmExportar">Exportar a Excel</button>
+      </div>
+      <div class="card table-wrap"><table class="datatable">
+        <thead><tr><th>Fecha</th><th>Correo</th><th style="text-align:right">Monto</th><th>Hasta</th><th>Nota</th></tr></thead>
+        <tbody id="admPagosBody"></tbody>
+      </table></div>
+    </div>
+
+    <div id="admPanel_ajustes" style="display:none;">
+      <div class="card" style="padding:22px 24px;max-width:680px;display:flex;flex-direction:column;gap:16px;">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;">
+          <span><span style="display:block;font-weight:700;font-size:15px;">PRO gratis para todos</span><span class="muted" style="font-size:12.5px;">Mientras esté encendido, todos tienen PRO sin pagar.</span></span>
+          <input type="checkbox" id="aj_proGratis" style="width:20px;height:20px;">
+        </label>
+        <div class="field" style="max-width:240px;"><label>Se apaga solo el (opcional)</label><input type="date" id="aj_proHasta"></div>
+        <div style="border-top:1px solid var(--border);"></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div class="field"><label>Precio mensual</label><input type="number" id="aj_precio" style="width:170px;"></div>
+          <div class="field" style="flex:1;min-width:220px;"><label>WhatsApp para pagos (con indicativo)</label><input id="aj_whatsapp" placeholder="573001234567"></div>
+        </div>
+        <div class="field"><label>Instrucciones de pago</label><textarea id="aj_instr" rows="3" style="border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13.5px;resize:vertical;"></textarea></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn" id="btnAjDescartar">Descartar</button>
+          <button class="btn btn-primary" id="btnAjGuardar">Guardar ajustes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="admModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:220; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:420px; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border);">
+      <div style="font-weight:700; font-size:15px;" id="admModalTitulo">Activar PRO</div>
+      <button class="logout-btn" id="btnAdmModalCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div id="admModalInfo" style="font-size:13px;"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="field"><label>Meses</label><input id="adm_meses" type="number" min="1" value="1" style="width:80px;"></div>
+        <div class="field"><label>Monto pagado</label><input id="adm_monto" type="number" style="width:140px;"></div>
+      </div>
+      <div class="field"><label>Nota (opcional)</label><input id="adm_nota" placeholder="Nequi, transferencia..."></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn" id="btnAdmQuitar">Quitar PRO</button>
+        <button class="btn btn-primary" id="btnAdmSumar">Activar</button>
       </div>
     </div>
   </div>
@@ -1216,22 +1307,6 @@
           <div class="muted" style="font-size:12.5px; margin-top:2px;">Este torneo ya está finalizado — genera un PDF con todo lo financiero de principio a fin (Estado de Resultados, categorías, flujo de caja, presupuesto vs. real).</div>
         </div>
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
-      </div>
-
-      <div class="card" id="adminPlanCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
-        <div>
-          <div style="font-weight:700; font-size:14px;">Admin: activar planes PRO</div>
-          <div class="muted" style="font-size:12.5px;">Solo lo ves tú. Busca a la persona por su correo y suma el mes que pagó.</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input id="adm_email" type="email" placeholder="correo@ejemplo.com" style="flex:1;min-width:200px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13.5px;">
-          <button class="btn" id="btnAdmBuscar">Buscar</button>
-        </div>
-        <div id="adm_resultado"></div>
-        <div>
-          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Últimos pagos registrados</div>
-          <div id="adm_pagos" class="muted" style="font-size:12.5px;"></div>
-        </div>
       </div>
 
       <div class="card" id="compartirCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
@@ -3747,6 +3822,15 @@
       }
       b.classList.toggle('perm-hide', ocultar);
     });
+    // Títulos del menú (Datos, Cuenta...) que se quedan sin opciones visibles
+    document.querySelectorAll('#sidebar .navgroup-label').forEach(function(lab){
+      var hay = false, n = lab.nextElementSibling;
+      while (n && !n.classList.contains('navgroup-label')) {
+        if (n.classList.contains('navitem') && !n.classList.contains('perm-hide')) hay = true;
+        n = n.nextElementSibling;
+      }
+      lab.classList.toggle('perm-hide', !hay);
+    });
     document.querySelectorAll('[data-w]').forEach(function(el){ el.classList.toggle('perm-hide', !puedeEditar(el.dataset.w)); });
     Object.keys(FORM_MODULO).forEach(function(id){
       var el = byId(id); if (el && !puedeEditar(FORM_MODULO[id])) { el.classList.remove('open'); el.classList.add('perm-hide'); } else if (el) el.classList.remove('perm-hide');
@@ -4224,76 +4308,162 @@
       '<button class="btn" data-ver-plan style="padding:6px 14px;font-size:12.5px;">' + boton + '</button></div>';
   }
 
-  // ---------- Admin: activar planes ----------
+  // ---------- Admin: pantalla de administración ----------
   function esAdminApp(){ return !!currentUid && cfgAdmins.indexOf(currentUid) >= 0; }
-  var admUsuario = null;   // { id, email, plan, planHasta } del último resultado
+  var admUsers = [], admPagos = [], admTab = 'usuarios', admEditando = null;
+  var DIA = 86400000;
   function renderAdminPlan(){
-    var card = byId('adminPlanCard');
     var v = esAdminApp();
-    card.style.display = v ? 'flex' : 'none';
-    if (v && !card.dataset.cargado) { card.dataset.cargado = '1'; cargarPagosAdmin(); }
+    byId('btnIrAdmin').style.display = v ? 'inline-flex' : 'none';
+    if (!v && byId('adminScreen').style.display !== 'none') { byId('adminScreen').style.display = 'none'; showTorneoScreen(); }
   }
-  function cargarPagosAdmin(){
-    fsdb.collection('pagos').get().then(function(snap){
-      var l = []; snap.forEach(function(d){ var x = d.data(); x.id = d.id; l.push(x); });
-      l.sort(function(a,b){ return (b.creadoEn||0) - (a.creadoEn||0); });
-      byId('adm_pagos').innerHTML = l.length ? l.slice(0, 10).map(function(x){
-        return '<div style="padding:3px 0;">' + esc(x.email||'—') + ' · ' + money(x.monto||0) + ' · hasta ' + (x.hasta ? fechaPlan(x.hasta) : '—') + (x.nota ? ' · ' + esc(x.nota) : '') + ' <span style="opacity:.7">(' + fechaPlan(x.creadoEn||Date.now()) + ')</span></div>';
-      }).join('') : 'Aún no hay pagos registrados.';
-    }).catch(function(e){ byId('adm_pagos').textContent = 'No se pudieron leer los pagos: ' + e.message; });
+  function estadoPlanUsuario(u){
+    if (u.plan !== 'PRO') return 'GRATIS';
+    if (!u.planHasta) return 'PRO';
+    if (u.planHasta <= Date.now()) return 'VENCIDO';
+    return (u.planHasta - Date.now() <= 7 * DIA) ? 'POR_VENCER' : 'PRO';
   }
-  function renderResultadoAdmin(){
-    var u = admUsuario, box = byId('adm_resultado');
-    if (!u) { box.innerHTML = ''; return; }
-    var vigente = u.plan === 'PRO' && (!u.planHasta || Date.now() < u.planHasta);
-    var estado = vigente ? (u.planHasta ? 'PRO hasta ' + fechaPlan(u.planHasta) : 'PRO sin vencimiento') : (u.plan === 'PRO' ? 'PRO vencido el ' + fechaPlan(u.planHasta) : 'Plan gratis');
-    box.innerHTML = '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">' +
-      '<div><strong>' + esc(u.email) + '</strong><div class="muted" style="font-size:12.5px;">' + estado + '</div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">' +
-        '<div class="field" style="margin:0;"><label>Meses</label><input id="adm_meses" type="number" min="1" value="1" style="width:80px;"></div>' +
-        '<div class="field" style="margin:0;"><label>Monto pagado</label><input id="adm_monto" type="number" value="' + cfgPlan.precio + '" style="width:130px;"></div>' +
-        '<div class="field" style="margin:0;flex:1;min-width:140px;"><label>Nota (opcional)</label><input id="adm_nota" placeholder="Nequi, transferencia..."></div>' +
-      '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-        '<button class="btn btn-primary" id="btnAdmSumar">Sumar meses</button>' +
-        (u.plan === 'PRO' ? '<button class="btn" id="btnAdmQuitar">Quitar PRO</button>' : '') +
-      '</div></div>';
-    byId('btnAdmSumar').addEventListener('click', admSumar);
-    if (byId('btnAdmQuitar')) byId('btnAdmQuitar').addEventListener('click', admQuitar);
+  function pillPlan(est){
+    var m = { PRO: ['#e3f1e3','#2f6b34','PRO'], POR_VENCER: ['#fff0d6','#7a5410','PRO · vence pronto'], VENCIDO: ['#fdecea','#8a2a1f','Vencido'], GRATIS: ['#eceae3','#55544a','Gratis'] }[est];
+    return '<span style="background:'+m[0]+';color:'+m[1]+';font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:999px;white-space:nowrap;">'+m[2]+'</span>';
   }
-  byId('btnAdmBuscar').addEventListener('click', function(){
-    var email = byId('adm_email').value.trim().toLowerCase();
-    if (!email) return;
-    fsdb.collection('users').where('email', '==', email).limit(1).get().then(function(snap){
-      if (snap.empty) { admUsuario = null; byId('adm_resultado').innerHTML = '<div class="muted" style="font-size:13px;">No encontré a nadie con ese correo. La persona debe haberse registrado primero.</div>'; return; }
-      var d = snap.docs[0], x = d.data();
-      admUsuario = { id: d.id, email: x.email, plan: x.plan === 'PRO' ? 'PRO' : 'FREE', planHasta: Number(x.planHasta) || 0 };
-      renderResultadoAdmin();
-    }).catch(function(e){ byId('adm_resultado').textContent = 'No se pudo buscar: ' + e.message; });
+  function abrirAdmin(){
+    byId('torneoScreen').style.display = 'none';
+    byId('adminScreen').style.display = 'flex';
+    cargarAdminUsuarios(); cargarAdminPagos(); cargarAjustes();
+  }
+  function cerrarAdmin(){ byId('adminScreen').style.display = 'none'; showTorneoScreen(); }
+  byId('btnIrAdmin').addEventListener('click', abrirAdmin);
+  byId('btnAdminVolver').addEventListener('click', cerrarAdmin);
+  document.querySelectorAll('[data-admtab]').forEach(function(b){
+    b.addEventListener('click', function(){
+      admTab = b.dataset.admtab;
+      document.querySelectorAll('[data-admtab]').forEach(function(x){ x.classList.toggle('active', x === b); });
+      ['usuarios','pagos','ajustes'].forEach(function(t){ byId('admPanel_' + t).style.display = t === admTab ? 'flex' : 'none'; });
+    });
   });
-  function admSumar(){
-    var u = admUsuario; if (!u) return;
+
+  function cargarAdminUsuarios(){
+    fsdb.collection('users').get().then(function(snap){
+      admUsers = [];
+      snap.forEach(function(d){ var x = d.data(); admUsers.push({ id: d.id, email: x.email || '(sin correo)', plan: x.plan === 'PRO' ? 'PRO' : 'FREE', planHasta: Number(x.planHasta) || 0 }); });
+      renderAdminUsuarios();
+    }).catch(function(e){ byId('admUsuariosBody').innerHTML = '<tr class="empty-row"><td colspan="4">No se pudo leer: ' + esc(e.message) + '</td></tr>'; });
+  }
+  function renderAdminUsuarios(){
+    var cont = { PRO: 0, POR_VENCER: 0, VENCIDO: 0 };
+    admUsers.forEach(function(u){ var e = estadoPlanUsuario(u); if (e === 'PRO' || e === 'POR_VENCER') cont.PRO++; if (e === 'POR_VENCER') cont.POR_VENCER++; if (e === 'VENCIDO') cont.VENCIDO++; });
+    function kpi(t, v, c){ return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);">'+t+'</div><div style="font-size:24px;font-weight:800;margin-top:4px;color:'+(c||'inherit')+';">'+v+'</div></div>'; }
+    byId('admKpis').innerHTML = kpi('USUARIOS', admUsers.length) + kpi('PRO ACTIVOS', cont.PRO, '#2f6b34') + kpi('VENCEN EN 7 DÍAS', cont.POR_VENCER, '#7a5410') + kpi('VENCIDOS', cont.VENCIDO, '#8a2a1f');
+    var q = byId('adm_buscar').value.trim().toLowerCase(), f = byId('adm_filtro').value;
+    var lista = admUsers.filter(function(u){
+      var e = estadoPlanUsuario(u);
+      if (q && u.email.toLowerCase().indexOf(q) < 0) return false;
+      if (f === 'PRO') return e === 'PRO' || e === 'POR_VENCER';
+      return !f || e === f;
+    }).sort(function(a, b){ return a.email.localeCompare(b.email); });
+    byId('admUsuariosBody').innerHTML = lista.length ? lista.map(function(u){
+      var e = estadoPlanUsuario(u);
+      var btn = e === 'GRATIS' ? 'Activar PRO' : (e === 'VENCIDO' ? 'Renovar' : '+ 1 mes');
+      return '<tr><td style="font-weight:600;">'+esc(u.email)+'</td><td>'+pillPlan(e)+'</td><td class="muted">'+(u.planHasta ? fechaPlan(u.planHasta) : '—')+'</td>' +
+        '<td style="text-align:right;"><button class="btn'+(e === 'POR_VENCER' || e === 'VENCIDO' ? ' btn-primary' : '')+'" data-adm-user="'+u.id+'" style="padding:6px 12px;font-size:12.5px;">'+btn+'</button></td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="4">Sin resultados.</td></tr>';
+    document.querySelectorAll('[data-adm-user]').forEach(function(b){ b.addEventListener('click', function(){ abrirAdmModal(b.dataset.admUser); }); });
+  }
+  byId('adm_buscar').addEventListener('input', renderAdminUsuarios);
+  byId('adm_filtro').addEventListener('change', renderAdminUsuarios);
+
+  function abrirAdmModal(uid){
+    var u = admUsers.find(function(x){ return x.id === uid; }); if (!u) return;
+    admEditando = u;
+    var e = estadoPlanUsuario(u);
+    byId('admModalTitulo').textContent = e === 'GRATIS' ? 'Activar PRO' : 'Sumar meses';
+    byId('admModalInfo').innerHTML = '<strong>' + esc(u.email) + '</strong><div class="muted" style="font-size:12.5px;">' + (u.plan === 'PRO' ? (u.planHasta ? (u.planHasta > Date.now() ? 'PRO hasta ' : 'PRO vencido el ') + fechaPlan(u.planHasta) : 'PRO sin vencimiento') : 'Plan gratis') + '</div>';
+    byId('adm_meses').value = 1; byId('adm_monto').value = cfgPlan.precio; byId('adm_nota').value = '';
+    byId('btnAdmQuitar').style.display = u.plan === 'PRO' ? '' : 'none';
+    byId('admModal').classList.add('show');
+  }
+  function cerrarAdmModal(){ byId('admModal').classList.remove('show'); admEditando = null; }
+  byId('btnAdmModalCerrar').addEventListener('click', cerrarAdmModal);
+  byId('admModal').addEventListener('click', function(e){ if (e.target === byId('admModal')) cerrarAdmModal(); });
+  byId('btnAdmSumar').addEventListener('click', function(){
+    var u = admEditando; if (!u) return;
     var meses = Math.max(1, parseInt(byId('adm_meses').value, 10) || 1);
-    var monto = parseFloat(byId('adm_monto').value) || 0;
-    var nota = byId('adm_nota').value.trim();
+    var monto = parseFloat(byId('adm_monto').value) || 0, nota = byId('adm_nota').value.trim();
     var vigente = u.plan === 'PRO' && u.planHasta && u.planHasta > Date.now();
     var base = vigente ? new Date(u.planHasta) : new Date();
     var hasta = new Date(base.getTime()); hasta.setMonth(hasta.getMonth() + meses);
-    if (!confirm('Activar PRO para ' + u.email + ' por ' + meses + ' mes(es), hasta el ' + fechaPlan(hasta.getTime()) + '?')) return;
     fsdb.collection('users').doc(u.id).update({ plan: 'PRO', planHasta: hasta.getTime() }).then(function(){
       return fsdb.collection('pagos').add({ uid: u.id, email: u.email, monto: monto, meses: meses, desde: base.getTime(), hasta: hasta.getTime(), nota: nota, porUid: currentUid, creadoEn: Date.now() });
     }).then(function(){
-      admUsuario.plan = 'PRO'; admUsuario.planHasta = hasta.getTime();
-      renderResultadoAdmin(); cargarPagosAdmin(); flashBarra('PRO activado');
+      u.plan = 'PRO'; u.planHasta = hasta.getTime();
+      cerrarAdmModal(); renderAdminUsuarios(); cargarAdminPagos(); flashBarra('PRO activo hasta ' + fechaPlan(u.planHasta));
     }).catch(function(e){ alert('No se pudo activar: ' + e.message); });
-  }
-  function admQuitar(){
-    var u = admUsuario; if (!u) return;
-    if (!confirm('Quitar el PRO a ' + u.email + '?')) return;
+  });
+  byId('btnAdmQuitar').addEventListener('click', function(){
+    var u = admEditando; if (!u) return;
+    if (!confirm('¿Quitar el PRO a ' + u.email + '?')) return;
     fsdb.collection('users').doc(u.id).update({ plan: 'FREE', planHasta: 0 }).then(function(){
-      admUsuario.plan = 'FREE'; admUsuario.planHasta = 0; renderResultadoAdmin(); flashBarra('PRO quitado');
+      u.plan = 'FREE'; u.planHasta = 0; cerrarAdmModal(); renderAdminUsuarios(); flashBarra('PRO quitado');
     }).catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+  });
+
+  // ---- Pagos
+  function cargarAdminPagos(){
+    fsdb.collection('pagos').get().then(function(snap){
+      admPagos = []; snap.forEach(function(d){ var x = d.data(); x.id = d.id; admPagos.push(x); });
+      admPagos.sort(function(a, b){ return (b.creadoEn || 0) - (a.creadoEn || 0); });
+      renderAdminPagos();
+    }).catch(function(e){ byId('admPagosBody').innerHTML = '<tr class="empty-row"><td colspan="5">No se pudo leer: ' + esc(e.message) + '</td></tr>'; });
   }
+  function renderAdminPagos(){
+    var ahora = new Date(), mes = admPagos.filter(function(x){ var d = new Date(x.creadoEn || 0); return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear(); });
+    var total = mes.reduce(function(s, x){ return s + (x.monto || 0); }, 0);
+    var nombreMes = ahora.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+    function kpi(t, v){ return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 20px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;">'+t+'</div><div style="font-size:24px;font-weight:800;margin-top:4px;">'+v+'</div></div>'; }
+    byId('admPagosKpis').innerHTML = kpi(nombreMes, money(total)) + kpi('Pagos del mes', mes.length);
+    byId('admPagosBody').innerHTML = admPagos.length ? admPagos.map(function(x){
+      return '<tr><td>'+fechaPlan(x.creadoEn || 0)+'</td><td style="font-weight:600;">'+esc(x.email || '—')+'</td><td class="num">'+money(x.monto || 0)+'</td><td>'+(x.hasta ? fechaPlan(x.hasta) : '—')+'</td><td class="muted">'+esc((x.meses > 1 ? x.meses + ' meses' + (x.nota ? ' · ' : '') : '') + (x.nota || ''))+'</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="5">Aún no hay pagos registrados.</td></tr>';
+  }
+  byId('btnAdmExportar').addEventListener('click', function(){
+    if (!admPagos.length) { alert('No hay pagos para exportar.'); return; }
+    function c(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+    var filas = [['Fecha','Correo','Monto','Meses','Desde','Hasta','Nota'].map(c).join(';')].concat(admPagos.map(function(x){
+      return [new Date(x.creadoEn || 0).toISOString().slice(0, 10), x.email, x.monto, x.meses || 1, x.desde ? new Date(x.desde).toISOString().slice(0, 10) : '', x.hasta ? new Date(x.hasta).toISOString().slice(0, 10) : '', x.nota].map(c).join(';');
+    }));
+    var blob = new Blob(['﻿' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pagos-courtos.csv'; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+
+  // ---- Ajustes (config/app)
+  var ajOriginal = null;
+  function cargarAjustes(){
+    fsdb.collection('config').doc('app').get().then(function(doc){
+      var d = doc.exists ? doc.data() : {};
+      ajOriginal = d;
+      byId('aj_proGratis').checked = d.proGratis === true;
+      byId('aj_proHasta').value = d.proHasta ? new Date(Number(d.proHasta)).toISOString().slice(0, 10) : '';
+      byId('aj_precio').value = d.precioMensual || '';
+      byId('aj_whatsapp').value = d.whatsapp || '';
+      byId('aj_instr').value = d.instruccionesPago || '';
+    });
+  }
+  byId('btnAjDescartar').addEventListener('click', cargarAjustes);
+  byId('btnAjGuardar').addEventListener('click', function(){
+    var h = byId('aj_proHasta').value;
+    var data = {
+      proGratis: byId('aj_proGratis').checked,
+      proHasta: h ? new Date(h + 'T23:59:59').getTime() : firebase.firestore.FieldValue.delete(),
+      precioMensual: parseFloat(byId('aj_precio').value) || 100000,
+      whatsapp: byId('aj_whatsapp').value.replace(/\D/g, ''),
+      instruccionesPago: byId('aj_instr').value.trim()
+    };
+    fsdb.collection('config').doc('app').set(data, { merge: true })
+      .then(function(){ flashBarra('Ajustes guardados'); })
+      .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
 
   function abrirPlan(){
     var pro = esPro(), email = (auth.currentUser && auth.currentUser.email) || '';
@@ -4396,6 +4566,7 @@
         userRef = null; torneoRef = null; torneoId = null; torneoData = {}; isAdminMode = false; currentUid = ''; torneoOwnerUid = null; permSig = null;
         byId('appShell').classList.remove('active');
         byId('torneoScreen').style.display = 'none';
+        byId('adminScreen').style.display = 'none';
         byId('authScreen').style.display = 'flex';
       }
     });
