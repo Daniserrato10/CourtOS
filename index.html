@@ -256,6 +256,11 @@
   #saveToast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150; background: var(--green-tx); color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
   #saveToast.show { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { #saveBar, #saveToast { transition: none; } }
+  #planModal { display: none; }
+  #planModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  #planModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
+  #userPlanLabel { cursor: pointer; }
+  #userPlanLabel:hover { text-decoration: underline; }
   #movModal { display: none; }
   #movModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #movModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
@@ -423,7 +428,17 @@
 </div>
 <div id="saveToast" role="status"></div>
 
-<div id="movModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; align-items:center; padding:24px;">
+<div id="planModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:210; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:440px; max-height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Tu plan</div>
+      <button class="logout-btn" id="btnCerrarPlan" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px 18px; overflow-y:auto;" id="planBody"></div>
+  </div>
+</div>
+
+<div id="movModal" style=""position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; align-items:center; padding:24px;">
   <div class="card" style="width:100%; max-width:440px; max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
       <div style="font-weight:700; font-size:15px;">Detalle del movimiento</div>
@@ -645,6 +660,7 @@
   </div>
 
   <div id="content">
+    <div id="planAviso" style="display:none;"></div>
 
     <!-- DASHBOARD -->
     <section class="view" data-view="dashboard">
@@ -1202,6 +1218,22 @@
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
       </div>
 
+      <div class="card" id="adminPlanCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
+        <div>
+          <div style="font-weight:700; font-size:14px;">Admin: activar planes PRO</div>
+          <div class="muted" style="font-size:12.5px;">Solo lo ves tú. Busca a la persona por su correo y suma el mes que pagó.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="adm_email" type="email" placeholder="correo@ejemplo.com" style="flex:1;min-width:200px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13.5px;">
+          <button class="btn" id="btnAdmBuscar">Buscar</button>
+        </div>
+        <div id="adm_resultado"></div>
+        <div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Últimos pagos registrados</div>
+          <div id="adm_pagos" class="muted" style="font-size:12.5px;"></div>
+        </div>
+      </div>
+
       <div class="card" id="compartirCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
         <div>
           <div style="font-weight:700; font-size:14px;">👥 Compartir este torneo</div>
@@ -1278,7 +1310,12 @@
   var unsubUserDoc = null, unsubConfig = null;
   var userPlan = 'FREE';      // FREE | PRO — se activa manualmente desde la consola de Firebase (ver campo "plan" en users/{uid})
   var proGratis = false;      // interruptor global: config/app { proGratis: true, proHasta: <ms, opcional> }
-  function esPro(){ return userPlan === 'PRO' || proGratis; }
+  var userPlanHasta = 0;      // users/{uid}.planHasta (ms): hasta cuándo está pagado el PRO. 0 = sin vencimiento
+  var cfgAdmins = [];         // config/app.admins: uids que pueden activar planes
+  var cfgPlan = { precio: 100000, whatsapp: '', instrucciones: '' };   // config/app: precioMensual, whatsapp, instruccionesPago
+  function fechaPlan(ts){ return new Date(ts).toLocaleDateString('es-CO', {day:'numeric', month:'short', year:'numeric'}); }
+  function planPagadoVigente(){ return userPlan === 'PRO' && (!userPlanHasta || Date.now() < userPlanHasta); }
+  function esPro(){ return planPagadoVigente() || proGratis; }
 
   // ---------- torneos compartidos: dueño, rol y permisos ----------
   var currentUid = '';
@@ -4152,12 +4189,15 @@
     if (unsubUserDoc) return;
     unsubUserDoc = userRef.onSnapshot(function(doc){
       userPlan = (doc.exists && doc.data().plan === 'PRO') ? 'PRO' : 'FREE';
+      userPlanHasta = (doc.exists && Number(doc.data().planHasta)) || 0;
       aplicarRestriccionesPlan();
     }, function(err){ console.error('user doc', err); });
     // Interruptor "PRO gratis para todos" (se maneja desde la consola de Firebase)
     unsubConfig = fsdb.collection('config').doc('app').onSnapshot(function(doc){
       var d = doc.exists ? doc.data() : {};
       proGratis = d.proGratis === true && (!d.proHasta || Date.now() < Number(d.proHasta));
+      cfgAdmins = Array.isArray(d.admins) ? d.admins : [];
+      cfgPlan = { precio: Number(d.precioMensual) || 100000, whatsapp: String(d.whatsapp || '').replace(/\D/g, ''), instrucciones: String(d.instruccionesPago || '') };
       aplicarRestriccionesPlan();
       if (typeof renderCompartir === 'function') { try { renderCompartir(); } catch(e){} }
     }, function(){ proGratis = false; });
@@ -4165,8 +4205,124 @@
   function teardownUserDoc(){
     if (unsubUserDoc) { try { unsubUserDoc(); } catch(e){} unsubUserDoc = null; }
     if (unsubConfig) { try { unsubConfig(); } catch(e){} unsubConfig = null; }
-    userPlan = 'FREE'; proGratis = false;
+    userPlan = 'FREE'; userPlanHasta = 0; proGratis = false; cfgAdmins = [];
   }
+
+  // Aviso de vencimiento (5 días antes y ya vencido)
+  function renderAvisoPlan(){
+    var el = byId('planAviso'), html = '';
+    if (userPlan === 'PRO' && userPlanHasta && !proGratis) {
+      var dias = Math.ceil((userPlanHasta - Date.now()) / 86400000);
+      if (dias <= 0) html = avisoHtml('#fdecea', '#f3c1bb', '#8a2a1f', 'Tu plan PRO venció el <strong>' + fechaPlan(userPlanHasta) + '</strong>. Tus torneos siguen guardados, pero las funciones PRO están bloqueadas hasta que renueves.', 'Renovar');
+      else if (dias <= 5) html = avisoHtml('#fff7e6', '#f0d9a8', '#7a5410', 'Tu plan PRO vence ' + (dias === 1 ? '<strong>mañana</strong>' : 'en <strong>' + dias + ' días</strong>') + ' (' + fechaPlan(userPlanHasta) + '). Renueva para no perder las funciones PRO.', 'Renovar');
+    }
+    el.innerHTML = html; el.style.display = html ? 'block' : 'none';
+  }
+  function avisoHtml(bg, bd, fg, texto, boton){
+    return '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:'+bg+';border:1px solid '+bd+';color:'+fg+';border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:13px;">' +
+      '<span style="flex:1;min-width:220px;line-height:1.5;">' + texto + '</span>' +
+      '<button class="btn" data-ver-plan style="padding:6px 14px;font-size:12.5px;">' + boton + '</button></div>';
+  }
+
+  // ---------- Admin: activar planes ----------
+  function esAdminApp(){ return !!currentUid && cfgAdmins.indexOf(currentUid) >= 0; }
+  var admUsuario = null;   // { id, email, plan, planHasta } del último resultado
+  function renderAdminPlan(){
+    var card = byId('adminPlanCard');
+    var v = esAdminApp();
+    card.style.display = v ? 'flex' : 'none';
+    if (v && !card.dataset.cargado) { card.dataset.cargado = '1'; cargarPagosAdmin(); }
+  }
+  function cargarPagosAdmin(){
+    fsdb.collection('pagos').get().then(function(snap){
+      var l = []; snap.forEach(function(d){ var x = d.data(); x.id = d.id; l.push(x); });
+      l.sort(function(a,b){ return (b.creadoEn||0) - (a.creadoEn||0); });
+      byId('adm_pagos').innerHTML = l.length ? l.slice(0, 10).map(function(x){
+        return '<div style="padding:3px 0;">' + esc(x.email||'—') + ' · ' + money(x.monto||0) + ' · hasta ' + (x.hasta ? fechaPlan(x.hasta) : '—') + (x.nota ? ' · ' + esc(x.nota) : '') + ' <span style="opacity:.7">(' + fechaPlan(x.creadoEn||Date.now()) + ')</span></div>';
+      }).join('') : 'Aún no hay pagos registrados.';
+    }).catch(function(e){ byId('adm_pagos').textContent = 'No se pudieron leer los pagos: ' + e.message; });
+  }
+  function renderResultadoAdmin(){
+    var u = admUsuario, box = byId('adm_resultado');
+    if (!u) { box.innerHTML = ''; return; }
+    var vigente = u.plan === 'PRO' && (!u.planHasta || Date.now() < u.planHasta);
+    var estado = vigente ? (u.planHasta ? 'PRO hasta ' + fechaPlan(u.planHasta) : 'PRO sin vencimiento') : (u.plan === 'PRO' ? 'PRO vencido el ' + fechaPlan(u.planHasta) : 'Plan gratis');
+    box.innerHTML = '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">' +
+      '<div><strong>' + esc(u.email) + '</strong><div class="muted" style="font-size:12.5px;">' + estado + '</div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">' +
+        '<div class="field" style="margin:0;"><label>Meses</label><input id="adm_meses" type="number" min="1" value="1" style="width:80px;"></div>' +
+        '<div class="field" style="margin:0;"><label>Monto pagado</label><input id="adm_monto" type="number" value="' + cfgPlan.precio + '" style="width:130px;"></div>' +
+        '<div class="field" style="margin:0;flex:1;min-width:140px;"><label>Nota (opcional)</label><input id="adm_nota" placeholder="Nequi, transferencia..."></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button class="btn btn-primary" id="btnAdmSumar">Sumar meses</button>' +
+        (u.plan === 'PRO' ? '<button class="btn" id="btnAdmQuitar">Quitar PRO</button>' : '') +
+      '</div></div>';
+    byId('btnAdmSumar').addEventListener('click', admSumar);
+    if (byId('btnAdmQuitar')) byId('btnAdmQuitar').addEventListener('click', admQuitar);
+  }
+  byId('btnAdmBuscar').addEventListener('click', function(){
+    var email = byId('adm_email').value.trim().toLowerCase();
+    if (!email) return;
+    fsdb.collection('users').where('email', '==', email).limit(1).get().then(function(snap){
+      if (snap.empty) { admUsuario = null; byId('adm_resultado').innerHTML = '<div class="muted" style="font-size:13px;">No encontré a nadie con ese correo. La persona debe haberse registrado primero.</div>'; return; }
+      var d = snap.docs[0], x = d.data();
+      admUsuario = { id: d.id, email: x.email, plan: x.plan === 'PRO' ? 'PRO' : 'FREE', planHasta: Number(x.planHasta) || 0 };
+      renderResultadoAdmin();
+    }).catch(function(e){ byId('adm_resultado').textContent = 'No se pudo buscar: ' + e.message; });
+  });
+  function admSumar(){
+    var u = admUsuario; if (!u) return;
+    var meses = Math.max(1, parseInt(byId('adm_meses').value, 10) || 1);
+    var monto = parseFloat(byId('adm_monto').value) || 0;
+    var nota = byId('adm_nota').value.trim();
+    var vigente = u.plan === 'PRO' && u.planHasta && u.planHasta > Date.now();
+    var base = vigente ? new Date(u.planHasta) : new Date();
+    var hasta = new Date(base.getTime()); hasta.setMonth(hasta.getMonth() + meses);
+    if (!confirm('Activar PRO para ' + u.email + ' por ' + meses + ' mes(es), hasta el ' + fechaPlan(hasta.getTime()) + '?')) return;
+    fsdb.collection('users').doc(u.id).update({ plan: 'PRO', planHasta: hasta.getTime() }).then(function(){
+      return fsdb.collection('pagos').add({ uid: u.id, email: u.email, monto: monto, meses: meses, desde: base.getTime(), hasta: hasta.getTime(), nota: nota, porUid: currentUid, creadoEn: Date.now() });
+    }).then(function(){
+      admUsuario.plan = 'PRO'; admUsuario.planHasta = hasta.getTime();
+      renderResultadoAdmin(); cargarPagosAdmin(); flashBarra('PRO activado');
+    }).catch(function(e){ alert('No se pudo activar: ' + e.message); });
+  }
+  function admQuitar(){
+    var u = admUsuario; if (!u) return;
+    if (!confirm('Quitar el PRO a ' + u.email + '?')) return;
+    fsdb.collection('users').doc(u.id).update({ plan: 'FREE', planHasta: 0 }).then(function(){
+      admUsuario.plan = 'FREE'; admUsuario.planHasta = 0; renderResultadoAdmin(); flashBarra('PRO quitado');
+    }).catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+  }
+
+  function abrirPlan(){
+    var pro = esPro(), email = (auth.currentUser && auth.currentUser.email) || '';
+    var estado;
+    if (planPagadoVigente()) estado = userPlanHasta ? 'PRO activo hasta el <strong>' + fechaPlan(userPlanHasta) + '</strong>' : 'PRO activo';
+    else if (proGratis) estado = 'PRO <strong>gratis</strong> por ahora (promoción de lanzamiento)';
+    else if (userPlan === 'PRO' && userPlanHasta) estado = 'Tu PRO venció el <strong>' + fechaPlan(userPlanHasta) + '</strong>';
+    else estado = 'Plan gratis';
+    var msg = 'Hola, quiero ' + (userPlan === 'PRO' ? 'renovar' : 'activar') + ' el plan PRO de CourtOS. Mi correo: ' + email;
+    var wa = cfgPlan.whatsapp ? 'https://wa.me/' + cfgPlan.whatsapp + '?text=' + encodeURIComponent(msg) : '';
+    byId('planBody').innerHTML =
+      '<div style="font-size:13.5px;margin-bottom:14px;">' + estado + '</div>' +
+      '<div style="border:1px solid var(--accent-bg);background:var(--accent-bg);border-radius:10px;padding:14px 16px;margin-bottom:14px;">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.03em;">PLAN PRO</div>' +
+        '<div style="font-size:22px;font-weight:800;margin:2px 0 8px;">' + money(cfgPlan.precio) + ' <span style="font-size:13px;font-weight:600;" class="muted">/ mes</span></div>' +
+        '<ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;">' +
+          '<li>Torneos ilimitados</li><li>Compartir torneos con tu equipo (lector o editor)</li><li>Presupuesto y comprobantes</li><li>Base de datos de jugadores</li><li>Exportar reportes a PDF</li></ul>' +
+      '</div>' +
+      (proGratis && !planPagadoVigente() ? '<div class="muted" style="font-size:12.5px;margin-bottom:12px;">Por ahora no tienes que pagar nada: todas las funciones PRO están abiertas.</div>' : '') +
+      '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">Cómo pagar</div>' +
+      '<div class="muted" style="font-size:12.5px;white-space:pre-line;margin-bottom:12px;">' + esc(cfgPlan.instrucciones || 'Escríbenos por WhatsApp y te damos los datos para pagar. Cuando confirmemos tu pago, activamos tu PRO por un mes.') + '</div>' +
+      (wa ? '<a class="btn btn-primary" href="' + wa + '" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block;">Escribir por WhatsApp</a>' : '');
+    byId('planModal').classList.add('show');
+  }
+  function cerrarPlan(){ byId('planModal').classList.remove('show'); }
+  byId('btnCerrarPlan').addEventListener('click', cerrarPlan);
+  byId('planModal').addEventListener('click', function(e){ if (e.target === byId('planModal')) cerrarPlan(); });
+  byId('userPlanLabel').addEventListener('click', abrirPlan);
+  document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-ver-plan]'); if (b) abrirPlan(); });
 
   function bloqueoProHtml(mensaje){
     return '<div class="card" style="padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;border-color:var(--accent-bg);background:linear-gradient(180deg,var(--accent-bg) 0%,#fff 140px);">' +
@@ -4175,6 +4331,7 @@
       '<span style="font-size:9px;font-weight:700;background:var(--accent);color:#fff;padding:2px 8px;border-radius:5px;letter-spacing:0.03em;">PRO</span>' +
       '<div style="font-weight:700;font-size:15px;">Esto se desbloquea con PRO</div>' +
       '<div class="muted" style="font-size:13px;max-width:360px;">'+esc(mensaje)+'</div>' +
+      '<button class="btn btn-primary" data-ver-plan style="margin-top:4px;">Ver plan PRO</button>' +
       '</div>';
   }
 
@@ -4183,8 +4340,10 @@
   // de torneos (para el límite de "1 torneo gratis").
   function aplicarRestriccionesPlan(){
     var pro = esPro();
+    renderAvisoPlan();
+    renderAdminPlan();
 
-    byId('userPlanLabel').textContent = pro ? 'PRO' : 'Gratis';
+    byId('userPlanLabel').textContent = !pro ? 'Gratis' : (planPagadoVigente() && userPlanHasta ? 'PRO · hasta ' + fmtDate(userPlanHasta) : 'PRO');
     byId('userPlanLabel').style.color = pro ? 'var(--green-tx)' : 'var(--gray-500)';
     byId('userPlanLabel').style.fontWeight = pro ? '700' : '400';
 
