@@ -1854,7 +1854,7 @@
         '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
         '<td><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;">' +
-          (i.estadoIns !== 'CANCELADA' && ((i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0)) || valorCortesia(i) > 0) ? '<button class="btn" data-w="inscripciones" data-cortesia="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cortesía</button>' : '') +
+          (i.estadoIns !== 'CANCELADA' && ((i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0))) ? '<button class="btn" data-w="inscripciones" data-cortesia="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cortesía</button>' : '') +
           (puedeCobrar ? '<button class="btn" data-w="inscripciones" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
           (isAdminMode ? '<button class="logout-btn" data-del-ins="'+i.id+'" title="Eliminar inscripción">✕</button>' : '') +
         '</div></td>' +
