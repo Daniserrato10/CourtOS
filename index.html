@@ -1275,9 +1275,10 @@
   var isAdminMode = false;    // se reinicia cada vez que entras a un torneo; se activa con el PIN en Configuración
   var unsubTorneos = null;    // listener de la lista de torneos
   var unsubJugadores = null;  // listener de jugadores — vive a nivel de CUENTA, no se reinicia entre torneos
-  var unsubUserDoc = null;
+  var unsubUserDoc = null, unsubConfig = null;
   var userPlan = 'FREE';      // FREE | PRO — se activa manualmente desde la consola de Firebase (ver campo "plan" en users/{uid})
-  function esPro(){ return userPlan === 'PRO'; }
+  var proGratis = false;      // interruptor global: config/app { proGratis: true, proHasta: <ms, opcional> }
+  function esPro(){ return userPlan === 'PRO' || proGratis; }
 
   // ---------- torneos compartidos: dueño, rol y permisos ----------
   var currentUid = '';
@@ -4153,10 +4154,18 @@
       userPlan = (doc.exists && doc.data().plan === 'PRO') ? 'PRO' : 'FREE';
       aplicarRestriccionesPlan();
     }, function(err){ console.error('user doc', err); });
+    // Interruptor "PRO gratis para todos" (se maneja desde la consola de Firebase)
+    unsubConfig = fsdb.collection('config').doc('app').onSnapshot(function(doc){
+      var d = doc.exists ? doc.data() : {};
+      proGratis = d.proGratis === true && (!d.proHasta || Date.now() < Number(d.proHasta));
+      aplicarRestriccionesPlan();
+      if (typeof renderCompartir === 'function') { try { renderCompartir(); } catch(e){} }
+    }, function(){ proGratis = false; });
   }
   function teardownUserDoc(){
     if (unsubUserDoc) { try { unsubUserDoc(); } catch(e){} unsubUserDoc = null; }
-    userPlan = 'FREE';
+    if (unsubConfig) { try { unsubConfig(); } catch(e){} unsubConfig = null; }
+    userPlan = 'FREE'; proGratis = false;
   }
 
   function bloqueoProHtml(mensaje){
