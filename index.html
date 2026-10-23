@@ -105,7 +105,7 @@
   /* ================= APP SHELL ================= */
   #appShell { display: none; }
   #appShell.active { display: flex; }
-  #sidebar {
+  #sidebar , #admSidebar {
     width: 236px; min-width: 236px; height: 100vh;
     background: var(--ink); border-right: none; color: #fff;
     box-sizing: border-box; padding: 24px 14px;
@@ -114,49 +114,49 @@
   }
   /* Mismo lenguaje visual del login: fondo --ink + resplandor azul
      difuminado, ahora en toda la barra lateral (visible en cada pantalla). */
-  #sidebar::before {
+  #sidebar::before , #admSidebar::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse 300px 420px at 10% 0%, rgba(42,93,149,0.55) 0%, transparent 60%);
   }
-  #sidebar > * { position: relative; z-index: 1; }
+  #sidebar > * , #admSidebar > * { position: relative; z-index: 1; }
   .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; margin-bottom: 28px; cursor: pointer; }
   .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); font-size: 12px; flex-shrink: 0; }
-  #sidebar .brand-mark { background: rgba(156,194,238,0.18); color: var(--login-blue); }
+  #sidebar .brand-mark , #admSidebar .brand-mark { background: rgba(156,194,238,0.18); color: var(--login-blue); }
   .brand-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #sidebar .brand-name { color: #fff; }
+  #sidebar .brand-name , #admSidebar .brand-name { color: #fff; }
   nav.navlist { display: flex; flex-direction: column; gap: 1px; }
   .navgroup-label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500); padding: 0 10px; margin: 16px 0 4px; }
-  #sidebar .navgroup-label { color: rgba(255,255,255,0.36); }
+  #sidebar .navgroup-label , #admSidebar .navgroup-label { color: rgba(255,255,255,0.36); }
   .navitem {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px;
     font-weight: 500; font-size: 13.5px; color: var(--gray-700); border: none; background: transparent;
     width: 100%; text-align: left; position: relative;
     transition: transform 120ms var(--ease-out), background-color 150ms ease, color 150ms ease;
   }
-  #sidebar .navitem { color: rgba(255,255,255,0.66); }
+  #sidebar .navitem , #admSidebar .navitem { color: rgba(255,255,255,0.66); }
   #sidebar #btnCambiarTorneo { color: rgba(255,255,255,0.5) !important; }
   .navitem svg { flex-shrink: 0; transition: stroke 150ms ease; }
   .navitem:hover:not(.active) { background: var(--gray-200); }
-  #sidebar .navitem:hover:not(.active) { background: rgba(255,255,255,0.08); }
+  #sidebar .navitem:hover:not(.active) , #admSidebar .navitem:hover:not(.active) { background: rgba(255,255,255,0.08); }
   .navitem:active { transform: scale(0.97); }
   .navitem.active { background: var(--gray-200); font-weight: 600; color: var(--ink); }
-  #sidebar .navitem.active { background: rgba(255,255,255,0.12); color: #fff; }
+  #sidebar .navitem.active , #admSidebar .navitem.active { background: rgba(255,255,255,0.12); color: #fff; }
   .navitem.active::before {
     content: ""; position: absolute; left: -14px; top: 50%; transform: translateY(-50%);
     width: 3px; height: 16px; border-radius: 0 3px 3px 0; background: var(--accent);
   }
-  #sidebar .navitem.active::before { background: var(--login-blue); }
+  #sidebar .navitem.active::before , #admSidebar .navitem.active::before { background: var(--login-blue); }
   .sidebar-foot { display: flex; flex-direction: column; gap: 2px; }
   .user-chip { display: flex; align-items: center; gap: 9px; padding: 10px; margin-top: 8px; border-top: 1px solid var(--border); }
-  #sidebar .user-chip { border-top-color: rgba(255,255,255,0.12); }
+  #sidebar .user-chip , #admSidebar .user-chip { border-top-color: rgba(255,255,255,0.12); }
   .user-avatar { width: 26px; height: 26px; border-radius: 999px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: var(--accent); }
-  #sidebar .user-avatar { background: rgba(156,194,238,0.18); color: var(--login-blue); }
+  #sidebar .user-avatar , #admSidebar .user-avatar { background: rgba(156,194,238,0.18); color: var(--login-blue); }
   #sidebar #userPlanLabel { color: rgba(255,255,255,0.42) !important; }
   .logout-btn { border: none; background: transparent; color: var(--gray-500); font-size: 11px; font-weight: 600; padding: 0; margin-left: auto; transition: color 150ms ease, transform 120ms var(--ease-out); }
   .logout-btn:hover { color: var(--red-tx); }
   .logout-btn:active { transform: scale(0.94); }
-  #sidebar .logout-btn { color: rgba(255,255,255,0.42); }
-  #sidebar .logout-btn:hover { color: #ff9c9c; }
+  #sidebar .logout-btn , #admSidebar .logout-btn { color: rgba(255,255,255,0.42); }
+  #sidebar .logout-btn:hover , #admSidebar .logout-btn:hover { color: #ff9c9c; }
 
   #content { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
   .view { padding: 40px 48px; display: none; flex-direction: column; gap: 18px; min-height: 100%; }
@@ -256,6 +256,15 @@
   #saveToast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150; background: var(--green-tx); color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
   #saveToast.show { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { #saveBar, #saveToast { transition: none; } }
+  #adminScreen { min-height: 100vh; }
+  #adminScreen[style*="display: flex"], #adminScreen.show { display: flex; }
+  #admSidebar { width: 236px; min-width: 236px; }
+  #admContent { flex: 1; min-width: 0; padding: 40px 48px; display: flex; flex-direction: column; gap: 22px; max-width: 1100px; }
+  @media (max-width: 860px) {
+    #adminScreen { flex-direction: column; }
+    #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
+    #admContent { padding: 22px 18px 40px; }
+  }
   #planModal, #admModal { display: none; }
   #admModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #planModal { display: none; }
@@ -530,7 +539,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <span class="wordmark" style="font-size:18px;">Court<span class="os">OS</span></span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn" id="btnIrAdmin" style="display:none;background:var(--sidebar);color:#fff;border-color:var(--sidebar);padding:7px 14px;font-size:12.5px;">Admin</button>
+        <button class="btn btn-primary" id="btnIrAdmin" style="display:none;padding:7px 14px;font-size:12.5px;">Admin</button>
         <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
       </div>
     </div>
@@ -585,24 +594,52 @@
   </div>
 </div>
 
-<div id="adminScreen" style="display:none; min-height:100vh; flex-direction:column; align-items:center; background:var(--bg); padding:32px 24px 60px;">
-  <div style="width:100%; max-width:980px; display:flex; flex-direction:column; gap:18px;">
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-      <button class="btn" id="btnAdminVolver">← Mis torneos</button>
-      <div style="font-weight:800;font-size:24px;letter-spacing:-0.02em;">Admin</div>
+<div id="adminScreen" style="display:none;">
+  <div id="admSidebar">
+    <div>
+      <div class="brand" style="cursor:default;">
+        <div class="brand-mark">C</div>
+        <div class="brand-name">CourtOS · Admin</div>
+      </div>
+      <nav class="navlist">
+        <div class="navgroup-label">Administración</div>
+        <button class="navitem active" data-admtab="usuarios">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18.5 14.5c1.6.8 2.5 2.7 2.5 5.5"/></svg>
+          Usuarios
+        </button>
+        <button class="navitem" data-admtab="pagos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg>
+          Pagos
+        </button>
+        <button class="navitem" data-admtab="ajustes">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          Ajustes
+        </button>
+      </nav>
     </div>
-    <div class="tabs" id="adminTabs">
-      <button class="tab-btn active" data-admtab="usuarios">Usuarios</button>
-      <button class="tab-btn" data-admtab="pagos">Pagos</button>
-      <button class="tab-btn" data-admtab="ajustes">Ajustes</button>
+    <div class="sidebar-foot">
+      <button class="navitem" id="btnAdminVolver">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+        Mis torneos
+      </button>
+    </div>
+  </div>
+
+  <div id="admContent">
+    <div>
+      <div class="page-title" id="admTitulo">Usuarios</div>
+      <div class="page-sub" id="admSub">Quién tiene qué plan y cuándo vence.</div>
     </div>
 
-    <div id="admPanel_usuarios" style="display:flex;flex-direction:column;gap:16px;">
-      <div id="admKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;"></div>
+    <div id="admPanel_usuarios" style="display:flex;flex-direction:column;gap:18px;">
+      <div class="kpi-grid" id="admKpis"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <input id="adm_buscar" type="text" placeholder="Buscar por correo..." style="flex:1;min-width:200px;max-width:340px;border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13.5px;background:#fff;">
-        <select id="adm_filtro" style="border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13.5px;background:#fff;">
-          <option value="">Todos</option><option value="PRO">PRO activo</option><option value="POR_VENCER">Vencen en 7 días</option><option value="VENCIDO">Vencidos</option><option value="GRATIS">Gratis</option>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;width:320px;max-width:100%;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="adm_buscar" type="text" placeholder="Buscar por correo..." style="border:none;outline:none;font-family:inherit;font-size:13px;flex:1;background:transparent;">
+        </div>
+        <select id="adm_filtro" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:13px;">
+          <option value="">Todos los planes</option><option value="PRO">PRO activo</option><option value="POR_VENCER">Vencen en 7 días</option><option value="VENCIDO">Vencidos</option><option value="GRATIS">Gratis</option>
         </select>
       </div>
       <div class="card table-wrap"><table class="datatable">
@@ -611,9 +648,9 @@
       </table></div>
     </div>
 
-    <div id="admPanel_pagos" style="display:none;flex-direction:column;gap:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div id="admPagosKpis" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+    <div id="admPanel_pagos" style="display:none;flex-direction:column;gap:18px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div class="kpi-grid" id="admPagosKpis" style="grid-template-columns:repeat(2,minmax(160px,220px));"></div>
         <button class="btn" id="btnAdmExportar">Exportar a Excel</button>
       </div>
       <div class="card table-wrap"><table class="datatable">
@@ -622,7 +659,7 @@
       </table></div>
     </div>
 
-    <div id="admPanel_ajustes" style="display:none;">
+    <div id="admPanel_ajustes" style="display:none;flex-direction:column;gap:18px;">
       <div class="card" style="padding:22px 24px;max-width:680px;display:flex;flex-direction:column;gap:16px;">
         <label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;">
           <span><span style="display:block;font-weight:700;font-size:15px;">PRO gratis para todos</span><span class="muted" style="font-size:12.5px;">Mientras esté encendido, todos tienen PRO sin pagar.</span></span>
@@ -4324,8 +4361,8 @@
     return (u.planHasta - Date.now() <= 7 * DIA) ? 'POR_VENCER' : 'PRO';
   }
   function pillPlan(est){
-    var m = { PRO: ['#e3f1e3','#2f6b34','PRO'], POR_VENCER: ['#fff0d6','#7a5410','PRO · vence pronto'], VENCIDO: ['#fdecea','#8a2a1f','Vencido'], GRATIS: ['#eceae3','#55544a','Gratis'] }[est];
-    return '<span style="background:'+m[0]+';color:'+m[1]+';font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:999px;white-space:nowrap;">'+m[2]+'</span>';
+    var m = { PRO: ['var(--green-bg)','var(--green-tx)','PRO'], POR_VENCER: ['var(--amber-bg)','var(--amber-tx)','PRO · vence pronto'], VENCIDO: ['var(--red-bg)','var(--red-tx)','Vencido'], GRATIS: ['var(--gray-200)','var(--gray-700)','Gratis'] }[est];
+    return '<span class="chip" style="background:'+m[0]+';color:'+m[1]+';">'+m[2]+'</span>';
   }
   function abrirAdmin(){
     byId('torneoScreen').style.display = 'none';
@@ -4339,6 +4376,8 @@
     b.addEventListener('click', function(){
       admTab = b.dataset.admtab;
       document.querySelectorAll('[data-admtab]').forEach(function(x){ x.classList.toggle('active', x === b); });
+      var T = { usuarios: ['Usuarios', 'Quién tiene qué plan y cuándo vence.'], pagos: ['Pagos', 'Lo que has cobrado por los planes.'], ajustes: ['Ajustes', 'Precio, WhatsApp y promoción de PRO gratis.'] }[admTab];
+      byId('admTitulo').textContent = T[0]; byId('admSub').textContent = T[1];
       ['usuarios','pagos','ajustes'].forEach(function(t){ byId('admPanel_' + t).style.display = t === admTab ? 'flex' : 'none'; });
     });
   });
@@ -4353,8 +4392,8 @@
   function renderAdminUsuarios(){
     var cont = { PRO: 0, POR_VENCER: 0, VENCIDO: 0 };
     admUsers.forEach(function(u){ var e = estadoPlanUsuario(u); if (e === 'PRO' || e === 'POR_VENCER') cont.PRO++; if (e === 'POR_VENCER') cont.POR_VENCER++; if (e === 'VENCIDO') cont.VENCIDO++; });
-    function kpi(t, v, c){ return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);">'+t+'</div><div style="font-size:24px;font-weight:800;margin-top:4px;color:'+(c||'inherit')+';">'+v+'</div></div>'; }
-    byId('admKpis').innerHTML = kpi('USUARIOS', admUsers.length) + kpi('PRO ACTIVOS', cont.PRO, '#2f6b34') + kpi('VENCEN EN 7 DÍAS', cont.POR_VENCER, '#7a5410') + kpi('VENCIDOS', cont.VENCIDO, '#8a2a1f');
+    function kpi(t, v, c){ return '<div class="kpi"><div class="kpi-lbl">'+t+'</div><div class="kpi-val" style="color:'+(c||'inherit')+';">'+v+'</div></div>'; }
+    byId('admKpis').innerHTML = kpi('USUARIOS', admUsers.length) + kpi('PRO ACTIVOS', cont.PRO, 'var(--green-tx)') + kpi('VENCEN EN 7 DÍAS', cont.POR_VENCER, 'var(--amber-tx)') + kpi('VENCIDOS', cont.VENCIDO, 'var(--red-tx)');
     var q = byId('adm_buscar').value.trim().toLowerCase(), f = byId('adm_filtro').value;
     var lista = admUsers.filter(function(u){
       var e = estadoPlanUsuario(u);
@@ -4420,8 +4459,8 @@
     var ahora = new Date(), mes = admPagos.filter(function(x){ var d = new Date(x.creadoEn || 0); return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear(); });
     var total = mes.reduce(function(s, x){ return s + (x.monto || 0); }, 0);
     var nombreMes = ahora.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
-    function kpi(t, v){ return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 20px;"><div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;">'+t+'</div><div style="font-size:24px;font-weight:800;margin-top:4px;">'+v+'</div></div>'; }
-    byId('admPagosKpis').innerHTML = kpi(nombreMes, money(total)) + kpi('Pagos del mes', mes.length);
+    function kpi(t, v){ return '<div class="kpi"><div class="kpi-lbl">'+t+'</div><div class="kpi-val">'+v+'</div></div>'; }
+    byId('admPagosKpis').innerHTML = kpi(nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1).replace(' de ', ' '), money(total)) + kpi('Pagos del mes', mes.length);
     byId('admPagosBody').innerHTML = admPagos.length ? admPagos.map(function(x){
       return '<tr><td>'+fechaPlan(x.creadoEn || 0)+'</td><td style="font-weight:600;">'+esc(x.email || '—')+'</td><td class="num">'+money(x.monto || 0)+'</td><td>'+(x.hasta ? fechaPlan(x.hasta) : '—')+'</td><td class="muted">'+esc((x.meses > 1 ? x.meses + ' meses' + (x.nota ? ' · ' : '') : '') + (x.nota || ''))+'</td></tr>';
     }).join('') : '<tr class="empty-row"><td colspan="5">Aún no hay pagos registrados.</td></tr>';
