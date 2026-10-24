@@ -461,6 +461,13 @@
   <button class="btn btn-ghost" id="btnDescartarCambios">Descartar</button>
   <button class="btn btn-primary" id="btnGuardarCambios">Guardar cambios</button>
 </div>
+<div id="lockScreen" style="display:none;position:fixed;inset:0;z-index:2000;background:var(--ink);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px;text-align:center;">
+  <span class="wordmark" style="font-size:26px;color:#fff;">Court<span class="os">OS</span></span>
+  <div style="font-size:14px;color:rgba(255,255,255,0.66);max-width:280px;">La app está bloqueada. Usa tu Face ID o huella para entrar.</div>
+  <button class="btn btn-primary" id="btnDesbloquear" type="button" style="padding:12px 28px;font-size:15px;margin-top:6px;">Desbloquear</button>
+  <div id="lockErr" style="font-size:12.5px;color:#ff9c9c;min-height:16px;"></div>
+  <button class="logout-btn" id="btnLockSalir" type="button" style="margin:0;color:rgba(255,255,255,0.5);">Cerrar sesión</button>
+</div>
 <div id="saveToast" role="status"></div>
 <div id="undoToast" role="status"><span id="undoTxt"></span><button id="btnUndo" type="button">Deshacer</button></div>
 
@@ -570,6 +577,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <span class="wordmark" style="font-size:18px;">Court<span class="os">OS</span></span>
       <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn lock-btn" id="btnCandadoTorneos" style="display:none;padding:7px 14px;font-size:12.5px;"></button>
         <button class="btn inst-btn" id="btnInstalarTorneos" style="display:none;padding:7px 14px;font-size:12.5px;">Instalar app</button>
         <button class="btn btn-primary" id="btnIrAdmin" style="display:none;padding:7px 14px;font-size:12.5px;">Admin</button>
         <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
@@ -808,6 +816,10 @@
       </nav>
     </div>
     <div class="sidebar-foot">
+      <button class="navitem lock-btn" id="btnCandadoSidebar" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <span class="lock-txt">Candado Face ID</span>
+      </button>
       <button class="navitem inst-btn" id="btnInstalarSidebar" style="display:none;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>
         Instalar app
@@ -1607,6 +1619,79 @@
     }).catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
   }
 
+
+  // ---------- Candado Face ID / huella (WebAuthn, solo en este dispositivo) ----------
+  var LOCK_KEY = 'courtos_lock_v1', LOCK_MIN = 5;
+  function lockLeer(){ try { return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null'); } catch(e){ return null; } }
+  function lockGuardar(v){ try { if (v) localStorage.setItem(LOCK_KEY, JSON.stringify(v)); else localStorage.removeItem(LOCK_KEY); } catch(e){} }
+  function b64(buf){ var s=''; new Uint8Array(buf).forEach(function(c){ s += String.fromCharCode(c); }); return btoa(s); }
+  function unb64(t){ var s = atob(t), a = new Uint8Array(s.length); for (var i=0;i<s.length;i++) a[i] = s.charCodeAt(i); return a; }
+  function rnd(n){ var a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+  var lockSoportado = false;
+  function lockPuedeUsarse(){
+    var l = lockLeer();
+    return !!(lockSoportado && currentUid && (!l || !l.uid || l.uid === currentUid));
+  }
+  function lockActivo(){ var l = lockLeer(); return !!(l && l.cred && (!l.uid || l.uid === currentUid)); }
+  function lockPintarBotones(){
+    var act = lockActivo(), ver = lockSoportado || act;
+    document.querySelectorAll('.lock-btn').forEach(function(b){
+      b.style.display = ver ? (b.id === 'btnCandadoTorneos' ? 'inline-flex' : '') : 'none';
+      var t = act ? 'Candado activo ✓' : 'Activar Face ID';
+      var sp = b.querySelector('.lock-txt'); if (sp) sp.textContent = t; else b.textContent = (act ? '🔒 ' : '🔓 ') + t;
+    });
+  }
+  function lockMostrar(){ var l = byId('lockScreen'); l.style.display = 'flex'; byId('lockErr').textContent = ''; document.body.style.overflow = 'hidden'; }
+  function lockOcultar(){ byId('lockScreen').style.display = 'none'; document.body.style.overflow = ''; lockSegundoPlano = 0; }
+  var lockSegundoPlano = 0;
+  function lockDesbloquear(){
+    var l = lockLeer(); if (!l) { lockOcultar(); return; }
+    byId('lockErr').textContent = '';
+    navigator.credentials.get({ publicKey: {
+      challenge: rnd(32), timeout: 60000, userVerification: 'required',
+      allowCredentials: [{ type: 'public-key', id: unb64(l.cred) }]
+    }}).then(function(){ lockOcultar(); }).catch(function(e){
+      byId('lockErr').textContent = (e && e.name === 'NotAllowedError') ? 'No se pudo verificar. Intenta de nuevo.' : 'Error: ' + (e && e.message || e);
+    });
+  }
+  function lockActivar(){
+    var email = currentUserEmail || 'usuario';
+    navigator.credentials.create({ publicKey: {
+      challenge: rnd(32), rp: { name: 'CourtOS' },
+      user: { id: rnd(16), name: email, displayName: email },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      timeout: 60000, attestation: 'none'
+    }}).then(function(cred){
+      lockGuardar({ cred: b64(cred.rawId), uid: currentUid });
+      lockPintarBotones(); flashBarra('Candado activado');
+    }).catch(function(e){
+      if (e && e.name === 'NotAllowedError') return;
+      alert('No se pudo activar el candado: ' + (e && e.message || e));
+    });
+  }
+  function lockToggle(){
+    if (lockActivo()) {
+      if (!confirm('¿Quitar el candado de Face ID / huella en este dispositivo?')) return;
+      lockGuardar(null); lockPintarBotones(); flashBarra('Candado desactivado');
+    } else lockActivar();
+  }
+  document.querySelectorAll('.lock-btn').forEach(function(b){ b.addEventListener('click', lockToggle); });
+  byId('btnDesbloquear').addEventListener('click', lockDesbloquear);
+  byId('btnLockSalir').addEventListener('click', function(){ lockGuardar(null); lockOcultar(); if (auth) auth.signOut(); });
+  document.addEventListener('visibilitychange', function(){
+    if (!lockActivo()) return;
+    if (document.hidden) lockSegundoPlano = Date.now();
+    else if (lockSegundoPlano && Date.now() - lockSegundoPlano > LOCK_MIN * 60000) { lockMostrar(); }
+  });
+  try {
+    if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(ok){ lockSoportado = !!ok; lockPintarBotones(); }).catch(function(){});
+    }
+  } catch(e){}
+  // Al abrir la app: si hay candado en este dispositivo, empieza bloqueada.
+  if (lockLeer()) lockMostrar();
+
   function flashBarra(txt){
     var t = byId('saveToast'); if (!t) return;
     t.textContent = txt; t.classList.add('show');
@@ -1820,11 +1905,12 @@
 
   // ---------- nav ----------
   function setView(v){
+    if (!v) return;
     document.querySelectorAll('.view').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
     document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
   }
   document.querySelectorAll('.navitem').forEach(function(btn){
-    btn.addEventListener('click', function(){ setView(btn.dataset.view); closeSidebarMobile(); });
+    btn.addEventListener('click', function(){ if (!btn.dataset.view) return; setView(btn.dataset.view); closeSidebarMobile(); });
   });
   document.querySelectorAll('[data-nav]').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -4760,6 +4846,8 @@
         byId('userAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
         subscribeJugadoresGlobal();
         subscribeUserDoc();
+        var lk = lockLeer(); if (lk && lk.uid && lk.uid !== user.uid) { lockGuardar(null); lockOcultar(); }
+        lockPintarBotones();
         if (!torneoRef) showTorneoScreen();
       } else {
         teardownSubscriptions();
@@ -4771,6 +4859,7 @@
         byId('torneoScreen').style.display = 'none';
         byId('adminScreen').style.display = 'none';
         byId('authScreen').style.display = 'flex';
+        lockGuardar(null); lockOcultar();
       }
     });
   }
