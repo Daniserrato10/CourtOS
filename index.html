@@ -284,6 +284,10 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  #impModal { display: none; }
+  #impModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  .imp-tab td, .imp-tab th { padding: 8px 10px; font-size: 12.5px; text-align: left; border-top: 1px solid var(--border); vertical-align: top; }
+  .imp-tab th { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .03em; background: var(--gray-100, #f1efe8); border-top: none; position: sticky; top: 0; }
   #instModal { display: none; }
   #instModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #planModal, #admModal { display: none; }
@@ -467,6 +471,20 @@
 <div id="undoToast" role="status"><span id="undoTxt"></span><button id="btnUndo" type="button">Deshacer</button></div>
 
 <div id="offlineBar" role="status" style="display:none;position:fixed;top:0;left:0;right:0;z-index:300;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;">Sin conexión: puedes ver lo que ya cargó, pero los cambios no se guardarán hasta que vuelva internet.</div>
+
+<div id="impModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:225; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Importar inscripciones</div>
+      <button class="logout-btn" id="btnImpCerrar" title="Cerrar">✕</button>
+    </div>
+    <div id="impBody" style="padding:16px 22px 20px; overflow-y:auto; font-size:13.5px; line-height:1.55;"></div>
+    <div id="impFoot" style="display:none; padding:12px 20px; border-top:1px solid var(--border); justify-content:flex-end; gap:8px; flex-shrink:0;">
+      <button class="btn" id="btnImpOtro">Elegir otro archivo</button>
+      <button class="btn btn-primary" id="btnImpConfirmar">Importar</button>
+    </div>
+  </div>
+</div>
 
 <div id="instModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:230; justify-content:center; align-items:center; padding:24px;">
   <div class="card" style="width:100%; max-width:420px; display:flex; flex-direction:column; padding:0; overflow:hidden;">
@@ -871,6 +889,7 @@
         </div>
         <div class="actions">
           <button class="btn" id="btnAbrirCategorias" data-toggle-form="categorias" style="display:none;">Categorías</button>
+          <button class="btn" id="btnImportarIns" data-w="inscripciones">Importar Excel / CSV</button>
           <button class="btn btn-primary" data-w="inscripciones" data-toggle-form="inscripcion">+ Nueva Inscripción</button>
         </div>
       </div>
@@ -1609,6 +1628,277 @@
     }).catch(function(e){ alert('No se pudo eliminar: ' + e.message); });
   }
 
+
+
+  // ---------- Importar inscripciones desde Excel / CSV ----------
+  var impFilas = [], impCuentaId = '', impMetodo = 'Efectivo';
+  function impNorm(t){ return normalizaTexto(t).replace(/ñ/g,'n').replace(/[^a-z0-9]+/g,' ').trim(); }
+  function impClave(j1, j2){ return [impNorm(j1), impNorm(j2)].filter(Boolean).sort().join('|'); }
+  function impNumero(v){
+    if (typeof v === 'number') return v;
+    var t = String(v == null ? '' : v).replace(/[^0-9,.\-]/g, '');
+    if (!t) return NaN;
+    if (/^\-?\d{1,3}([.,]\d{3})+$/.test(t)) t = t.replace(/[.,]/g, '');       // 340.000 o 340,000
+    else if (/,\d{1,2}$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');   // 1.234,5
+    return parseFloat(t);
+  }
+  function impParseCSV(txt){
+    txt = txt.replace(/^﻿/, '');
+    var primera = txt.split(/\r?\n/)[0] || '';
+    var sep = (primera.split(';').length > primera.split(',').length) ? ';' : (primera.indexOf('\t') >= 0 ? '\t' : ',');
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < txt.length; i++) {
+      var c = txt[i];
+      if (q) { if (c === '"') { if (txt[i+1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+      else if (c === '"') q = true;
+      else if (c === sep) { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && txt[i+1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  var IMP_ALIAS = {
+    pareja: ['pareja', 'equipo', 'jugadores'],
+    j1: ['jugador 1', 'jugador1', 'j1', 'nombre 1', 'nombre1', 'jugador', 'nombre', 'participante'],
+    j2: ['jugador 2', 'jugador2', 'j2', 'nombre 2', 'nombre2', 'companero', 'compañero', 'pareja de'],
+    cat: ['categoria', 'cat', 'nivel'],
+    tarifa: ['tarifa', 'fase', 'precio tipo'],
+    valor: ['valor', 'precio', 'valor inscripcion', 'costo'],
+    pagado: ['pagado', 'pago', 'abono', 'abonado', 'monto pagado']
+  };
+  function impMapear(head){
+    var m = {};
+    head.forEach(function(h, i){
+      var n = impNorm(h);
+      Object.keys(IMP_ALIAS).forEach(function(k){ if (m[k] === undefined && IMP_ALIAS[k].map(impNorm).indexOf(n) >= 0) m[k] = i; });
+    });
+    return m;
+  }
+  function impCategoria(txt){
+    var n = impNorm(txt); if (!n) return null;
+    return categorias.find(function(c){ return impNorm(c.nombre) === n; }) || null;
+  }
+  function impTarifa(txt){
+    var n = impNorm(txt); if (!n) return null;
+    return tarifasTorneo().find(function(t){ return impNorm(t.nombre) === n; }) || null;
+  }
+  function impAnalizar(rows){
+    var res = { filas: [], error: '' };
+    if (!rows.length) { res.error = 'El archivo está vacío.'; return res; }
+    // encabezado: primera fila que tenga al menos una columna reconocida
+    var hi = -1, m = {};
+    for (var k = 0; k < Math.min(rows.length, 6); k++) { m = impMapear(rows[k]); if ((m.j1 !== undefined || m.pareja !== undefined) && m.cat !== undefined) { hi = k; break; } }
+    if (hi < 0) { res.error = 'No encontré las columnas. La primera fila debe tener al menos "Jugador 1" (o "Pareja") y "Categoría". Descarga la plantilla para ver el formato.'; return res; }
+    var existentes = inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; });
+    var claveExistente = {}, jugadorEn = {};
+    existentes.forEach(function(i){
+      claveExistente[i.categoriaId + '#' + impClave(i.j1Nombre, i.j2Nombre)] = i;
+      [i.j1Nombre, i.j2Nombre].forEach(function(n){ if (n) jugadorEn[i.categoriaId + '#' + impNorm(n)] = i; });
+    });
+    var vistasArchivo = {}, jugadorArchivo = {};
+    for (var r = hi + 1; r < rows.length; r++) {
+      var row = rows[r];
+      if (!row || row.every(function(c){ return String(c == null ? '' : c).trim() === ''; })) continue;
+      var get = function(key){ return m[key] === undefined ? '' : String(row[m[key]] == null ? '' : row[m[key]]).trim(); };
+      var j1 = get('j1'), j2 = get('j2');
+      if (m.pareja !== undefined && !j1) j1 = get('pareja');
+      if (j1 && !j2) { // "Juan / Pedro" en una sola celda
+        var partes = j1.split(/\s*(?:\/|\s+y\s+|\s+&\s+|\+| - )\s*/i).filter(Boolean);
+        if (partes.length > 1) { j1 = partes[0]; j2 = partes[1]; }
+      }
+      var f = { n: r + 1, j1: j1, j2: j2, catTxt: get('cat'), estado: 'NUEVA', nota: '', marcar: true };
+      var cat = impCategoria(f.catTxt);
+      if (!j1) { f.estado = 'ERROR'; f.nota = 'Falta el jugador 1'; }
+      else if (!cat) { f.estado = 'ERROR'; f.nota = f.catTxt ? 'La categoría "' + f.catTxt + '" no existe en este torneo' : 'Falta la categoría'; }
+      if (f.estado !== 'ERROR') {
+        f.cat = cat; f.individual = categoriaEsIndividual(cat);
+        if (f.individual) f.j2 = j2 = '';
+        var tf = impTarifa(get('tarifa'));
+        if (get('tarifa') && !tf) { f.estado = 'ERROR'; f.nota = 'La tarifa "' + get('tarifa') + '" no existe'; }
+        f.tarifa = tf || tarifaById(tarifaActivaId());
+        var vl = precioCategoria(cat, f.tarifa.id), vtxt = get('valor');
+        f.valor = vtxt !== '' ? impNumero(vtxt) : vl;
+        f.valorLista = vl;
+        if (f.estado !== 'ERROR' && !(f.valor > 0)) { f.estado = 'ERROR'; f.nota = 'El valor no es válido'; }
+        var ptxt = get('pagado');
+        f.pagado = ptxt !== '' ? impNumero(ptxt) : 0;
+        if (isNaN(f.pagado) || f.pagado < 0) f.pagado = 0;
+        if (f.estado !== 'ERROR' && f.pagado > f.valor) { f.estado = 'ERROR'; f.nota = 'Lo pagado supera el valor'; }
+      }
+      if (f.estado === 'NUEVA') {
+        var ck = cat.id + '#' + impClave(j1, j2);
+        if (claveExistente[ck]) { f.estado = 'DUPLICADA'; f.nota = 'Ya está inscrita en esta categoría'; f.marcar = false; }
+        else if (vistasArchivo[ck]) { f.estado = 'REPETIDA'; f.nota = 'Repetida en el archivo (fila ' + vistasArchivo[ck] + ')'; f.marcar = false; }
+        else {
+          var choque = [j1, j2].filter(Boolean).map(function(n){
+            var k2 = cat.id + '#' + impNorm(n);
+            return jugadorEn[k2] ? n + ' ya está con ' + (impNorm(jugadorEn[k2].j1Nombre) === impNorm(n) ? (jugadorEn[k2].j2Nombre || 'sin pareja') : jugadorEn[k2].j1Nombre) :
+                   (jugadorArchivo[k2] ? n + ' aparece en otra pareja del archivo' : '');
+          }).filter(Boolean);
+          if (choque.length) { f.estado = 'REVISAR'; f.nota = choque.join(' · '); f.marcar = false; }
+          vistasArchivo[ck] = f.n;
+          [j1, j2].filter(Boolean).forEach(function(n){ jugadorArchivo[cat.id + '#' + impNorm(n)] = true; });
+        }
+      }
+      if (f.estado === 'ERROR') f.marcar = false;
+      res.filas.push(f);
+    }
+    if (!res.filas.length) res.error = 'No encontré filas con datos debajo del encabezado.';
+    return res;
+  }
+  function impRender(){
+    var body = byId('impBody'), foot = byId('impFoot');
+    var c = { NUEVA: 0, DUPLICADA: 0, REPETIDA: 0, REVISAR: 0, ERROR: 0 };
+    impFilas.forEach(function(f){ c[f.estado]++; });
+    var marcadas = impFilas.filter(function(f){ return f.marcar; }).length;
+    var conPago = impFilas.some(function(f){ return f.marcar && f.pagado > 0; });
+    var chips = [
+      ['NUEVA', 'nuevas', 'var(--green-bg)', 'var(--green-tx)'], ['DUPLICADA', 'ya inscritas', 'var(--gray-200)', 'var(--gray-700)'],
+      ['REPETIDA', 'repetidas en el archivo', 'var(--gray-200)', 'var(--gray-700)'], ['REVISAR', 'por revisar', 'var(--amber-bg)', 'var(--amber-tx)'], ['ERROR', 'con error', 'var(--red-bg)', 'var(--red-tx)']
+    ].filter(function(x){ return c[x[0]]; }).map(function(x){ return '<span class="chip" style="background:'+x[2]+';color:'+x[3]+';">'+c[x[0]]+' '+x[1]+'</span>'; }).join(' ');
+    var cuentaSel = '';
+    if (conPago) {
+      cuentaSel = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;padding:12px;background:var(--gray-100,#f1efe8);border-radius:8px;">' +
+        '<div class="field" style="flex:1;min-width:200px;margin:0;"><label>Cuenta donde entraron los pagos</label><select id="impCuenta">' + cuentas.map(function(x){ return '<option value="'+esc(x.id)+'"'+(x.id===impCuentaId?' selected':'')+'>'+esc(x.nombre)+'</option>'; }).join('') + '</select></div>' +
+        '<div class="field" style="flex:1;min-width:160px;margin:0;"><label>Método de pago</label><select id="impMetodo">' + ['Efectivo','Transferencia','Nequi','Daviplata','Tarjeta'].map(function(x){ return '<option'+(x===impMetodo?' selected':'')+'>'+x+'</option>'; }).join('') + '</select></div></div>';
+    }
+    var est = { NUEVA: ['var(--green-bg)','var(--green-tx)','Nueva'], DUPLICADA: ['var(--gray-200)','var(--gray-700)','Ya inscrita'], REPETIDA: ['var(--gray-200)','var(--gray-700)','Repetida'], REVISAR: ['var(--amber-bg)','var(--amber-tx)','Revisar'], ERROR: ['var(--red-bg)','var(--red-tx)','Error'] };
+    body.innerHTML =
+      '<div style="margin-bottom:8px;">' + chips + '</div>' +
+      '<div class="muted" style="font-size:12.5px;">Solo se importan las filas marcadas. Las ya inscritas y las repetidas quedan sin marcar para que no se dupliquen. Las de "Revisar" tienen un jugador que ya está en esa categoría con otra pareja: márcalas solo si es correcto.</div>' +
+      cuentaSel +
+      '<div style="overflow:auto;max-height:46vh;border:1px solid var(--border);border-radius:8px;margin-top:10px;"><table class="imp-tab" style="width:100%;border-collapse:collapse;min-width:640px;"><thead><tr><th style="width:34px;"></th><th>Fila</th><th>Pareja</th><th>Categoría</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Pagado</th><th>Estado</th></tr></thead><tbody>' +
+      impFilas.map(function(f, i){
+        var e = est[f.estado];
+        return '<tr><td>' + '<input type="checkbox" data-imp-chk="'+i+'"'+(f.marcar?' checked':'')+(f.estado==='ERROR'?' disabled':'')+'></td>' +
+          '<td>' + f.n + '</td><td><b>' + esc(f.j1) + '</b>' + (f.j2 ? ' / <b>' + esc(f.j2) + '</b>' : '') + '</td><td>' + esc(f.cat ? f.cat.nombre : f.catTxt) + '</td>' +
+          '<td style="text-align:right;">' + (f.valor > 0 ? money(f.valor) : '—') + '</td><td style="text-align:right;">' + (f.pagado > 0 ? money(f.pagado) : '—') + '</td>' +
+          '<td><span class="chip" style="background:'+e[0]+';color:'+e[1]+';">'+e[2]+'</span>' + (f.nota ? '<div class="muted" style="font-size:11.5px;margin-top:3px;">'+esc(f.nota)+'</div>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    foot.style.display = 'flex';
+    byId('btnImpConfirmar').textContent = 'Importar ' + marcadas + ' inscripci' + (marcadas === 1 ? 'ón' : 'ones');
+    byId('btnImpConfirmar').disabled = !marcadas;
+    body.querySelectorAll('[data-imp-chk]').forEach(function(ch){
+      ch.addEventListener('change', function(){ impFilas[+ch.dataset.impChk].marcar = ch.checked; impGuardarSel(); impRender(); });
+    });
+    var sc = byId('impCuenta'); if (sc) sc.addEventListener('change', function(){ impCuentaId = sc.value; });
+    var sm = byId('impMetodo'); if (sm) sm.addEventListener('change', function(){ impMetodo = sm.value; });
+  }
+  function impGuardarSel(){ var sc = byId('impCuenta'); if (sc) impCuentaId = sc.value; var sm = byId('impMetodo'); if (sm) impMetodo = sm.value; }
+  function impPlantillaCSV(){
+    var cat1 = (categorias[0] && categorias[0].nombre) || 'Sexta';
+    var lineas = [
+      ['Jugador 1', 'Jugador 2', 'Categoría', 'Tarifa', 'Valor', 'Pagado'],
+      ['Juan Pérez', 'Carlos Gómez', cat1, '', '', '0'],
+      ['Ana Ruiz', 'Laura Mora', cat1, '', '', '170000']
+    ];
+    var txt = '﻿' + lineas.map(function(l){ return l.map(function(c){ return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'plantilla-inscripciones.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function impPantallaInicial(msgError){
+    byId('impFoot').style.display = 'none';
+    byId('impBody').innerHTML =
+      (msgError ? '<div style="background:var(--red-bg);color:var(--red-tx);padding:10px 12px;border-radius:8px;margin-bottom:12px;">' + esc(msgError) + '</div>' : '') +
+      '<p style="margin:0 0 10px;">Sube un archivo <b>Excel (.xlsx)</b> o <b>CSV</b> con una pareja por fila. Antes de guardar nada verás una vista previa, y las parejas que ya están inscritas en la misma categoría <b>no se duplican</b>.</p>' +
+      '<div style="font-size:12.5px;margin-bottom:12px;"><b>Columnas</b> (la primera fila es el encabezado):<br>' +
+      '• <b>Jugador 1</b>, <b>Jugador 2</b> y <b>Categoría</b> — obligatorias (o una sola columna <b>Pareja</b> con "Juan / Pedro").<br>' +
+      '• <b>Tarifa</b>, <b>Valor</b> y <b>Pagado</b> — opcionales. Sin valor se usa el precio de la categoría; sin pagado queda pendiente de pago.<br>' +
+      'El nombre de la categoría debe ser igual al que ya tienes creado en el torneo.</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+      '<label class="btn btn-primary" style="cursor:pointer;margin:0;">Elegir archivo<input type="file" id="impArchivo" accept=".csv,.xlsx,.xls,.txt,text/csv" style="display:none;"></label>' +
+      '<button class="btn" id="btnImpPlantilla" type="button">Descargar plantilla</button></div>';
+    byId('btnImpPlantilla').addEventListener('click', impPlantillaCSV);
+    byId('impArchivo').addEventListener('change', function(e){ var f = e.target.files && e.target.files[0]; if (f) impLeerArchivo(f); });
+  }
+  function impCargarXLSX(){
+    if (window.XLSX) return Promise.resolve();
+    return new Promise(function(ok, no){
+      var sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = ok; sc.onerror = function(){ no(new Error('No se pudo cargar el lector de Excel (¿sin internet?). Guarda el archivo como CSV e inténtalo de nuevo.')); };
+      document.head.appendChild(sc);
+    });
+  }
+  function impLeerArchivo(file){
+    byId('impBody').innerHTML = '<p class="muted">Leyendo archivo…</p>';
+    var esExcel = /\.xlsx?$/i.test(file.name);
+    var lectura = esExcel
+      ? impCargarXLSX().then(function(){ return file.arrayBuffer(); }).then(function(buf){
+          var wb = XLSX.read(buf, { type: 'array' });
+          return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+        })
+      : file.arrayBuffer().then(function(buf){
+          var txt = new TextDecoder('utf-8').decode(buf);
+          if (txt.indexOf('�') >= 0) txt = new TextDecoder('windows-1252').decode(buf);
+          return impParseCSV(txt);
+        });
+    lectura.then(function(rows){
+      var an = impAnalizar(rows);
+      if (an.error) { impPantallaInicial(an.error); return; }
+      impFilas = an.filas;
+      if (!impCuentaId || !cuentas.some(function(x){ return x.id === impCuentaId; })) impCuentaId = (cuentas[0] && cuentas[0].id) || '';
+      impRender();
+    }).catch(function(e){ impPantallaInicial('No se pudo leer el archivo: ' + (e && e.message || e)); });
+  }
+  function impImportar(){
+    impGuardarSel();
+    var sel = impFilas.filter(function(f){ return f.marcar && f.estado !== 'ERROR'; });
+    if (!sel.length) return;
+    if (sel.some(function(f){ return f.pagado > 0; }) && !impCuentaId) { alert('Primero crea una cuenta para registrar los pagos.'); return; }
+    var btn = byId('btnImpConfirmar'); btn.disabled = true; btn.textContent = 'Importando…';
+    var ahora = Date.now(), cont = 0, lotes = [], lote = fsdb.batch(), ops = 0, nuevos = [];
+    sel.forEach(function(f, k){
+      var cobrable = f.valor, mitad = f.individual ? f.valor : f.valor / 2;
+      var pJ1 = Math.min(f.pagado, mitad), pJ2 = f.individual ? 0 : Math.min(Math.max(0, f.pagado - mitad), mitad);
+      var estadoPago = f.pagado >= cobrable ? 'APROBADO' : (f.pagado > 0 ? 'PARCIAL' : 'PENDIENTE');
+      var ref = torneoRef.collection('inscripciones').doc();
+      lote.set(ref, {
+        categoriaId: f.cat.id, categoriaNombre: f.cat.nombre, j1Nombre: f.j1, j2Nombre: f.j2, individual: f.individual,
+        valor: f.valor, pagadoJ1: pJ1, pagadoJ2: pJ2, exentoJ1: false, exentoJ2: false, motivoExencion: '',
+        tarifaId: f.tarifa.id, tarifaNombre: f.tarifa.nombre, valorLista: f.valorLista, precioAjustado: f.valor !== f.valorLista,
+        estadoPago: estadoPago, estadoIns: estadoPago === 'APROBADO' ? 'CONFIRMADA' : 'PENDIENTE',
+        cuentaId: impCuentaId, metodoPago: impMetodo, fecha: ahora + k, importada: true
+      });
+      ops++;
+      if (f.pagado > 0) {
+        lote.set(torneoRef.collection('movimientos').doc(), {
+          tipo: 'INGRESO', concepto: 'Inscripción — ' + f.j1 + (f.j2 ? ' / ' + f.j2 : ''), categoria: 'Inscripciones', valor: f.pagado, cuentaId: impCuentaId,
+          sourceType: 'INSCRIPCION', sourceId: ref.id, attribJ1: pJ1, attribJ2: pJ2,
+          observacion: (!f.individual && f.pagado < cobrable) ? 'Abono de ' + f.j1 + ' (importado)' : 'Importado desde archivo',
+          estado: 'ACTIVO', fecha: ahora, creadoEn: ahora, registradoPor: currentUserEmail
+        });
+        ops++;
+      }
+      nuevos.push({ id: ref.id, f: f });
+      if (ops >= 400) { lotes.push(lote); lote = fsdb.batch(); ops = 0; }
+    });
+    if (ops) lotes.push(lote);
+    lotes.reduce(function(p, l){ return p.then(function(){ return l.commit(); }); }, Promise.resolve())
+      .then(function(){
+        // jugadores: uno por uno, sin repetir el mismo en la misma categoría
+        return nuevos.reduce(function(p, n){
+          return p.then(function(){ return sincronizarJugador(n.f.j1, n.f.cat.nombre, n.id); })
+                  .then(function(){ if (n.f.j2) return sincronizarJugador(n.f.j2, n.f.cat.nombre, n.id); });
+        }, Promise.resolve()).catch(function(){});
+      })
+      .then(function(){
+        byId('impModal').classList.remove('show');
+        flashBarra(sel.length + ' inscripci' + (sel.length === 1 ? 'ón importada' : 'ones importadas'));
+      })
+      .catch(function(e){ alert('No se pudo importar: ' + (e && e.message || e)); btn.disabled = false; btn.textContent = 'Reintentar'; });
+  }
+  byId('btnImportarIns').addEventListener('click', function(){
+    if (!categorias.length) { alert('Primero crea las categorías del torneo.'); return; }
+    impFilas = []; impPantallaInicial(''); byId('impModal').classList.add('show');
+  });
+  byId('btnImpCerrar').addEventListener('click', function(){ byId('impModal').classList.remove('show'); });
+  byId('impModal').addEventListener('click', function(e){ if (e.target === byId('impModal')) byId('impModal').classList.remove('show'); });
+  byId('btnImpOtro').addEventListener('click', function(){ impFilas = []; impPantallaInicial(''); });
+  byId('btnImpConfirmar').addEventListener('click', impImportar);
 
   function flashBarra(txt){
     var t = byId('saveToast'); if (!t) return;
