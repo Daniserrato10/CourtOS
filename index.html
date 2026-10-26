@@ -284,6 +284,8 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  #repModal { display: none; }
+  #repModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #impModal { display: none; }
   #impModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   .imp-tab td, .imp-tab th { padding: 8px 10px; font-size: 12.5px; text-align: left; border-top: 1px solid var(--border); vertical-align: top; }
@@ -471,6 +473,26 @@
 <div id="undoToast" role="status"><span id="undoTxt"></span><button id="btnUndo" type="button">Deshacer</button></div>
 
 <div id="offlineBar" role="status" style="display:none;position:fixed;top:0;left:0;right:0;z-index:300;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;">Sin conexión: puedes ver lo que ya cargó, pero los cambios no se guardarán hasta que vuelva internet.</div>
+
+<div id="repModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:226; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:440px; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border);">
+      <div style="font-weight:700; font-size:15px;">Cambiar jugador</div>
+      <button class="logout-btn" id="btnRepCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px 20px; font-size:13.5px; line-height:1.55;">
+      <div class="muted" id="repInfo" style="margin-bottom:12px;"></div>
+      <div class="field"><label>¿A quién reemplazas?</label><select id="repSlot"></select></div>
+      <div class="field" style="margin-top:10px;"><label>Jugador nuevo</label><input id="repNuevo" list="jugadoresSuggestions" placeholder="Busca en tus jugadores o escribe un nombre nuevo" autocomplete="off"></div>
+      <div class="muted" style="font-size:12px;margin-top:10px;">Lo pagado, la cortesía y el valor se quedan en la inscripción: el jugador nuevo ocupa el mismo lugar. Si no está en tu lista de jugadores, se crea solo.</div>
+      <div id="repAviso" style="display:none;margin-top:10px;padding:9px 11px;border-radius:8px;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+        <button class="btn" id="btnRepCancelar" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="btnRepGuardar" type="button">Cambiar jugador</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="impModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:225; justify-content:center; align-items:center; padding:24px;">
   <div class="card" style="width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
@@ -995,11 +1017,14 @@
         </div>
       </div>
 
-      <div class="tabs" id="insTabs">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="tabs" id="insTabs" style="margin-bottom:0;">
         <button class="tab-btn active" data-filter="TODAS">Todas</button>
         <button class="tab-btn" data-filter="CONFIRMADA">Confirmadas</button>
         <button class="tab-btn" data-filter="PENDIENTE">Pendientes de pago</button>
         <button class="tab-btn" data-filter="CANCELADA">Canceladas</button>
+      </div>
+      <select id="insFiltroCat" aria-label="Filtrar por categoría" style="appearance:none;-webkit-appearance:none;background:#fff url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27 fill=%27none%27 stroke=%27%23666%27 stroke-width=%271.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m1 1 5 5 5-5%27/%3E%3C/svg%3E&quot;) no-repeat right 16px center;border:1px solid var(--border);border-radius:8px;padding:9px 38px 9px 13px;font-family:inherit;font-size:13px;"><option value="">Todas las categorías</option></select>
       </div>
 
       <div class="card table-wrap" style="flex:1;">
@@ -1514,7 +1539,7 @@
   // ---------- state ----------
   var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
   var jugadoresGlobal = []; // base de datos de jugadores, a nivel de cuenta (persiste entre torneos)
-  var insFilter = 'TODAS', finFilter = 'TODOS';
+  var insFilter = 'TODAS', finFilter = 'TODOS', insCatFilter = '';
   var unsubs = [];
 
   // ---------- helpers ----------
@@ -1899,6 +1924,53 @@
   byId('impModal').addEventListener('click', function(e){ if (e.target === byId('impModal')) byId('impModal').classList.remove('show'); });
   byId('btnImpOtro').addEventListener('click', function(){ impFilas = []; impPantallaInicial(''); });
   byId('btnImpConfirmar').addEventListener('click', impImportar);
+
+
+  // ---------- Filtro por categoría y cambio de jugador en una inscripción ----------
+  byId('insFiltroCat').addEventListener('change', function(){ insCatFilter = byId('insFiltroCat').value; renderInscripciones(); });
+  var repInsId = null;
+  function abrirCambioJugador(id){
+    var i = inscripciones.find(function(x){ return x.id === id; }); if (!i) return;
+    repInsId = id;
+    byId('repInfo').textContent = i.categoriaNombre + ' · ' + i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : '');
+    var ops = '<option value="1">' + esc(i.j1Nombre) + ' (jugador 1)</option>';
+    if (!i.individual) ops += '<option value="2">' + (i.j2Nombre ? esc(i.j2Nombre) + ' (jugador 2)' : '(vacío) jugador 2 por confirmar') + '</option>';
+    byId('repSlot').innerHTML = ops;
+    byId('repNuevo').value = ''; byId('repAviso').style.display = 'none';
+    byId('repModal').classList.add('show');
+    setTimeout(function(){ byId('repNuevo').focus(); }, 50);
+  }
+  function cerrarCambioJugador(){ byId('repModal').classList.remove('show'); repInsId = null; }
+  byId('btnRepCerrar').addEventListener('click', cerrarCambioJugador);
+  byId('btnRepCancelar').addEventListener('click', cerrarCambioJugador);
+  byId('repModal').addEventListener('click', function(e){ if (e.target === byId('repModal')) cerrarCambioJugador(); });
+  byId('btnRepGuardar').addEventListener('click', function(){
+    if (!isAdminMode) { alert('Para cambiar un jugador activa el modo administrador.'); return; }
+    var i = inscripciones.find(function(x){ return x.id === repInsId; }); if (!i) return;
+    var slot = byId('repSlot').value, nuevo = byId('repNuevo').value.trim().replace(/\s+/g, ' ');
+    if (!nuevo) { alert('Escribe o elige el jugador nuevo.'); return; }
+    var viejo = slot === '1' ? i.j1Nombre : (i.j2Nombre || '');
+    var otro = slot === '1' ? i.j2Nombre : i.j1Nombre;
+    if (impNorm(nuevo) === impNorm(viejo)) { alert('Es el mismo jugador que ya está en la inscripción.'); return; }
+    if (otro && impNorm(nuevo) === impNorm(otro)) { alert('Ese jugador ya está en esta misma inscripción.'); return; }
+    // ¿ya está en otra inscripción activa de la misma categoría?
+    var en = inscripciones.find(function(x){
+      return x.id !== i.id && x.estadoIns !== 'CANCELADA' && x.categoriaId === i.categoriaId && (impNorm(x.j1Nombre) === impNorm(nuevo) || impNorm(x.j2Nombre) === impNorm(nuevo));
+    });
+    if (en && !confirm(nuevo + ' ya está inscrito en ' + i.categoriaNombre + ' con ' + (impNorm(en.j1Nombre) === impNorm(nuevo) ? (en.j2Nombre || 'nadie (pareja por confirmar)') : en.j1Nombre) + '.\n\n¿Cambiarlo de todas formas?')) return;
+    var btn = byId('btnRepGuardar'); btn.disabled = true;
+    var upd = {};
+    upd[slot === '1' ? 'j1Nombre' : 'j2Nombre'] = nuevo;
+    upd.reemplazos = firebase.firestore.FieldValue.arrayUnion({ puesto: slot === '1' ? 'J1' : 'J2', de: viejo, a: nuevo, fecha: Date.now(), por: currentUserEmail || '' });
+    torneoRef.collection('inscripciones').doc(i.id).update(upd).then(function(){
+      var tareas = [];
+      if (viejo) tareas.push(quitarInscripcionDeJugadores({ id: i.id, categoriaNombre: i.categoriaNombre, j1Nombre: viejo, j2Nombre: '' }));
+      return Promise.all(tareas).then(function(){ return sincronizarJugador(nuevo, i.categoriaNombre, i.id); });
+    }).then(function(){
+      cerrarCambioJugador();
+      flashBarra(viejo ? 'Jugador cambiado' : 'Jugador agregado');
+    }).catch(function(e){ alert('No se pudo cambiar: ' + (e && e.message || e)); }).then(function(){ btn.disabled = false; });
+  });
 
   function flashBarra(txt){
     var t = byId('saveToast'); if (!t) return;
@@ -2401,9 +2473,22 @@
     byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es');
     var list = inscripciones.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
     if (insFilter !== 'TODAS') list = list.filter(function(i){ return i.estadoIns === insFilter; });
+    var selC = byId('insFiltroCat');
+    var catIds = categorias.map(function(c){ return c.id; });
+    if (insCatFilter && catIds.indexOf(insCatFilter) < 0) insCatFilter = '';
+    var firma = categorias.map(function(c){ return c.id + ':' + c.nombre; }).join('|');
+    if (selC.dataset.firma !== firma) {
+      selC.innerHTML = '<option value="">Todas las categorías</option>' + categorias.map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.nombre)+'</option>'; }).join('');
+      selC.dataset.firma = firma;
+    }
+    selC.value = insCatFilter;
+    if (insCatFilter) {
+      list = list.filter(function(i){ return i.categoriaId === insCatFilter; });
+      byId('insSub').textContent = list.length + ' de ' + inscripciones.length + ' inscripciones';
+    }
     if (!list.length){
-      byId('insBody').innerHTML = insFilter !== 'TODAS'
-        ? vacioFila(6, vacioHtml('lista', 'No hay inscripciones con este filtro', 'Prueba con otro filtro de arriba.'))
+      byId('insBody').innerHTML = (insFilter !== 'TODAS' || insCatFilter)
+        ? vacioFila(6, vacioHtml('lista', 'No hay inscripciones con este filtro', 'Prueba con otro estado o con otra categoría.'))
         : (!categorias.length
           ? vacioFila(6, vacioHtml('etiqueta', 'Primero crea tus categorías', 'Sin categorías no se puede inscribir a nadie. Se crean en modo administrador, con tu PIN.', isAdminMode ? { accion: 'categorias', texto: 'Crear categorías', modulo: 'dueno' } : null))
           : vacioFila(6, vacioHtml('personas', 'Aún no hay inscripciones', 'Registra la primera pareja con su categoría y su pago. Aparecerá aquí.', { accion: 'inscripcion', texto: '+ Nueva inscripción', modulo: 'inscripciones' })));
@@ -2415,7 +2500,7 @@
       var pagado = pagadoTotalIns(i);
       var puedeCobrar = i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO';
       return '<tr>' +
-        '<td style="font-weight:600;">'+nombreUnidad+'</td>' +
+        '<td style="font-weight:600;">'+nombreUnidad+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-jug="'+i.id+'" title="Cambiar un jugador de esta inscripción" style="font-size:14px;margin-left:4px;vertical-align:baseline;">✎</button>' : '')+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
         '<td class="num">'+money(valorCobrable(i))+
           (valorCortesia(i) ? '<div style="font-size:11px;font-weight:600;color:var(--accent);" title="'+esc(i.motivoExencion||'')+'">'+esc(textoCortesia(i))+' · −'+money(valorCortesia(i))+'</div>' : '')+
@@ -2432,6 +2517,9 @@
 
     document.querySelectorAll('[data-cortesia]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormCortesia(btn.dataset.cortesia); });
+    });
+    document.querySelectorAll('[data-cambiar-jug]').forEach(function(btn){
+      btn.addEventListener('click', function(){ abrirCambioJugador(btn.dataset.cambiarJug); });
     });
     document.querySelectorAll('[data-cobrar]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormPago(btn.dataset.cobrar); });
