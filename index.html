@@ -1290,7 +1290,7 @@
 
       <div id="jugadoresContenido">
         <div class="formpanel" id="formJugador">
-          <div class="panel-title">Nuevo Jugador</div>
+          <div class="panel-title" id="jTitulo">Nuevo Jugador</div>
           <div class="formgrid">
             <div class="field"><label>Nombre</label><input id="j_nombre" placeholder="Nombre completo"></div>
             <div class="field"><label>Teléfono</label><input id="j_telefono" placeholder="3001234567"></div>
@@ -3447,7 +3447,7 @@
         '<td class="muted">'+esc(cats)+'</td>' +
         '<td class="num">'+hist.length+'</td>' +
         '<td><button class="btn" data-ver-historial="'+j.id+'" style="padding:5px 10px;font-size:12px;">'+(hist.length?'Ver historial':'')+'</button></td>' +
-        '<td>'+(isAdminMode ? '<button class="logout-btn" data-del-jugador="'+j.id+'" title="Eliminar jugador">✕</button>' : '')+'</td>' +
+        '<td style="white-space:nowrap;">'+(isAdminMode ? '<button class="btn" data-edit-jugador="'+j.id+'" style="padding:5px 10px;font-size:12px;">Editar</button> ' : '')+(isAdminMode ? '<button class="logout-btn" data-del-jugador="'+j.id+'" title="Eliminar jugador">✕</button>' : '')+'</td>' +
         '</tr>' +
         '<tr id="hist-'+j.id+'" style="display:none;"><td colspan="6" style="background:var(--gray-200);padding:12px 24px;">' +
           (hist.length ? hist.map(function(h, k){ return {h:h, k:k}; }).sort(function(a,b){return (b.h.fecha||0)-(a.h.fecha||0);}).map(function(o){
@@ -3484,6 +3484,19 @@
           .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
       });
     });
+    document.querySelectorAll('[data-edit-jugador]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var ju = jugadoresGlobal.find(function(x){ return x.id === btn.dataset.editJugador; });
+        if (!ju) return;
+        editandoJugadorId = ju.id;
+        byId('jTitulo').textContent = 'Editar jugador';
+        byId('btnGuardarJugador').textContent = 'Guardar cambios';
+        byId('j_nombre').value = ju.nombre || ''; byId('j_telefono').value = ju.telefono || '';
+        openForm('jugador');
+        byId('formJugador').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        byId('j_nombre').focus();
+      });
+    });
     document.querySelectorAll('[data-del-jugador]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var ju = jugadoresGlobal.find(function(x){ return x.id === btn.dataset.delJugador; });
@@ -3494,8 +3507,83 @@
   byId('jug_buscar').addEventListener('input', renderJugadores);
   byId('jug_filtroCat').addEventListener('change', renderJugadores);
 
+  var editandoJugadorId = null;
+  function jugadorFormANuevo(){
+    editandoJugadorId = null;
+    byId('jTitulo').textContent = 'Nuevo Jugador'; byId('btnGuardarJugador').textContent = 'Guardar Jugador';
+    byId('j_nombre').value = ''; byId('j_telefono').value = '';
+  }
+  byId('btnNuevoJugador').addEventListener('click', function(){ if (editandoJugadorId) jugadorFormANuevo(); });
+  document.querySelectorAll('[data-close-form="jugador"]').forEach(function(b){ b.addEventListener('click', jugadorFormANuevo); });
+
+  // Buscar en todos los torneos de la cuenta las inscripciones (y pagos) donde sale este jugador
+  function buscarUsosJugador(nombre){
+    var n = impNorm(nombre);
+    return userRef.collection('torneos').get().then(function(snap){
+      return Promise.all(snap.docs.map(function(td){
+        return Promise.all([ td.ref.collection('inscripciones').get(), td.ref.collection('movimientos').get() ]).then(function(r){
+          var ins = r[0].docs.filter(function(d){ var x = d.data(); return impNorm(x.j1Nombre) === n || impNorm(x.j2Nombre) === n; });
+          var ids = {}; ins.forEach(function(d){ ids[d.id] = true; });
+          var movs = r[1].docs.filter(function(d){ var m = d.data(); return m.sourceType === 'INSCRIPCION' && ids[m.sourceId]; });
+          return { torneo: td.ref, ins: ins, movs: movs };
+        });
+      }));
+    });
+  }
+  function aplicarRenombre(usos, viejoNorm, nuevo){
+    var ops = [];
+    usos.forEach(function(u){
+      var viejoPorIns = {};
+      u.ins.forEach(function(d){
+        var x = d.data(), upd = {};
+        if (impNorm(x.j1Nombre) === viejoNorm) { viejoPorIns[d.id] = x.j1Nombre; upd.j1Nombre = nuevo; }
+        if (impNorm(x.j2Nombre) === viejoNorm) { viejoPorIns[d.id] = x.j2Nombre; upd.j2Nombre = nuevo; }
+        ops.push({ ref: d.ref, upd: upd });
+      });
+      u.movs.forEach(function(d){
+        var m = d.data(), viejo = viejoPorIns[m.sourceId], upd = {};
+        if (!viejo) return;
+        if (m.concepto && m.concepto.indexOf(viejo) >= 0) upd.concepto = m.concepto.split(viejo).join(nuevo);
+        if (m.observacion && m.observacion.indexOf(viejo) >= 0) upd.observacion = m.observacion.split(viejo).join(nuevo);
+        if (Object.keys(upd).length) ops.push({ ref: d.ref, upd: upd });
+      });
+    });
+    var chunks = [];
+    for (var i = 0; i < ops.length; i += 400) chunks.push(ops.slice(i, i + 400));
+    return chunks.reduce(function(p, ch){
+      return p.then(function(){ var b = fsdb.batch(); ch.forEach(function(o){ b.update(o.ref, o.upd); }); return b.commit(); });
+    }, Promise.resolve());
+  }
+  function guardarEdicionJugador(){
+    var ju = jugadoresGlobal.find(function(x){ return x.id === editandoJugadorId; });
+    if (!ju) { jugadorFormANuevo(); return; }
+    if (!isAdminMode) { alert('Para editar un jugador activa el modo administrador.'); return; }
+    var nombre = byId('j_nombre').value.trim(), tel = byId('j_telefono').value.trim();
+    if (!nombre) { alert('Escribe el nombre del jugador.'); return; }
+    var cambioNombre = nombre !== ju.nombre;
+    if (cambioNombre && jugadoresGlobal.some(function(j){ return j.id !== ju.id && normalizaTexto(j.nombre) === normalizaTexto(nombre); })) {
+      alert('Ya existe otro jugador con ese nombre.'); return;
+    }
+    var btn = byId('btnGuardarJugador'); btn.disabled = true;
+    var fin = function(){ btn.disabled = false; };
+    var guardar = function(){
+      return userRef.collection('jugadores').doc(ju.id).update({ nombre: nombre, telefono: tel }).then(function(){
+        flashBarra('Jugador actualizado'); jugadorFormANuevo(); closeForm('jugador');
+      });
+    };
+    if (!cambioNombre) { guardar().catch(function(e){ alert('No se pudo guardar: ' + e.message); }).then(fin); return; }
+    var viejoNorm = impNorm(ju.nombre);
+    buscarUsosJugador(ju.nombre).then(function(usos){
+      var nIns = 0, nTor = 0;
+      usos.forEach(function(u){ nIns += u.ins.length; if (u.ins.length) nTor++; });
+      if (nIns && !confirm('Vas a cambiar "' + ju.nombre + '" por "' + nombre + '".\n\nTambién se corregirá en ' + nIns + ' inscripci' + (nIns === 1 ? 'ón' : 'ones') + ' (' + nTor + ' torneo' + (nTor === 1 ? '' : 's') + ') y en el texto de sus pagos.\n\nLos montos y los pagos no cambian. ¿Continuar?')) return;
+      return aplicarRenombre(usos, viejoNorm, nombre).then(guardar);
+    }).catch(function(e){ alert('No se pudo guardar: ' + (e && e.message || e)); }).then(fin);
+  }
+
   byId('btnGuardarJugador').addEventListener('click', function(){
     if (!userRef) return;
+    if (editandoJugadorId) { guardarEdicionJugador(); return; }
     var nombre = byId('j_nombre').value.trim();
     if (!nombre) { alert('Escribe el nombre del jugador.'); return; }
     var yaExiste = jugadoresGlobal.some(function(j){ return normalizaTexto(j.nombre) === normalizaTexto(nombre); });
