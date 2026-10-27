@@ -4522,9 +4522,9 @@
     return b.commit().then(function(){ return { id: tRef.id, datos: datos }; });
   }
   byId('btnCargarDemo').addEventListener('click', function(){
-    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…'; barraIniciar(null);
+    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…'; splashMinForzado = 2000; mostrarSplash();
     cargarTorneoDemo().then(function(r){ enterTorneo(r.id, r.datos); })
-      .catch(function(e){ barraSwap = null; barraTerminar(); alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
+      .catch(function(e){ ocultarSplash(); alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
       .then(function(){ btn.disabled = false; btn.textContent = 'Cargar torneo de ejemplo'; });
   });
 
@@ -4559,7 +4559,7 @@
   }
   // Pantalla de carga: tapa la app hasta saber quién eres y qué pantalla toca, para que no se vea parpadear otra antes
   var splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
-  var SPLASH_MIN = 2000, splashDesde = Date.now(), splashEspera = null;
+  var splashMinForzado = 0, splashDesde = Date.now(), splashEspera = null;
   // Vuelve a lanzar la animación de entrada de lo que quedó a la vista, para que aparezca suave cuando se va la carga
   function reanimarPantalla(retraso){
     setTimeout(function(){
@@ -4572,9 +4572,11 @@
   function ocultarSplash(){
     var sp = byId('splash'); if (!sp || sp.classList.contains('out') || sp.style.display === 'none') return;
     // Mínimo visible (aunque cargue rápido): la animación se alcanza a ver y no hay saltos entre pantallas
-    var falta = SPLASH_MIN - (Date.now() - splashDesde);
+    // 2 s si es cuenta nueva / primera vez (o se pidió); 1 s en el caso normal con sesión ya iniciada
+    var min = splashMinForzado || ((userDocListo && !introVista && torneosTotal === 0) ? 2000 : 1000);
+    var falta = min - (Date.now() - splashDesde);
     if (falta > 0) { if (!splashEspera) splashEspera = setTimeout(function(){ splashEspera = null; ocultarSplash(); }, falta); return; }
-    clearTimeout(splashTimer); clearTimeout(splashEspera); splashEspera = null;
+    clearTimeout(splashTimer); clearTimeout(splashEspera); splashEspera = null; splashMinForzado = 0;
     sp.classList.add('out');
     setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 450);
   }
@@ -5172,11 +5174,15 @@
   }
 
   function enterTorneo(id, data, ownerUid){
-    barraIniciar(function(){
+    var swapTorneo = function(){
       if (!torneoRef) return;
       byId('torneoScreen').style.display = 'none';
       byId('appShell').classList.add('active');
-    });
+    };
+    var spv = byId('splash');
+    // Si ya hay pantalla completa (torneo demo), el cambio se hace tapado; si no, barra de arriba
+    if (spv && spv.style.display !== 'none' && !spv.classList.contains('out')) { mostrarSplash(); setTimeout(swapTorneo, 0); }
+    else barraIniciar(swapTorneo);
     torneoOwnerUid = ownerUid || currentUid;
     torneoOwnerEmail = (data && data.ownerEmail) || '';
     torneoId = id;
