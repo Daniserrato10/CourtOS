@@ -4299,7 +4299,7 @@
   var torneosCountCache = 0;
   function renderTorneoList(torneos){
     torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA' && !t.demo; }).length;
-    byId('demoCard').style.display = torneos.some(function(t){ return t.demo; }) ? 'none' : 'flex';
+    byId('demoCard').style.display = torneos.length === 0 ? 'flex' : 'none'; // solo para quien aún no tiene ningún torneo
     var list = byId('torneoList');
     if (!torneos.length){
       list.innerHTML = '<div class="muted" style="padding:12px 0;">Aún no tienes torneos. Crea el primero abajo.</div>';
