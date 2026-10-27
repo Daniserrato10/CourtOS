@@ -284,6 +284,17 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  #ayudaModal { display: none; }
+  #ayudaModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  #ayudaModal details { border-top: 1px solid var(--border); padding: 10px 0; }
+  #ayudaModal summary { cursor: pointer; font-weight: 700; font-size: 13.5px; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #ayudaModal summary::-webkit-details-marker { display: none; }
+  #ayudaModal summary::after { content: '+'; font-weight: 600; color: var(--gray-500); font-size: 16px; }
+  #ayudaModal details[open] summary::after { content: '−'; }
+  #ayudaModal ol { margin: 8px 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.6; color: var(--gray-700); }
+  #introScreen { display: none; position: fixed; inset: 0; z-index: 1500; background: var(--ink) radial-gradient(ellipse 700px 420px at 50% -5%, rgba(42,93,149,0.6) 0%, transparent 65%); color: #fff; align-items: center; justify-content: center; padding: 24px; padding-top: calc(24px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  #introScreen .intro-dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,255,255,0.28); transition: all 200ms ease; }
+  #introScreen .intro-dot.on { width: 22px; background: var(--login-blue); }
   #repModal { display: none; }
   #repModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #impModal { display: none; }
@@ -494,6 +505,32 @@
   </div>
 </div>
 
+<div id="introScreen" role="dialog" aria-label="Introducción a CourtOS">
+  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;">
+    <span class="wordmark" style="font-size:22px;color:#fff;">Court<span class="os">OS</span></span>
+    <div id="introIcono" style="width:72px;height:72px;border-radius:20px;background:rgba(156,194,238,0.16);color:var(--login-blue);display:flex;align-items:center;justify-content:center;"></div>
+    <div id="introTitulo" style="font-weight:800;font-size:26px;letter-spacing:-0.02em;line-height:1.15;"></div>
+    <div id="introTexto" style="font-size:14.5px;line-height:1.6;color:rgba(255,255,255,0.78);min-height:132px;"></div>
+    <div id="introDots" style="display:flex;gap:6px;align-items:center;"></div>
+    <div id="introBotones" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;"></div>
+    <button class="logout-btn" id="btnIntroSaltar" type="button" style="margin:0;color:rgba(255,255,255,0.5);">Saltar introducción</button>
+  </div>
+</div>
+
+<div id="ayudaModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:228; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Ayuda</div>
+      <button class="logout-btn" id="btnAyudaCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:14px 22px 20px; overflow-y:auto;">
+      <div class="muted" style="font-size:12.5px;margin-bottom:10px;">Toca un tema para ver los pasos. Con <b>"Llévame ahí"</b> te abrimos la pantalla correcta.</div>
+      <div id="ayudaLista"></div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px;"><button class="btn" id="btnVerIntro" type="button" style="font-size:12.5px;">Ver la introducción otra vez</button></div>
+    </div>
+  </div>
+</div>
+
 <div id="impModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:225; justify-content:center; align-items:center; padding:24px;">
   <div class="card" style="width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
@@ -612,6 +649,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <span class="wordmark" style="font-size:18px;">Court<span class="os">OS</span></span>
       <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn" id="btnAyudaTorneos" style="padding:7px 14px;font-size:12.5px;">Ayuda</button>
         <button class="btn inst-btn" id="btnInstalarTorneos" style="display:none;padding:7px 14px;font-size:12.5px;">Instalar app</button>
         <button class="btn btn-primary" id="btnIrAdmin" style="display:none;padding:7px 14px;font-size:12.5px;">Admin</button>
         <button class="logout-btn" id="btnLogoutFromTorneos">Cerrar sesión</button>
@@ -858,6 +896,10 @@
       </nav>
     </div>
     <div class="sidebar-foot">
+      <button class="navitem" id="btnAyudaSidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.2.9-1.2 1.7M12 16.6v.1"/></svg>
+        Ayuda
+      </button>
       <button class="navitem inst-btn" id="btnInstalarSidebar" style="display:none;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>
         Instalar app
@@ -887,7 +929,6 @@
           <button class="btn" data-nav="viabilidad">Calculadora de Viabilidad</button>
         </div>
       </div>
-      <div id="primerosPasos" style="display:none;"></div>
       <div class="kpi-grid" id="dashKpis"></div>
       <div class="panels">
         <div class="panel">
@@ -2402,37 +2443,7 @@
     else openForm(a);
   });
 
-  // ---------- Primeros pasos (torneo nuevo) ----------
-  function ppClave(){ return 'courtos_pp_' + (torneoOwnerUid || '') + '_' + (torneoId || ''); }
-  function ppDescartado(){ try { return localStorage.getItem(ppClave()) === '1'; } catch(e){ return false; } }
-  function renderPrimerosPasos(){
-    var box = byId('primerosPasos');
-    if (!torneoRef || !esDueno() || ppDescartado()) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    var pasos = [
-      { ok: categorias.length > 0, titulo: 'Crea tus categorías', texto: 'Por ejemplo Sexta, Séptima o Femenino C, cada una con su precio. Se hace en modo administrador (con tu PIN).', boton: 'Crear categorías', ir: function(){ if (isAdminMode) { setView('inscripciones'); openForm('categorias'); } else { setView('configuracion'); flashBarra('Activa el modo administrador para crear categorías'); } } },
-      { ok: cuentas.length > 0, titulo: 'Crea una cuenta', texto: 'La cuenta es donde entra y sale la plata del torneo: efectivo, Nequi, banco...', boton: 'Crear cuenta', ir: function(){ setView('financiero'); openForm('cuenta'); } },
-      { ok: inscripciones.length > 0, titulo: 'Inscribe la primera pareja', texto: 'Con la categoría y la cuenta listas, ya puedes registrar a quien se inscribe y su pago.', boton: 'Nueva inscripción', ir: function(){ setView('inscripciones'); actualizarFormInscripcionSegunCategoria(); openForm('inscripcion'); } }
-    ];
-    var hechos = pasos.filter(function(x){ return x.ok; }).length;
-    if (hechos === pasos.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    box.style.display = 'block';
-    box.innerHTML = '<div class="card" style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;border-color:var(--accent-bg);background:linear-gradient(180deg,var(--accent-bg) 0%,#fff 90px);">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
-        '<div><div style="font-weight:800;font-size:15px;">Primeros pasos</div><div class="muted" style="font-size:12.5px;">' + hechos + ' de ' + pasos.length + ' listos — así dejas tu torneo funcionando.</div></div>' +
-        '<button class="logout-btn" id="btnPPCerrar" title="No mostrar más">Ocultar</button></div>' +
-      '<div style="display:flex;flex-direction:column;gap:2px;">' + pasos.map(function(x, k){
-        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;' + (k ? 'border-top:1px solid var(--border);' : '') + '">' +
-          '<span style="width:22px;height:22px;border-radius:999px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;' + (x.ok ? 'background:var(--green-bg);color:var(--green-tx);' : 'background:#fff;color:var(--accent);box-shadow:0 0 0 1.5px var(--accent);') + '">' + (x.ok ? '✓' : (k + 1)) + '</span>' +
-          '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13.5px;' + (x.ok ? 'color:var(--gray-500);text-decoration:line-through;' : '') + '">' + x.titulo + '</div>' +
-          (x.ok ? '' : '<div class="muted" style="font-size:12.5px;line-height:1.45;">' + x.texto + '</div>') + '</div>' +
-          (x.ok ? '' : '<button class="btn" data-pp="' + k + '" style="padding:6px 12px;font-size:12.5px;flex-shrink:0;">' + x.boton + '</button>') + '</div>';
-      }).join('') + '</div></div>';
-    box.querySelectorAll('[data-pp]').forEach(function(b){ b.addEventListener('click', function(){ pasos[parseInt(b.dataset.pp, 10)].ir(); }); });
-    byId('btnPPCerrar').addEventListener('click', function(){ try { localStorage.setItem(ppClave(), '1'); } catch(e){} renderPrimerosPasos(); });
-  }
-
   function renderDashboard(){
-    renderPrimerosPasos();
     var ing = totalIngresos(), gas = totalGastos(), util = ing - gas;
     var saldoTotal = cuentas.reduce(function(s,c){ return s + cuentaSaldo(c.id); }, 0);
     var parejas = torneoCuposOcupados();
@@ -4299,6 +4310,7 @@
   var torneosCountCache = 0;
   function renderTorneoList(torneos){
     torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA' && !t.demo; }).length;
+    torneosTotal = torneos.length; torneosListos = true;
     byId('demoCard').style.display = torneos.length === 0 ? 'flex' : 'none'; // solo para quien aún no tiene ningún torneo
     var list = byId('torneoList');
     if (!torneos.length){
@@ -4361,6 +4373,8 @@
         });
       });
     }
+
+    evaluarIntro();
 
     // Plan FREE: máximo 1 torneo. Al llegar al límite, se oculta el
     // formulario de creación y se muestra un aviso en su lugar.
@@ -4454,6 +4468,105 @@
       .catch(function(e){ alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
       .then(function(){ btn.disabled = false; btn.textContent = 'Cargar torneo de ejemplo'; });
   });
+
+
+  // ---------- Introducción (cuentas nuevas) y Ayuda ----------
+  var introVista = false, userDocListo = false, torneosListos = false, torneosTotal = 0, introPaso = 0, introRepetir = false;
+  var ICONOS = {
+    hola: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+    flujo: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
+    equipo: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="9" r="2.4"/><path d="M15.5 14a4.6 4.6 0 0 1 5.5 4.4"/></svg>',
+    listo: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>'
+  };
+  var INTRO = [
+    { icono: 'hola', titulo: 'Bienvenido a CourtOS', texto: 'El lugar donde organizas tus torneos de pádel y tenis: inscripciones, cobros y finanzas, sin hojas de cálculo sueltas ni cuentas en el cuaderno.' },
+    { icono: 'flujo', titulo: 'Así funciona un torneo', texto: '<div style="text-align:left;display:inline-block;line-height:1.9;">① Creas el torneo y sus categorías<br>② Inscribes parejas y registras sus pagos<br>③ Controlas ingresos, gastos y presupuesto<br>④ Sacas reportes en PDF cuando los necesites</div>' },
+    { icono: 'equipo', titulo: 'Trabaja en equipo, donde estés', texto: 'Comparte el torneo con tu equipo como lector o editor, importa inscripciones desde Excel y instala CourtOS como app en tu celular o computador.' },
+    { icono: 'listo', titulo: '¿Empezamos?', texto: 'Crea tu primer torneo, o mira uno de ejemplo ya lleno para recorrerlo con calma. Si en algún momento te pierdes, el botón <b>Ayuda</b> te explica todo paso a paso.' }
+  ];
+  function introClave(){ return 'courtos_intro_' + (currentUid || ''); }
+  function introMarcarVista(){
+    introVista = true;
+    try { localStorage.setItem(introClave(), '1'); } catch(e){}
+    if (userRef) userRef.set({ introVista: true }, { merge: true }).catch(function(){});
+  }
+  function introCerrar(marcar){
+    byId('introScreen').style.display = 'none'; document.body.style.overflow = '';
+    if (marcar && !introRepetir) introMarcarVista();
+    introRepetir = false;
+  }
+  function introRender(){
+    var d = INTRO[introPaso], ultimo = introPaso === INTRO.length - 1;
+    byId('introIcono').innerHTML = ICONOS[d.icono];
+    byId('introTitulo').textContent = d.titulo;
+    byId('introTexto').innerHTML = d.texto;
+    byId('introDots').innerHTML = INTRO.map(function(x, k){ return '<span class="intro-dot' + (k === introPaso ? ' on' : '') + '"></span>'; }).join('');
+    var bt = '';
+    if (!ultimo) bt = (introPaso > 0 ? '<button class="btn" id="btnIntroAtras" type="button" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.3);">Atrás</button>' : '') + '<button class="btn btn-primary" id="btnIntroSig" type="button" style="min-width:140px;">Siguiente</button>';
+    else if (introRepetir) bt = '<button class="btn" id="btnIntroAtras" type="button" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.3);">Atrás</button><button class="btn btn-primary" id="btnIntroFin" type="button" style="min-width:140px;">Entendido</button>';
+    else bt = '<button class="btn btn-primary" id="btnIntroCrear" type="button" style="min-width:160px;">Crear mi torneo</button><button class="btn" id="btnIntroDemo" type="button" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.3);">Ver un torneo de ejemplo</button>';
+    byId('introBotones').innerHTML = bt;
+    byId('btnIntroSaltar').style.display = ultimo ? 'none' : '';
+    var f = function(id, fn){ var e = byId(id); if (e) e.addEventListener('click', fn); };
+    f('btnIntroSig', function(){ introPaso++; introRender(); });
+    f('btnIntroAtras', function(){ introPaso--; introRender(); });
+    f('btnIntroFin', function(){ introCerrar(false); });
+    f('btnIntroCrear', function(){ introCerrar(true); var n = byId('nt_nombre'); if (n) { n.scrollIntoView({ behavior: 'smooth', block: 'center' }); n.focus(); } });
+    f('btnIntroDemo', function(){ introCerrar(true); byId('btnCargarDemo').click(); });
+  }
+  function introMostrar(repetir){
+    introRepetir = !!repetir; introPaso = 0; introRender();
+    byId('introScreen').style.display = 'flex'; document.body.style.overflow = 'hidden';
+  }
+  byId('btnIntroSaltar').addEventListener('click', function(){ introCerrar(true); });
+  function evaluarIntro(){
+    if (!userDocListo || !torneosListos || introVista || torneosTotal !== 0 || !currentUid) return;
+    if (byId('torneoScreen').style.display === 'none' || byId('introScreen').style.display === 'flex') return;
+    try { if (localStorage.getItem(introClave()) === '1') { introVista = true; return; } } catch(e){}
+    introMostrar(false);
+  }
+
+  var AYUDA = [
+    { id: 'inscribir', t: 'Inscribir una pareja', ir: 'inscribir', pasos: ['Entra a <b>Inscripciones</b> en el menú.', 'Toca <b>+ Nueva Inscripción</b>.', 'Elige la categoría y la tarifa: el valor se llena solo.', 'Escribe los dos jugadores (te sugiere los que ya tienes) o deja el segundo vacío si aún no sabes quién es.', 'Elige el estado del pago: pendiente, abono o pagó todo, y la cuenta donde entró la plata.', 'Toca <b>Guardar Inscripción</b>.'] },
+    { id: 'cobrar', t: 'Cobrar un saldo o un abono', ir: 'inscripciones', pasos: ['En <b>Inscripciones</b>, busca la pareja.', 'Toca <b>Cobrar</b> en su fila.', 'Escribe cuánto pagó y quién pagó (jugador 1, jugador 2 o los dos).', 'Elige la cuenta y guarda. El pago queda en Financiero.'] },
+    { id: 'cortesia', t: 'Dar una cortesía', ir: 'inscripciones', pasos: ['En <b>Inscripciones</b>, toca <b>Cortesía</b> en la fila de la pareja.', 'Elige si es la mitad de un jugador o toda la inscripción.', 'Escribe el motivo (patrocinador, invitado…) y guarda. Esa parte ya no se cobra.'] },
+    { id: 'movimiento', t: 'Registrar un ingreso o un gasto', ir: 'movimiento', pasos: ['Entra a <b>Financiero</b>.', 'Toca <b>+ Nuevo Movimiento</b>.', 'Elige si es ingreso o gasto, escribe el concepto y el valor.', 'Elige la cuenta, adjunta el comprobante si lo tienes (PRO) y guarda.'] },
+    { id: 'importar', t: 'Importar inscripciones desde Excel o CSV', ir: 'importar', pasos: ['En <b>Inscripciones</b>, toca <b>Importar Excel / CSV</b>.', 'Descarga la plantilla, llénala con una pareja por fila y súbela.', 'Revisa la vista previa: las parejas que ya están inscritas no se duplican.', 'Toca <b>Importar</b>.'] },
+    { id: 'cambiar', t: 'Cambiar un jugador de una inscripción', ir: 'configuracion', pasos: ['Activa el <b>modo administrador</b> en Configuración, con tu PIN.', 'Ve a <b>Inscripciones</b> y toca el lápiz ✎ junto al nombre de la pareja.', 'Elige a quién reemplazas y escribe el jugador nuevo. Lo pagado se queda en la inscripción.'] },
+    { id: 'jugador', t: 'Corregir el nombre de un jugador', ir: 'configuracion', pasos: ['Activa el <b>modo administrador</b> en Configuración.', 'Entra a <b>Jugadores</b> y toca <b>Editar</b> en su fila.', 'Cambia el nombre: se corrige también en todas sus inscripciones.'] },
+    { id: 'categorias', t: 'Crear o cambiar categorías y precios', ir: 'configuracion', pasos: ['Activa el <b>modo administrador</b> en Configuración.', 'Ve a <b>Inscripciones</b> y toca <b>Categorías</b>.', 'Agrega categorías, cambia sus precios y crea tarifas como Preventa.'] },
+    { id: 'compartir', t: 'Compartir el torneo con tu equipo', ir: 'configuracion', pasos: ['Entra a <b>Configuración</b> y baja hasta <b>Compartir este torneo</b>.', 'Escribe el correo de la persona y elige si es lector o editor.', 'Toca <b>Enviar invitación</b>. La persona debe crear su cuenta con ese mismo correo.'] },
+    { id: 'reportes', t: 'Sacar reportes en PDF', ir: 'reportes', pasos: ['Entra a <b>Reportes</b>.', 'Revisa el resumen y toca el botón para exportar a PDF.'] },
+    { id: 'instalar', t: 'Instalar CourtOS como app', ir: 'instalar', pasos: ['Toca <b>Instalar app</b> en el menú, o el ícono de instalar en la barra del navegador.', 'En iPhone: abre la página en Safari, toca Compartir y elige <b>Añadir a pantalla de inicio</b>.'] }
+  ];
+  function ayudaIr(id){
+    var a = AYUDA.find(function(x){ return x.id === id; }); if (!a) return;
+    byId('ayudaModal').classList.remove('show');
+    var vista = function(v){
+      var nav = document.querySelector('.navitem[data-view="' + v + '"]');
+      if (nav && nav.classList.contains('perm-hide')) { flashBarra('No tienes acceso a esa pantalla'); return false; }
+      setView(v); return true;
+    };
+    if (a.ir === 'inscribir') { if (vista('inscripciones')) { actualizarFormInscripcionSegunCategoria(); openForm('inscripcion'); } }
+    else if (a.ir === 'movimiento') { if (vista('financiero')) openForm('movimiento'); }
+    else if (a.ir === 'importar') { if (vista('inscripciones')) byId('btnImportarIns').click(); }
+    else if (a.ir === 'instalar') instalarApp();
+    else vista(a.ir);
+  }
+  function ayudaAbrir(){
+    var enTorneo = !!torneoRef && byId('appShell').classList.contains('active');
+    byId('ayudaLista').innerHTML = AYUDA.map(function(a){
+      return '<details><summary>' + a.t + '</summary><ol>' + a.pasos.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ol>' +
+        (enTorneo ? '<button class="btn" data-ayuda-ir="' + a.id + '" type="button" style="padding:6px 12px;font-size:12.5px;">Llévame ahí</button>' : '') + '</details>';
+    }).join('');
+    byId('ayudaLista').querySelectorAll('[data-ayuda-ir]').forEach(function(b){ b.addEventListener('click', function(){ ayudaIr(b.dataset.ayudaIr); }); });
+    byId('ayudaModal').classList.add('show');
+  }
+  byId('btnAyudaSidebar').addEventListener('click', function(){ ayudaAbrir(); closeSidebarMobile(); });
+  byId('btnAyudaTorneos').addEventListener('click', ayudaAbrir);
+  byId('btnAyudaCerrar').addEventListener('click', function(){ byId('ayudaModal').classList.remove('show'); });
+  byId('ayudaModal').addEventListener('click', function(e){ if (e.target === byId('ayudaModal')) byId('ayudaModal').classList.remove('show'); });
+  byId('btnVerIntro').addEventListener('click', function(){ byId('ayudaModal').classList.remove('show'); introMostrar(true); });
 
   // El selector de Deporte decide si se muestra "Modalidad" (solo aplica a
   // Tenis: Pádel siempre es por parejas) y ajusta el texto de "Cupos
@@ -5015,7 +5128,10 @@
     unsubUserDoc = userRef.onSnapshot(function(doc){
       userPlan = (doc.exists && doc.data().plan === 'PRO') ? 'PRO' : 'FREE';
       userPlanHasta = (doc.exists && Number(doc.data().planHasta)) || 0;
+      introVista = !!(doc.exists && doc.data().introVista === true);
+      userDocListo = true;
       aplicarRestriccionesPlan();
+      evaluarIntro();
     }, function(err){ console.error('user doc', err); });
     // Interruptor "PRO gratis para todos" (se maneja desde la consola de Firebase)
     unsubConfig = fsdb.collection('config').doc('app').onSnapshot(function(doc){
@@ -5031,6 +5147,7 @@
     if (unsubUserDoc) { try { unsubUserDoc(); } catch(e){} unsubUserDoc = null; }
     if (unsubConfig) { try { unsubConfig(); } catch(e){} unsubConfig = null; }
     userPlan = 'FREE'; userPlanHasta = 0; proGratis = false; cfgAdmins = [];
+    userDocListo = false; torneosListos = false; introVista = false;
   }
 
   // Aviso de vencimiento (5 días antes y ya vencido)
