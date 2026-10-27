@@ -292,6 +292,8 @@
   @keyframes splashPulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.82; } }
   @keyframes splashEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @keyframes splashBarrido { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
+  #topBar { position: fixed; left: 0; top: 0; height: 3px; width: 0; z-index: 3500; background: var(--accent); border-radius: 0 2px 2px 0; opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #topBar { transition: none !important; } }
   @keyframes introFundido { from { opacity: 0; } to { opacity: 1; } }
   @keyframes introEntra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes pantallaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -421,6 +423,7 @@
 <!-- ============================================================
      PANTALLA DE AUTENTICACIÓN
      ============================================================ -->
+<div id="topBar" aria-hidden="true"></div>
 <div id="splash" aria-hidden="true"><span class="wordmark">Court<span class="os">OS</span></span><div class="splash-linea"><i></i></div></div>
 
 <div id="authScreen">
@@ -4486,9 +4489,9 @@
     return b.commit().then(function(){ return { id: tRef.id, datos: datos }; });
   }
   byId('btnCargarDemo').addEventListener('click', function(){
-    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…'; mostrarSplash();
+    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…'; barraIniciar(null);
     cargarTorneoDemo().then(function(r){ enterTorneo(r.id, r.datos); })
-      .catch(function(e){ ocultarSplash(); alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
+      .catch(function(e){ barraSwap = null; barraTerminar(); alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
       .then(function(){ btn.disabled = false; btn.textContent = 'Cargar torneo de ejemplo'; });
   });
 
@@ -4542,6 +4545,33 @@
     sp.classList.add('out');
     reanimarPantalla(140);
     setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 450);
+  }
+  // Barra de progreso arriba: para cambios de pantalla normales. La pantalla actual se queda hasta que la nueva esté lista.
+  var barraActiva = false, barraSwap = null, barraDesde = 0, barraTimer = null, barraSeg = null;
+  function barraIniciar(swap){
+    if (swap) barraSwap = swap;
+    if (barraActiva) return;
+    var b = byId('topBar'); if (!b) { if (swap) { swap(); barraSwap = null; } return; }
+    barraActiva = true; barraDesde = Date.now();
+    clearTimeout(barraSeg); clearTimeout(barraTimer);
+    b.style.transition = 'none'; b.style.width = '0'; b.style.opacity = '1'; void b.offsetWidth;
+    b.style.transition = 'width 450ms cubic-bezier(.2,.7,.2,1)'; b.style.width = '72%';
+    barraSeg = setTimeout(function(){ b.style.transition = 'width 9s cubic-bezier(.1,.6,.2,1)'; b.style.width = '93%'; }, 470);
+    barraTimer = setTimeout(barraTerminar, 6000);
+  }
+  function barraTerminar(){
+    if (!barraActiva) return;
+    var falta = 650 - (Date.now() - barraDesde);
+    if (falta > 0) { clearTimeout(barraTimer); barraTimer = setTimeout(barraTerminar, falta); return; }
+    clearTimeout(barraTimer); clearTimeout(barraSeg);
+    barraActiva = false;
+    var b = byId('topBar'), sw = barraSwap; barraSwap = null;
+    b.style.transition = 'width 180ms ease-out'; b.style.width = '100%';
+    setTimeout(function(){
+      if (sw) sw();
+      reanimarPantalla(0);
+      b.style.transition = 'opacity 280ms ease'; b.style.opacity = '0';
+    }, 190);
   }
   function mostrarSplash(){
     var sp = byId('splash'); if (!sp) return;
@@ -5054,7 +5084,11 @@
   }
 
   function enterTorneo(id, data, ownerUid){
-    mostrarSplash();
+    barraIniciar(function(){
+      if (!torneoRef) return;
+      byId('torneoScreen').style.display = 'none';
+      byId('appShell').classList.add('active');
+    });
     torneoOwnerUid = ownerUid || currentUid;
     torneoOwnerEmail = (data && data.ownerEmail) || '';
     torneoId = id;
@@ -5063,8 +5097,6 @@
     isAdminMode = false;
     permSig = null;
     applyBrand(torneoData.nombre || 'Mi Torneo');
-    byId('torneoScreen').style.display = 'none';
-    byId('appShell').classList.add('active');
     // Sugerencia inicial de duración de partido en Viabilidad de Canchas:
     // en tenis el formato a sets suele tomar más tiempo que un set único
     // de pádel. El organizador puede ajustarlo libremente después.
@@ -5127,7 +5159,7 @@
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
     if (userRef) userRef.collection('compartidos').doc(enlace).delete().catch(function(){});
-    ocultarSplash();
+    barraSwap = null; barraTerminar(); ocultarSplash();
     alert(msg);
     showTorneoScreen();
   }
@@ -5136,14 +5168,14 @@
     if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cambias de torneo se perderán.\n\n¿Cambiar de torneo de todas formas?')) return;
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
-    ocultarSplash();
+    barraSwap = null; barraTerminar(); ocultarSplash();
     showTorneoScreen();
   });
 
   var cargaPend = 0;
   function subscribe(collectionName, onData){
     var primera = true; cargaPend++;
-    var listo = function(){ if (primera) { primera = false; if (--cargaPend <= 0) { cargaPend = 0; ocultarSplash(); } } };
+    var listo = function(){ if (primera) { primera = false; if (--cargaPend <= 0) { cargaPend = 0; ocultarSplash(); barraTerminar(); } } };
     var unsub = torneoRef.collection(collectionName).onSnapshot(function(snap){
       var arr = [];
       snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
@@ -5257,10 +5289,11 @@
     return '<span class="chip" style="background:'+m[0]+';color:'+m[1]+';">'+m[2]+'</span>';
   }
   function abrirAdmin(){
-    byId('torneoScreen').style.display = 'none';
-    byId('adminScreen').style.display = 'flex';
-    mostrarSplash();
-    Promise.all([cargarAdminUsuarios(), cargarAdminPagos(), cargarAjustes()].map(function(p){ return Promise.resolve(p).catch(function(){}); })).then(ocultarSplash);
+    barraIniciar(function(){
+      byId('torneoScreen').style.display = 'none';
+      byId('adminScreen').style.display = 'flex';
+    });
+    Promise.all([cargarAdminUsuarios(), cargarAdminPagos(), cargarAjustes()].map(function(p){ return Promise.resolve(p).catch(function(){}); })).then(barraTerminar);
   }
   function cerrarAdmin(){ byId('adminScreen').style.display = 'none'; showTorneoScreen(); }
   byId('btnIrAdmin').addEventListener('click', abrirAdmin);
