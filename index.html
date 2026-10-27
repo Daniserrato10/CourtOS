@@ -320,7 +320,10 @@
   #dlgIcono.peligro { background: var(--red-bg); color: var(--red-tx); }
   #dlgTitulo { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; color: var(--ink); }
   #dlgTexto { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--gray-700, #555); white-space: pre-line; }
-  #dlgInputWrap { display: none; margin-top: 14px; text-align: left; }
+  #dlgInputWrap { display: none; margin-top: 14px; text-align: center; }
+  #dlgInput { width: 100%; text-align: center; font-size: 16px; }
+  #dlgInput[type=password] { font-size: 22px; letter-spacing: 6px; }
+  #dlgInput[type=password]::placeholder { letter-spacing: normal; font-size: 14px; }
   #dlgInputWrap label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--gray-700, #555); }
   #dlgBtns { display: flex; gap: 10px; margin-top: 16px; }
   #dlgBtns .btn { flex: 1; padding: 11px 14px; font-size: 14px; }
