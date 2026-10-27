@@ -3535,7 +3535,9 @@
 
   // ---------- render: jugadores (nivel de cuenta) ----------
   function historialDeJugador(j){ return j.historial || []; }
+  var jugadoresListos = false;
   function renderJugadores(){
+    if (!jugadoresListos) { byId('jugadoresBody').innerHTML = vacioFila(6, '<div class="muted" style="padding:28px 0;text-align:center;">Cargando jugadores…</div>'); return; }
     var q = normalizaTexto(byId('jug_buscar').value);
     var lista = jugadoresGlobal.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
     // filtro por categoría (se arma con las categorías de todos los jugadores)
@@ -4483,7 +4485,7 @@
 
 
   // ---------- Introducción (cuentas nuevas) y Ayuda ----------
-  var introVista = false, userDocListo = false, torneosListos = false, torneosTotal = 0, introPaso = 0, introRepetir = false;
+  var introVista = false, userDocListo = false, torneosListos = false, compartidosListo = false, invListo = false, torneosTotal = 0, introPaso = 0, introRepetir = false;
   var ICONOS = {
     hola: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
     flujo: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
@@ -4508,7 +4510,7 @@
     introRepetir = false;
   }
   // Pantalla de carga: tapa la app hasta saber quién eres y qué pantalla toca, para que no se vea parpadear otra antes
-  var splashTimer = setTimeout(function(){ ocultarSplash(); }, 6000);
+  var splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
   function ocultarSplash(){
     clearTimeout(splashTimer);
     var sp = byId('splash'); if (!sp || sp.classList.contains('out')) return;
@@ -4518,7 +4520,7 @@
   function mostrarSplash(){
     var sp = byId('splash'); if (!sp) return;
     sp.style.display = 'flex'; void sp.offsetWidth; sp.classList.remove('out');
-    clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 6000);
+    clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
   }
   function introRender(){
     var d = INTRO[introPaso], ultimo = introPaso === INTRO.length - 1;
@@ -4547,7 +4549,7 @@
   byId('btnIntroSaltar').addEventListener('click', function(){ introCerrar(true); });
   function evaluarIntro(){
     evaluarIntroInterno();
-    if (userDocListo && torneosListos) ocultarSplash();
+    if (userDocListo && torneosListos && compartidosListo && invListo) ocultarSplash();
   }
   function evaluarIntroInterno(){
     if (!userDocListo || !torneosListos || introVista || torneosTotal !== 0 || !currentUid) return;
@@ -4916,14 +4918,15 @@
   function suscribirInvitacionesRecibidas(){
     if (unsubInvRecibidas || !userRef) return;
     var mail = (currentUserEmail || '').toLowerCase();
-    if (!mail) return;
+    if (!mail) { invListo = true; return; }
     unsubInvRecibidas = fsdb.collection('invitaciones').where('emailInvitado', '==', mail).onSnapshot(function(snap){
       var arr = [];
       snap.forEach(function(d){ var x = d.data(); x.id = d.id; if (x.estado === 'PENDIENTE' && x.emailInvitado === mail) arr.push(x); });
       renderInvitacionesRecibidas(arr);
-    }, function(err){ console.error('invitaciones recibidas', err); });
+    }, function(err){ console.error('invitaciones recibidas', err); invListo = true; evaluarIntro(); });
   }
   function renderInvitacionesRecibidas(arr){
+    invListo = true; evaluarIntro();
     var box = byId('invitacionesBox');
     if (!arr.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
     box.style.display = 'flex';
@@ -4973,9 +4976,10 @@
           return null;
         });
       })).then(function(lista){ if (seq === compartidosSeq) renderCompartidos(lista.filter(Boolean)); });
-    }, function(err){ console.error('compartidos', err); });
+    }, function(err){ console.error('compartidos', err); compartidosListo = true; evaluarIntro(); });
   }
   function renderCompartidos(lista){
+    compartidosListo = true; evaluarIntro();
     var box = byId('compartidosBox');
     box.style.display = lista.length ? 'flex' : 'none';
     byId('compartidosList').innerHTML = lista.map(function(t){
@@ -5021,6 +5025,7 @@
   }
 
   function enterTorneo(id, data, ownerUid){
+    mostrarSplash();
     torneoOwnerUid = ownerUid || currentUid;
     torneoOwnerEmail = (data && data.ownerEmail) || '';
     torneoId = id;
@@ -5074,6 +5079,7 @@
     unsubCols.forEach(function(u){ try { u(); } catch(e){} });
     unsubCols = [];
     categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
+    cargaPend = 0;
     var ver = puedeVer('inscripciones') || puedeVer('financiero');
     subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
     if (ver) {
@@ -5092,6 +5098,7 @@
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
     if (userRef) userRef.collection('compartidos').doc(enlace).delete().catch(function(){});
+    ocultarSplash();
     alert(msg);
     showTorneoScreen();
   }
@@ -5100,16 +5107,21 @@
     if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cambias de torneo se perderán.\n\n¿Cambiar de torneo de todas formas?')) return;
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
+    ocultarSplash();
     showTorneoScreen();
   });
 
+  var cargaPend = 0;
   function subscribe(collectionName, onData){
+    var primera = true; cargaPend++;
+    var listo = function(){ if (primera) { primera = false; if (--cargaPend <= 0) { cargaPend = 0; ocultarSplash(); } } };
     var unsub = torneoRef.collection(collectionName).onSnapshot(function(snap){
       var arr = [];
       snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
       onData(arr);
       renderAll();
-    }, function(err){ console.error(collectionName, err); });
+      listo();
+    }, function(err){ console.error(collectionName, err); listo(); });
     unsubCols.push(unsub);
   }
 
@@ -5120,7 +5132,7 @@
     unsubCols = [];
     if (unsubTorneoDoc) { try { unsubTorneoDoc(); } catch(e){} unsubTorneoDoc = null; }
     if (unsubInvTorneo) { try { unsubInvTorneo(); } catch(e){} unsubInvTorneo = null; }
-    invitacionesTorneo = [];
+    invitacionesTorneo = []; cargaPend = 0;
     categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
     limpiarPendientes();
   }
@@ -5139,14 +5151,14 @@
     unsubJugadores = userRef.collection('jugadores').onSnapshot(function(snap){
       var arr = [];
       snap.forEach(function(d){ var data = d.data(); data.id = d.id; arr.push(data); });
-      jugadoresGlobal = arr;
+      jugadoresGlobal = arr; jugadoresListos = true;
       fillJugadoresDatalist();
       renderJugadores();
-    }, function(err){ console.error('jugadores', err); });
+    }, function(err){ console.error('jugadores', err); jugadoresListos = true; renderJugadores(); });
   }
   function teardownJugadores(){
     if (unsubJugadores) { try { unsubJugadores(); } catch(e){} unsubJugadores = null; }
-    jugadoresGlobal = [];
+    jugadoresGlobal = []; jugadoresListos = false;
   }
 
   // Se suscribe al propio documento de la cuenta para saber el plan
@@ -5177,7 +5189,7 @@
     if (unsubUserDoc) { try { unsubUserDoc(); } catch(e){} unsubUserDoc = null; }
     if (unsubConfig) { try { unsubConfig(); } catch(e){} unsubConfig = null; }
     userPlan = 'FREE'; userPlanHasta = 0; proGratis = false; cfgAdmins = [];
-    userDocListo = false; torneosListos = false; introVista = false;
+    userDocListo = false; torneosListos = false; compartidosListo = false; invListo = false; introVista = false;
   }
 
   // Aviso de vencimiento (5 días antes y ya vencido)
@@ -5218,7 +5230,8 @@
   function abrirAdmin(){
     byId('torneoScreen').style.display = 'none';
     byId('adminScreen').style.display = 'flex';
-    cargarAdminUsuarios(); cargarAdminPagos(); cargarAjustes();
+    mostrarSplash();
+    Promise.all([cargarAdminUsuarios(), cargarAdminPagos(), cargarAjustes()].map(function(p){ return Promise.resolve(p).catch(function(){}); })).then(ocultarSplash);
   }
   function cerrarAdmin(){ byId('adminScreen').style.display = 'none'; showTorneoScreen(); }
   byId('btnIrAdmin').addEventListener('click', abrirAdmin);
@@ -5234,7 +5247,7 @@
   });
 
   function cargarAdminUsuarios(){
-    fsdb.collection('users').get().then(function(snap){
+    return fsdb.collection('users').get().then(function(snap){
       admUsers = [];
       snap.forEach(function(d){ var x = d.data(); admUsers.push({ id: d.id, email: x.email || '(sin correo)', plan: x.plan === 'PRO' ? 'PRO' : 'FREE', planHasta: Number(x.planHasta) || 0 }); });
       renderAdminUsuarios();
@@ -5300,7 +5313,7 @@
 
   // ---- Pagos
   function cargarAdminPagos(){
-    fsdb.collection('pagos').get().then(function(snap){
+    return fsdb.collection('pagos').get().then(function(snap){
       admPagos = []; snap.forEach(function(d){ var x = d.data(); x.id = d.id; admPagos.push(x); });
       admPagos.sort(function(a, b){ return (b.creadoEn || 0) - (a.creadoEn || 0); });
       renderAdminPagos();
@@ -5330,7 +5343,7 @@
   // ---- Ajustes (config/app)
   var ajOriginal = null;
   function cargarAjustes(){
-    fsdb.collection('config').doc('app').get().then(function(doc){
+    return fsdb.collection('config').doc('app').get().then(function(doc){
       var d = doc.exists ? doc.data() : {};
       ajOriginal = d;
       byId('aj_proGratis').checked = d.proGratis === true;
