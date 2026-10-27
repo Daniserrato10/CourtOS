@@ -304,7 +304,7 @@
   #dlgTexto { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--gray-700, #555); white-space: pre-line; }
   #dlgInputWrap { display: none; margin-top: 14px; text-align: left; }
   #dlgInputWrap label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--gray-700, #555); }
-  #dlgBtns { display: flex; gap: 10px; margin-top: 20px; }
+  #dlgBtns { display: flex; gap: 10px; margin-top: 16px; }
   #dlgBtns .btn { flex: 1; padding: 11px 14px; font-size: 14px; }
   #dlgOk.peligro { background: var(--red-tx); border-color: var(--red-tx); color: #fff; }
   #dlgOk:disabled { opacity: .45; cursor: not-allowed; }
@@ -549,6 +549,7 @@
     <div id="dlgTitulo"></div>
     <div id="dlgTexto"></div>
     <div id="dlgInputWrap"><label for="dlgInput" id="dlgInputLbl"></label><input id="dlgInput" autocomplete="off"></div>
+    <button id="dlgExtra" type="button" style="display:none;background:none;border:0;padding:10px 0 0;font-size:12.5px;color:var(--accent);text-decoration:underline;cursor:pointer;"></button>
     <div id="dlgBtns"><button class="btn" id="dlgCancel" type="button">Cancelar</button><button class="btn btn-primary" id="dlgOk" type="button">Aceptar</button></div>
   </div>
 </div>
@@ -863,6 +864,7 @@
       </div>
       <div class="field"><label>Nota (opcional)</label><input id="adm_nota" placeholder="Nequi, transferencia..."></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn" id="btnAdmEliminar" style="color:var(--red-tx);margin-right:auto;">Eliminar usuario</button>
         <button class="btn" id="btnAdmQuitar">Quitar PRO</button>
         <button class="btn btn-primary" id="btnAdmSumar">Activar</button>
       </div>
@@ -2819,11 +2821,7 @@
     if (!isAdminMode) { alert('Anular un movimiento solo se puede en modo administrador (Configuración → Activar).'); return; }
     var m = movimientos.find(function(x){ return x.id === movId; });
     if (!m) return;
-    var motivo = prompt('¿Por qué se anula este movimiento?\n"'+m.concepto+'" — '+money(m.valor));
-    if (motivo === null) return;
-    motivo = motivo.trim();
-    if (!motivo) { alert('Escribe un motivo para poder anularlo.'); return; }
-
+    pedir({ titulo: 'Anular movimiento', texto: '"'+m.concepto+'" — '+money(m.valor), ok: 'Anular', peligro: true, input: { etiqueta: '¿Por qué se anula?', placeholder: 'Motivo' } }, function(motivo){
     torneoRef.collection('movimientos').doc(movId).update({
       estado: 'ANULADO', motivoAnulacion: motivo,
       anuladoPor: currentUserEmail, anuladoEn: Date.now()
@@ -2832,6 +2830,7 @@
         return revertirPagoInscripcion(m.sourceId, m.attribJ1||0, m.attribJ2||0);
       }
     }).catch(function(e){ alert('No se pudo anular: ' + e.message); });
+    });
   }
 
   function revertirPagoInscripcion(insId, attribJ1, attribJ2){
@@ -3411,12 +3410,10 @@
     box.querySelectorAll('[data-ren-tarifa]').forEach(function(b){
       b.addEventListener('click', function(){
         var id = b.dataset.renTarifa, t = tarifaById(id);
-        var nombre = prompt('Nuevo nombre para la tarifa:', t.nombre);
-        if (nombre === null) return;
-        nombre = nombre.trim();
-        if (!nombre) return;
-        if (id === TARIFA_BASE_ID) guardarTarifasTorneo({ tarifaBaseNombre: nombre });
-        else guardarTarifasTorneo({ tarifas: (torneoData.tarifas || []).map(function(x){ return x.id === id ? { id: x.id, nombre: nombre } : x; }) });
+        pedir({ titulo: 'Renombrar tarifa', ok: 'Guardar', input: { etiqueta: 'Nuevo nombre', valor: t.nombre } }, function(nombre){
+          if (id === TARIFA_BASE_ID) guardarTarifasTorneo({ tarifaBaseNombre: nombre });
+          else guardarTarifasTorneo({ tarifas: (torneoData.tarifas || []).map(function(x){ return x.id === id ? { id: x.id, nombre: nombre } : x; }) });
+        });
       });
     });
     box.querySelectorAll('[data-del-tarifa]').forEach(function(b){
@@ -3511,49 +3508,35 @@
   // ---------- modo administrador (PIN por torneo) ----------
   byId('btnToggleAdmin').addEventListener('click', function(){
     if (isAdminMode) { isAdminMode = false; renderAll(); return; }
+    function guardarPinYEntrar(pin){
+      torneoRef.set({ adminPin: pin }, { merge: true }).then(function(){
+        torneoData.adminPin = pin;
+        isAdminMode = true;
+        renderAll();
+      }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
+    }
     if (!torneoData.adminPin) {
-      var nuevo = prompt('Todavía no tienes un PIN de administrador para este torneo.\nCrea uno (mínimo 4 caracteres):');
-      if (nuevo === null) return;
-      nuevo = nuevo.trim();
-      if (nuevo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
-      torneoRef.set({ adminPin: nuevo }, { merge: true }).then(function(){
-        torneoData.adminPin = nuevo;
-        isAdminMode = true;
-        renderAll();
-      }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
+      pedir({ titulo: 'Crea tu PIN de administrador', texto: 'Todavía no tienes un PIN para este torneo. Sirve para activar el modo administrador.', ok: 'Crear PIN', input: { etiqueta: 'PIN (mínimo 4 caracteres)', min: 4, tipo: 'password' } }, guardarPinYEntrar);
       return;
     }
-    var intento = prompt('Ingresa el PIN de administrador:\n\n(¿Lo olvidaste? Escribe "olvide" y podrás crear uno nuevo)');
-    if (intento === null) return;
-    intento = intento.trim();
-    if (intento.toLowerCase() === 'olvide') {
-      var reemplazo = prompt('Como esta es tu cuenta, puedes restablecer el PIN ahora mismo.\nEscribe el nuevo PIN de administrador (mínimo 4 caracteres):');
-      if (reemplazo === null) return;
-      reemplazo = reemplazo.trim();
-      if (reemplazo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
-      torneoRef.set({ adminPin: reemplazo }, { merge: true }).then(function(){
-        torneoData.adminPin = reemplazo;
-        isAdminMode = true;
-        renderAll();
-      }).catch(function(e){ alert('No se pudo guardar el PIN: ' + e.message); });
-      return;
-    }
-    if (intento === torneoData.adminPin) {
-      isAdminMode = true;
-      renderAll();
-    } else {
-      alert('PIN incorrecto.');
-    }
+    pedir({
+      titulo: 'Modo administrador', texto: 'Ingresa el PIN de administrador.', ok: 'Entrar',
+      input: { etiqueta: 'PIN', tipo: 'password' },
+      extra: { texto: 'Olvidé el PIN', fn: function(){
+        pedir({ titulo: 'Restablecer PIN', texto: 'Como esta es tu cuenta, puedes restablecer el PIN ahora mismo.', ok: 'Guardar PIN', input: { etiqueta: 'Nuevo PIN (mínimo 4 caracteres)', min: 4, tipo: 'password' } }, guardarPinYEntrar);
+      } }
+    }, function(intento){
+      if (intento === torneoData.adminPin) { isAdminMode = true; renderAll(); }
+      else alert('PIN incorrecto.');
+    });
   });
   byId('btnCambiarPin').addEventListener('click', function(){
-    var nuevo = prompt('Nuevo PIN de administrador (mínimo 4 caracteres):');
-    if (nuevo === null) return;
-    nuevo = nuevo.trim();
-    if (nuevo.length < 4) { alert('El PIN debe tener al menos 4 caracteres.'); return; }
-    torneoRef.set({ adminPin: nuevo }, { merge: true }).then(function(){
-      torneoData.adminPin = nuevo;
-      alert('PIN actualizado.');
-    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+    pedir({ titulo: 'Cambiar PIN', texto: 'Escribe el nuevo PIN de administrador.', ok: 'Guardar PIN', input: { etiqueta: 'Nuevo PIN (mínimo 4 caracteres)', min: 4, tipo: 'password' } }, function(nuevo){
+      torneoRef.set({ adminPin: nuevo }, { merge: true }).then(function(){
+        torneoData.adminPin = nuevo;
+        alert('PIN actualizado.');
+      }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+    });
   });
 
   byId('btnGuardarConfig').addEventListener('click', function(){
@@ -4276,11 +4259,13 @@
     e.preventDefault();
     hideAuthError();
     var email = byId('loginEmail').value.trim();
-    if (!email) email = (prompt('Escribe el correo de tu cuenta para enviarte el enlace de recuperación:') || '').trim();
-    if (!email) return;
-    auth.sendPasswordResetEmail(email).then(function(){
-      alert('Listo — te enviamos un correo a ' + email + ' con un enlace para crear una nueva contraseña.');
-    }).catch(function(err){ showAuthError(translateAuthError(err.code)); });
+    var enviar = function(email){
+      auth.sendPasswordResetEmail(email).then(function(){
+        alert('Listo — te enviamos un correo a ' + email + ' con un enlace para crear una nueva contraseña.');
+      }).catch(function(err){ showAuthError(translateAuthError(err.code)); });
+    };
+    if (email) { enviar(email); return; }
+    pedir({ titulo: 'Recuperar contraseña', texto: 'Escribe el correo de tu cuenta y te enviamos un enlace para crear una nueva contraseña.', ok: 'Enviar enlace', input: { etiqueta: 'Correo', placeholder: 'tu@correo.com', valida: function(v){ return /\S+@\S+\.\S+/.test(v); } } }, enviar);
   });
 
   // ---------- legal: Términos y Condiciones / Política de Privacidad ----------
@@ -4599,24 +4584,42 @@
     can.textContent = o.cancelar || 'Cancelar'; can.style.display = o.soloOk ? 'none' : '';
     byId('dlgInputWrap').style.display = o.input ? 'block' : 'none';
     inp.value = '';
-    if (o.input) { byId('dlgInputLbl').textContent = o.input.etiqueta || ''; inp.placeholder = o.input.placeholder || ''; ok.disabled = true; }
+    if (o.input) {
+      byId('dlgInputLbl').textContent = o.input.etiqueta || ''; inp.placeholder = o.input.placeholder || '';
+      inp.type = o.input.tipo || 'text'; inp.value = o.input.valor || '';
+      ok.disabled = !dlgValido();
+    }
+    var ex = byId('dlgExtra');
+    ex.style.display = o.extra ? '' : 'none'; if (o.extra) ex.textContent = o.extra.texto;
     byId('dlgModal').classList.add('show');
     setTimeout(function(){ (o.input ? inp : (o.peligro && !o.soloOk ? can : ok)).focus(); }, 30);
+  }
+  function dlgValido(){
+    var o = dlgActual && dlgActual.o; if (!o || !o.input) return true;
+    var v = byId('dlgInput').value.trim();
+    if (o.input.esperado != null) return v === o.input.esperado;
+    if (o.input.valida) return !!o.input.valida(v);
+    return v.length >= (o.input.min || 1);
   }
   function dlgCerrar(acepto){
     var it = dlgActual; if (!it) return;
     var valor = byId('dlgInput').value;
     byId('dlgModal').classList.remove('show');
     dlgActual = null;
-    if (acepto && it.cb) it.cb(valor); else if (!acepto && it.no) it.no();
+    if (acepto && it.cb) it.cb(valor.trim()); else if (!acepto && it.no) it.no();
     setTimeout(dlgSiguiente, 180);
   }
   byId('dlgOk').addEventListener('click', function(){ dlgCerrar(true); });
+  byId('dlgExtra').addEventListener('click', function(){
+    var it = dlgActual; if (!it || !it.o.extra) return;
+    dlgCerrar(false);
+    setTimeout(it.o.extra.fn, 200);
+  });
   byId('dlgCancel').addEventListener('click', function(){ dlgCerrar(false); });
   byId('dlgModal').addEventListener('click', function(e){ if (e.target === this && dlgActual && !dlgActual.o.soloOk) dlgCerrar(false); });
   byId('dlgInput').addEventListener('input', function(){
     var o = dlgActual && dlgActual.o; if (!o || !o.input) return;
-    byId('dlgOk').disabled = this.value.trim() !== o.input.esperado;
+    byId('dlgOk').disabled = !dlgValido();
   });
   document.addEventListener('keydown', function(e){
     if (!dlgActual) return;
@@ -4624,6 +4627,7 @@
     else if (e.key === 'Enter' && dlgActual.o.input && !byId('dlgOk').disabled) { e.preventDefault(); dlgCerrar(true); }
   });
   function confirmar(o, fn){ dlg(o, fn); }
+  function pedir(o, fn){ dlg(o, fn); }
   function confirmarP(o){ return new Promise(function(res){ dlgCola.push({ o: o, cb: function(){ res(true); }, no: function(){ res(false); } }); if (!dlgActual) dlgSiguiente(); }); }
   window.alert = function(m){
     m = String(m == null ? '' : m);
@@ -5443,6 +5447,7 @@
     byId('admModalInfo').innerHTML = '<strong>' + esc(u.email) + '</strong><div class="muted" style="font-size:12.5px;">' + (u.plan === 'PRO' ? (u.planHasta ? (u.planHasta > Date.now() ? 'PRO hasta ' : 'PRO vencido el ') + fechaPlan(u.planHasta) : 'PRO sin vencimiento') : 'Plan gratis') + '</div>';
     byId('adm_meses').value = 1; byId('adm_monto').value = cfgPlan.precio; byId('adm_nota').value = '';
     byId('btnAdmQuitar').style.display = u.plan === 'PRO' ? '' : 'none';
+    byId('btnAdmEliminar').style.display = u.id === currentUid ? 'none' : '';
     byId('admModal').classList.add('show');
   }
   function cerrarAdmModal(){ byId('admModal').classList.remove('show'); admEditando = null; }
@@ -5461,6 +5466,43 @@
       u.plan = 'PRO'; u.planHasta = hasta.getTime();
       cerrarAdmModal(); renderAdminUsuarios(); cargarAdminPagos(); flashBarra('PRO activo hasta ' + fechaPlan(u.planHasta));
     }).catch(function(e){ alert('No se pudo activar: ' + e.message); });
+  });
+  // Borra todos los datos de un usuario (torneos y todo lo que cuelga de ellos, jugadores, atajos y su documento).
+  // El acceso de inicio de sesión (Firebase Authentication) no se puede borrar desde el navegador.
+  function eliminarDatosUsuario(uid){
+    var ref = fsdb.collection('users').doc(uid);
+    return ref.collection('torneos').get().then(function(snap){
+      var p = Promise.resolve();
+      snap.forEach(function(d){
+        var tr = d.ref;
+        p = p.then(function(){ return tr.collection('movimientos').get(); }).then(function(ms){
+          var q = Promise.resolve();
+          ms.forEach(function(m){ q = q.then(function(){ return eliminarColeccionCompleta(m.ref.collection('adjuntos')); }); });
+          return q;
+        });
+        SUBCOLECCIONES_TORNEO.forEach(function(n){ p = p.then(function(){ return eliminarColeccionCompleta(tr.collection(n)); }); });
+        p = p.then(function(){ return tr.delete(); });
+      });
+      return p;
+    }).then(function(){ return eliminarColeccionCompleta(ref.collection('jugadores')); })
+      .then(function(){ return eliminarColeccionCompleta(ref.collection('compartidos')); })
+      .then(function(){ return ref.delete(); });
+  }
+  byId('btnAdmEliminar').addEventListener('click', function(){
+    var u = admEditando; if (!u || u.id === currentUid) return;
+    confirmar({
+      titulo: '¿Eliminar a este usuario?', peligro: true, ok: 'Eliminar usuario',
+      texto: 'Se borran sus torneos, inscripciones, movimientos, jugadores y su plan. El registro de pagos se conserva. No se puede deshacer.',
+      input: { etiqueta: 'Para confirmar, escribe su correo', esperado: u.email, placeholder: u.email }
+    }, function(){
+      cerrarAdmModal(); mostrarSplash(); splashMinForzado = 1200;
+      eliminarDatosUsuario(u.id).then(function(){
+        ocultarSplash(); flashBarra('Usuario eliminado');
+        return cargarAdminUsuarios();
+      }).then(function(){
+        alert('Listo: se borraron los datos de ' + u.email + '.\n\nPara que tampoco pueda iniciar sesión, bórralo también en Firebase → Authentication → Users.');
+      }).catch(function(e){ ocultarSplash(); alert('No se pudo eliminar por completo: ' + (e && e.message || e) + '\n\nSi dice "permissions", falta actualizar las reglas de Firestore.'); });
+    });
   });
   byId('btnAdmQuitar').addEventListener('click', function(){
     var u = admEditando; if (!u) return;
