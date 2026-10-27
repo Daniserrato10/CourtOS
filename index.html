@@ -284,6 +284,24 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  .cfg-wrap { width: 100%; max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .cfg-wrap > * { max-width: none !important; }
+  .cfg-wrap .page-head { justify-content: center; text-align: center; }
+  .cfg-hero { padding: 28px 24px 24px !important; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+  .cfg-ico { width: 46px; height: 46px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: var(--gray-200); color: var(--gray-700); margin-bottom: 8px; transition: background-color 200ms ease, color 200ms ease; flex-shrink: 0; }
+  .cfg-ico.on { background: var(--green-bg); color: var(--green-tx); }
+  .cfg-ico.blue { background: var(--blue-bg); color: var(--blue-tx); }
+  .cfg-titulo { font-weight: 700; font-size: 16px; letter-spacing: -0.2px; }
+  .cfg-sub { font-size: 13px; line-height: 1.55; color: var(--gray-500); max-width: 470px; }
+  .cfg-botones { display: flex; gap: 8px; margin-top: 14px; justify-content: center; flex-wrap: wrap; }
+  .cfg-seccion { font-weight: 700; font-size: 14.5px; letter-spacing: -0.1px; margin-bottom: 12px; }
+  .cfg-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px 20px; margin: 0; }
+  .cfg-resumen dt { font-size: 11.5px; font-weight: 600; color: var(--gray-500); margin-bottom: 2px; }
+  .cfg-resumen dd { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .cfg-nota { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--gray-500); }
+  .cfg-fila { display: flex; align-items: center; gap: 14px; }
+  .cfg-fila > div:nth-child(2) { flex: 1; min-width: 0; }
+  @media (max-width: 520px) { .cfg-fila { flex-wrap: wrap; } }
   #splash { position: fixed; inset: 0; z-index: 3000; background: var(--bg, #fbfaf6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 420ms ease; }
   #splash.out { opacity: 0; pointer-events: none; }
   #splash .wordmark { font-size: 30px; animation: splashEntra 520ms cubic-bezier(.2,.7,.2,1) both, splashPulso 2.4s ease-in-out 520ms infinite; }
@@ -1475,25 +1493,32 @@
 
     <!-- CONFIGURACIÓN -->
     <section class="view" data-view="configuracion">
+     <div class="cfg-wrap">
       <div class="page-head">
         <div>
           <div class="page-title">Configuración del Torneo</div>
-          <div class="page-sub">Datos generales de este torneo — protegidos con PIN</div>
+          <div class="page-sub">Datos generales de este torneo, protegidos con PIN</div>
         </div>
       </div>
 
-      <div class="card" id="adminBanner" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; max-width:640px;">
-        <div>
-          <div style="font-weight:700; font-size:14px;" id="adminBannerTitulo">🔒 Modo Administrador</div>
-          <div class="muted" style="font-size:12.5px; margin-top:2px;" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.</div>
-        </div>
-        <div style="display:flex; gap:8px;">
+      <div class="card cfg-hero" id="adminBanner">
+        <div class="cfg-ico" id="adminIcono"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
+        <div class="cfg-titulo" id="adminBannerTitulo">Modo Administrador</div>
+        <div class="cfg-sub" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.</div>
+        <div class="cfg-botones">
           <button class="btn" id="btnCambiarPin" style="display:none;">Cambiar PIN</button>
           <button class="btn btn-primary" id="btnToggleAdmin">Activar</button>
         </div>
       </div>
 
-      <div class="formpanel" id="formConfig" style="max-width:640px;">
+      <div class="card" id="configLockedMsg" style="padding:20px 22px;">
+        <div class="cfg-seccion">Datos del torneo</div>
+        <dl class="cfg-resumen" id="cfgResumen"></dl>
+        <div class="cfg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Activa el modo administrador arriba para editar estos datos.</span></div>
+      </div>
+
+      <div class="formpanel" id="formConfig">
+        <div class="cfg-seccion">Datos del torneo</div>
         <div class="formgrid">
           <div class="field"><label>Nombre</label><input id="cfg_nombre"></div>
           <div class="field"><label>Deporte</label><input id="cfg_deporte" readonly style="background:var(--sidebar);color:var(--gray-500);cursor:not-allowed;"></div>
@@ -1516,29 +1541,29 @@
         </div>
       </div>
 
-      <div class="card" id="configLockedMsg" style="padding:16px 20px; max-width:640px; color:var(--gray-500); font-size:13px;">
-        🔒 Activa el modo administrador arriba para poder editar los datos del torneo.
-      </div>
-
-      <div class="card" id="reporteGeneralCard" style="display:none; padding:16px 20px; max-width:640px; align-items:center; justify-content:space-between; gap:14px;">
+      <div class="card cfg-fila" id="reporteGeneralCard" style="display:none; padding:18px 20px;">
+        <div class="cfg-ico blue" style="margin:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>
         <div>
-          <div style="font-weight:700; font-size:14px;">📋 Reporte General del Torneo</div>
-          <div class="muted" style="font-size:12.5px; margin-top:2px;">Este torneo ya está finalizado — genera un PDF con todo lo financiero de principio a fin (Estado de Resultados, categorías, flujo de caja, presupuesto vs. real).</div>
+          <div class="cfg-titulo" style="font-size:14.5px;">Reporte General del Torneo</div>
+          <div class="cfg-sub" style="font-size:12.5px;margin-top:2px;">Este torneo ya está finalizado. Genera un PDF con todo lo financiero de principio a fin: Estado de Resultados, categorías, flujo de caja y presupuesto vs. real.</div>
         </div>
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
       </div>
 
-      <div class="card" id="compartirCard" style="display:none; padding:18px 20px; max-width:640px; flex-direction:column; gap:14px;">
-        <div>
-          <div style="font-weight:700; font-size:14px;">👥 Compartir este torneo</div>
-          <div class="muted" style="font-size:12.5px; margin-top:2px;">Invita a otra persona por su correo. Tú decides qué puede ver y qué puede editar, y puedes cambiarlo o quitarle el acceso cuando quieras. Nadie más que tú puede eliminar el torneo, cambiar el PIN, anular movimientos ni eliminar inscripciones.</div>
+      <div class="card" id="compartirCard" style="display:none; padding:20px 22px; flex-direction:column; gap:14px;">
+        <div class="cfg-fila" style="align-items:flex-start;">
+          <div class="cfg-ico blue" style="margin:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.2A6.5 6.5 0 0 1 21.5 20"/></svg></div>
+          <div>
+          <div class="cfg-titulo" style="font-size:14.5px;">Compartir este torneo</div>
+          <div class="muted" style="font-size:12.5px; margin-top:2px; line-height:1.55;">Invita a otra persona por su correo. Tú decides qué puede ver y qué puede editar, y puedes cambiarlo o quitarle el acceso cuando quieras. Nadie más que tú puede eliminar el torneo, cambiar el PIN, anular movimientos ni eliminar inscripciones.</div>
+          </div>
         </div>
         <div id="compartirLock" style="display:none;"></div>
         <div id="compartirContenido" style="display:flex; flex-direction:column; gap:14px;">
           <div class="formgrid">
-            <div class="field"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
+            <div class="field" style="grid-column:1/-1;"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
             <div class="field" style="grid-column:1/-1;"><label>Tu nombre (para el mensaje de la invitación)</label><input id="sh_miNombre" placeholder="Ej: Daniel Serrato"></div>
-            <div class="field"><label>Rol</label>
+            <div class="field" style="grid-column:1/-1;"><label>Rol</label>
               <select id="sh_rol">
                 <option value="LECTOR">Lector — solo puede ver</option>
                 <option value="EDITOR">Editor — puede editar lo que tú elijas</option>
@@ -1554,11 +1579,12 @@
         </div>
       </div>
 
-      <div class="muted" style="font-size:12px; max-width:640px;">
+      <div class="muted" style="font-size:12px; text-align:center;">
         <a href="#" data-open-legal="terminos" style="color:inherit;text-decoration:underline;">Términos y Condiciones</a>
         &nbsp;·&nbsp;
         <a href="#" data-open-legal="privacidad" style="color:inherit;text-decoration:underline;">Política de Privacidad</a>
       </div>
+     </div>
     </section>
 
   </div>
@@ -3338,18 +3364,26 @@
     byId('cfg_fechaFin').value = torneoData.fechaFin || '';
     byId('cfg_cupos').value = torneoData.cuposTotales || 0;
     byId('cfg_estado').value = torneoData.estado || 'PLANIFICADA';
+    // Resumen de solo lectura (cuando el modo administrador está apagado)
+    var ESTADOS = { PLANIFICADA: 'Planificada', ABIERTA: 'Abierta', EN_CURSO: 'En curso', FINALIZADA: 'Finalizada' };
+    function fch(f){ if (!f) return '—'; var d = new Date(f + 'T12:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    var fila = function(k, v){ return '<div><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>'; };
+    byId('cfgResumen').innerHTML = fila('Nombre', torneoData.nombre) + fila('Deporte', byId('cfg_deporte').value) + fila('Ciudad', torneoData.ciudad) + fila('Club / Sede', torneoData.club)
+      + fila('Fecha inicio', fch(torneoData.fechaInicio)) + fila('Fecha fin', fch(torneoData.fechaFin)) + fila(byId('cfg_cuposLabel').textContent, String(torneoData.cuposTotales || 0)) + fila('Estado', ESTADOS[torneoData.estado || 'PLANIFICADA']);
 
     if (isAdminMode) {
-      byId('adminBannerTitulo').textContent = '🔓 Modo Administrador activo';
-      byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo, categorías, y eliminar inscripciones, cuentas y jugadores. Ciérralo cuando termines.';
-      byId('btnToggleAdmin').textContent = 'Salir';
+      byId('adminBannerTitulo').textContent = 'Modo Administrador activo';
+      byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo y las categorías, y eliminar inscripciones, cuentas y jugadores. Ciérralo cuando termines.';
+      byId('adminIcono').className = 'cfg-ico on'; byId('adminIcono').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.6"/></svg>';
+      byId('btnToggleAdmin').textContent = 'Salir del modo admin';
       byId('btnCambiarPin').style.display = 'inline-block';
       byId('formConfig').style.display = 'flex';
       byId('configLockedMsg').style.display = 'none';
     } else {
-      byId('adminBannerTitulo').textContent = '🔒 Modo Administrador';
+      byId('adminBannerTitulo').textContent = 'Modo Administrador';
       byId('adminBannerSub').textContent = 'Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.';
-      byId('btnToggleAdmin').textContent = 'Activar';
+      byId('adminIcono').className = 'cfg-ico'; byId('adminIcono').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+      byId('btnToggleAdmin').textContent = 'Activar con PIN';
       byId('btnCambiarPin').style.display = 'none';
       byId('formConfig').style.display = 'none';
       byId('configLockedMsg').style.display = 'block';
