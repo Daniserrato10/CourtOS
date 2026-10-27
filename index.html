@@ -284,14 +284,23 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
-  #splash { position: fixed; inset: 0; z-index: 3000; background: var(--bg, #fbfaf6); display: flex; align-items: center; justify-content: center; transition: opacity 240ms ease; }
+  #splash { position: fixed; inset: 0; z-index: 3000; background: var(--bg, #fbfaf6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 420ms ease; }
   #splash.out { opacity: 0; pointer-events: none; }
-  #splash .wordmark { font-size: 26px; animation: splashPulso 1.4s ease-in-out infinite; }
-  @keyframes splashPulso { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+  #splash .wordmark { font-size: 30px; animation: splashEntra 520ms cubic-bezier(.2,.7,.2,1) both, splashPulso 2.4s ease-in-out 520ms infinite; }
+  #splash .splash-linea { width: 120px; height: 3px; border-radius: 2px; background: rgba(42,93,149,0.14); overflow: hidden; animation: splashEntra 520ms cubic-bezier(.2,.7,.2,1) 120ms both; }
+  #splash .splash-linea i { display: block; width: 36%; height: 100%; border-radius: 2px; background: var(--accent); animation: splashBarrido 1.35s cubic-bezier(.65,0,.35,1) infinite; }
+  @keyframes splashPulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.82; } }
+  @keyframes splashEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes splashBarrido { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
+  @keyframes introFundido { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes introEntra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes pantallaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .view.active, #torneoScreen, #admContent { animation: pantallaIn 240ms var(--ease-out, ease-out) both; }
-  #introScreen .intro-in { animation: pantallaIn 300ms var(--ease-out, ease-out) both; }
-  @media (prefers-reduced-motion: reduce) { .view.active, #torneoScreen, #admContent, #introScreen .intro-in, #splash .wordmark { animation: none !important; } #splash { transition: none; } }
+  .view.active, #torneoScreen, #admContent { animation: pantallaIn 380ms cubic-bezier(.2,.7,.2,1) both; }
+  #introScreen.show { animation: introFundido 500ms ease both; }
+  #introScreen.saliendo { opacity: 0; transition: opacity 280ms ease; }
+  #introScreen .intro-in { animation: introEntra 520ms cubic-bezier(.2,.7,.2,1) both; }
+  #introIcono.intro-in { animation-delay: 0ms; } #introTitulo.intro-in { animation-delay: 90ms; } #introTexto.intro-in { animation-delay: 180ms; }
+  @media (prefers-reduced-motion: reduce) { .view.active, #torneoScreen, #admContent, #introScreen, #introScreen .intro-in, #splash .wordmark, #splash .splash-linea, #splash .splash-linea i { animation: none !important; } #splash, #introScreen.saliendo { transition: none; } }
   @media print { .view.active, #torneoScreen, #admContent { animation: none !important; } }
   #ayudaModal { display: none; }
   #ayudaModal.show { display: flex; animation: overlayIn 180ms ease-out; }
@@ -412,7 +421,7 @@
 <!-- ============================================================
      PANTALLA DE AUTENTICACIÓN
      ============================================================ -->
-<div id="splash" aria-hidden="true"><span class="wordmark">Court<span class="os">OS</span></span></div>
+<div id="splash" aria-hidden="true"><span class="wordmark">Court<span class="os">OS</span></span><div class="splash-linea"><i></i></div></div>
 
 <div id="authScreen">
 
@@ -4477,9 +4486,9 @@
     return b.commit().then(function(){ return { id: tRef.id, datos: datos }; });
   }
   byId('btnCargarDemo').addEventListener('click', function(){
-    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…';
+    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…'; mostrarSplash();
     cargarTorneoDemo().then(function(r){ enterTorneo(r.id, r.datos); })
-      .catch(function(e){ alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
+      .catch(function(e){ ocultarSplash(); alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
       .then(function(){ btn.disabled = false; btn.textContent = 'Cargar torneo de ejemplo'; });
   });
 
@@ -4505,20 +4514,39 @@
     if (userRef) userRef.set({ introVista: true }, { merge: true }).catch(function(){});
   }
   function introCerrar(marcar){
-    byId('introScreen').style.display = 'none'; document.body.style.overflow = '';
+    var is = byId('introScreen'); document.body.style.overflow = '';
+    is.classList.add('saliendo');
+    setTimeout(function(){ is.style.display = 'none'; is.classList.remove('saliendo', 'show'); }, 290);
     if (marcar && !introRepetir) introMarcarVista();
     introRepetir = false;
+    reanimarPantalla(120);
   }
   // Pantalla de carga: tapa la app hasta saber quién eres y qué pantalla toca, para que no se vea parpadear otra antes
   var splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
+  var SPLASH_MIN = 2000, splashDesde = Date.now(), splashEspera = null;
+  // Vuelve a lanzar la animación de entrada de lo que quedó a la vista, para que aparezca suave cuando se va la carga
+  function reanimarPantalla(retraso){
+    setTimeout(function(){
+      ['.view.active', '#torneoScreen', '#admContent'].forEach(function(q){
+        var e = document.querySelector(q); if (!e || e.offsetParent === null) return;
+        e.style.animation = 'none'; void e.offsetWidth; e.style.animation = '';
+      });
+    }, retraso || 0);
+  }
   function ocultarSplash(){
-    clearTimeout(splashTimer);
-    var sp = byId('splash'); if (!sp || sp.classList.contains('out')) return;
+    var sp = byId('splash'); if (!sp || sp.classList.contains('out') || sp.style.display === 'none') return;
+    // Mínimo visible (aunque cargue rápido): la animación se alcanza a ver y no hay saltos entre pantallas
+    var falta = SPLASH_MIN - (Date.now() - splashDesde);
+    if (falta > 0) { if (!splashEspera) splashEspera = setTimeout(function(){ splashEspera = null; ocultarSplash(); }, falta); return; }
+    clearTimeout(splashTimer); clearTimeout(splashEspera); splashEspera = null;
     sp.classList.add('out');
-    setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 280);
+    reanimarPantalla(140);
+    setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 450);
   }
   function mostrarSplash(){
     var sp = byId('splash'); if (!sp) return;
+    if (sp.style.display !== 'none' && !sp.classList.contains('out')) { clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000); return; }
+    splashDesde = Date.now(); clearTimeout(splashEspera); splashEspera = null;
     sp.style.display = 'flex'; void sp.offsetWidth; sp.classList.remove('out');
     clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
   }
@@ -4544,7 +4572,8 @@
   }
   function introMostrar(repetir){
     introRepetir = !!repetir; introPaso = 0; introRender();
-    byId('introScreen').style.display = 'flex'; document.body.style.overflow = 'hidden';
+    var is = byId('introScreen'); is.classList.remove('saliendo', 'show'); void is.offsetWidth;
+    is.style.display = 'flex'; is.classList.add('show'); document.body.style.overflow = 'hidden';
   }
   byId('btnIntroSaltar').addEventListener('click', function(){ introCerrar(true); });
   function evaluarIntro(){
