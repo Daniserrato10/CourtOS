@@ -628,6 +628,14 @@
       <div id="compartidosList" style="display:flex; flex-direction:column; gap:10px;"></div>
     </div>
 
+    <div id="demoCard" class="card" style="display:none; padding:16px 20px; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; border-style:dashed;">
+      <div style="min-width:200px;flex:1;">
+        <div style="font-weight:700;font-size:14px;">🎾 ¿Quieres ver cómo funciona?</div>
+        <div class="muted" style="font-size:12.5px;margin-top:2px;">Carga un torneo de ejemplo con parejas, pagos, finanzas y presupuesto ya llenos. Todo es inventado, puedes tocar lo que quieras y borrarlo cuando quieras.</div>
+      </div>
+      <button class="btn btn-primary" id="btnCargarDemo">Cargar torneo de ejemplo</button>
+    </div>
+
     <div id="limiteTorneoAviso" style="display:none;"></div>
 
     <div class="card" id="crearTorneoCard" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
@@ -4290,7 +4298,8 @@
   // ============================================================
   var torneosCountCache = 0;
   function renderTorneoList(torneos){
-    torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA'; }).length;
+    torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA' && !t.demo; }).length;
+    byId('demoCard').style.display = torneos.some(function(t){ return t.demo; }) ? 'none' : 'flex';
     var list = byId('torneoList');
     if (!torneos.length){
       list.innerHTML = '<div class="muted" style="padding:12px 0;">Aún no tienes torneos. Crea el primero abajo.</div>';
@@ -4301,7 +4310,7 @@
           '<button class="torneo-card-main" data-torneo-id="'+t.id+'" style="all:unset;cursor:pointer;flex:1;display:flex;align-items:center;gap:12px;padding:6px 0;min-width:0;">' +
             '<div style="width:34px;height:34px;border-radius:9px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">'+esc((t.nombre||'?').trim().charAt(0).toUpperCase())+'</div>' +
             '<div style="min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
-            '<div style="min-width:0;"><div title="'+esc(t.nombre||'Sin nombre')+'" style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.nombre||'Sin nombre')+'</div>' +
+            '<div style="min-width:0;"><div title="'+esc(t.nombre||'Sin nombre')+'" style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.nombre||'Sin nombre')+(t.demo ? ' <span class="chip" style="background:var(--amber-bg);color:var(--amber-tx);font-size:10px;padding:2px 7px;vertical-align:middle;">DEMO</span>' : '')+'</div>' +
             '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.ciudad||'—')+(t.fechaInicio?' · '+fmtDateFull(t.fechaInicio):'')+'</div></div>' +
             '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:10px;">'+chip(ESTADO_TORNEO, t.estado)+
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
@@ -4334,6 +4343,12 @@
           var id = btn.dataset.eliminarTorneo;
           var t = torneos.find(function(x){ return x.id === id; });
           var nombre = t ? (t.nombre || 'Sin nombre') : 'este torneo';
+          if (t && t.demo) {
+            if (!confirm('¿Eliminar el torneo de ejemplo? Se borran sus datos inventados. Tus torneos reales no se tocan.')) return;
+            btn.disabled = true; btn.textContent = '…';
+            eliminarTorneoCompleto(id).catch(function(err){ alert('No se pudo eliminar: ' + err.message); });
+            return;
+          }
           var escrito = prompt('Esto borra TODO lo del torneo "'+nombre+'" de forma permanente: inscripciones, movimientos, presupuesto, cuentas, categorías y notas. No se puede deshacer.\n\nEscribe el nombre exacto del torneo para confirmar:');
           if (escrito === null) return;
           if (escrito.trim() !== nombre) { alert('El nombre no coincide. No se eliminó nada.'); return; }
@@ -4354,6 +4369,91 @@
     byId('limiteTorneoAviso').style.display = enElLimite ? 'block' : 'none';
     if (enElLimite) byId('limiteTorneoAviso').innerHTML = bloqueoProHtml('El plan gratis incluye 1 torneo activo. Actualiza a PRO para crear torneos ilimitados.');
   }
+
+
+  // ---------- Torneo de ejemplo ("casa modelo") ----------
+  function cargarTorneoDemo(){
+    if (!userRef) return Promise.resolve();
+    var hoy = new Date(), dia = 86400000, ahora = Date.now();
+    function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+    var datos = {
+      nombre: 'Copa Demo de Pádel', deporte: 'PADEL', modalidad: 'PAREJAS', ciudad: 'Bucaramanga', club: 'Club Demo',
+      fechaInicio: ymd(new Date(ahora + 12*dia)), fechaFin: ymd(new Date(ahora + 14*dia)), cuposTotales: 32, estado: 'ABIERTA',
+      tarifas: [{ id: 'preventa', nombre: 'Preventa' }], tarifaActiva: 'regular', demo: true, creadoEn: ahora
+    };
+    var tRef = userRef.collection('torneos').doc();
+    var b = fsdb.batch();
+    b.set(tRef, datos);
+    var cats = [
+      { id: 'd-cuarta', nombre: 'Cuarta', orden: 1, valorInscripcion: 200000, precios: { preventa: 170000 }, modalidad: 'PAREJAS' },
+      { id: 'd-quinta', nombre: 'Quinta', orden: 2, valorInscripcion: 180000, precios: { preventa: 150000 }, modalidad: 'PAREJAS' },
+      { id: 'd-sexta',  nombre: 'Sexta',  orden: 3, valorInscripcion: 150000, precios: { preventa: 130000 }, modalidad: 'PAREJAS' },
+      { id: 'd-femb',   nombre: 'Femenino B', orden: 4, valorInscripcion: 180000, precios: { preventa: 150000 }, modalidad: 'PAREJAS' }
+    ];
+    cats.forEach(function(c){ var id = c.id, d = Object.assign({}, c); delete d.id; b.set(tRef.collection('categorias').doc(id), d); });
+    var ctas = [{ id: 'cta-principal', nombre: 'Cuenta Principal' }, { id: 'cta-efectivo', nombre: 'Efectivo' }, { id: 'cta-nequi', nombre: 'Nequi' }];
+    ctas.forEach(function(c){ b.set(tRef.collection('cuentas').doc(c.id), { nombre: c.nombre }); });
+    var pres = [
+      ['pl-inscripciones','INGRESO','Inscripciones',1,3200000], ['pl-patrocinios','INGRESO','Patrocinios',2,1500000], ['pl-ventas','INGRESO','Ventas',3,400000], ['pl-otros-ing','INGRESO','Otros ingresos',4,0],
+      ['pl-canchas','GASTO','Canchas',1,1200000], ['pl-pelotas','GASTO','Pelotas',2,250000], ['pl-trofeos','GASTO','Trofeos',3,450000], ['pl-camisetas','GASTO','Camisetas',4,600000],
+      ['pl-premios','GASTO','Premios',5,800000], ['pl-personal','GASTO','Personal',6,300000], ['pl-marketing','GASTO','Marketing',7,150000], ['pl-transporte','GASTO','Transporte',8,100000],
+      ['pl-proveedores','GASTO','Proveedores',9,200000], ['pl-otros-gas','GASTO','Otros gastos',10,0]
+    ];
+    pres.forEach(function(l){ b.set(tRef.collection('presupuesto').doc(l[0]), { tipo: l[1], concepto: l[2], orden: l[3], valorProyectado: l[4] }); });
+
+    // [categoría, jugador 1, jugador 2, tarifa (r/p), situación, cuenta]
+    var P = [
+      [0,'Andrés Mejía','Camilo Rueda','p','PAGADA',0], [0,'Felipe Cárdenas','Sebastián Ortiz','p','PAGADA',2], [0,'Julián Barrera','David Montoya','r','ABONO',0],
+      [0,'Nicolás Prada','Esteban Villamizar','r','PENDIENTE',0], [0,'Mateo Arenas','Santiago Pinzón','r','PAGADA',1],
+      [1,'Carlos Duarte','Iván Camargo','p','PAGADA',0], [1,'Jorge Quintero','Ricardo Meza','p','PAGADA',2], [1,'Diego Landazábal','Óscar Rey','r','PENDIENTE',0],
+      [1,'Miguel Serrano','Hernán Vargas','r','ABONO',2], [1,'Tomás Becerra','Luis Plata','r','CORTESIA_TOTAL',0],
+      [2,'Pablo Soto','Juan Contreras','p','PAGADA',1], [2,'Alejandro Niño','Gustavo Peña','r','PAGADA',0], [2,'Sergio Mora','Fabián Cruz','r','CORTESIA_MITAD',0],
+      [2,'Héctor Lizarazo','Wilson Mantilla','r','PENDIENTE',0], [2,'Cristian Flórez','Brayan Ardila','r','CANCELADA',0],
+      [3,'Laura Gómez','Paula Cáceres','p','PAGADA',2], [3,'Camila Ruiz','Daniela Parra','p','PAGADA',0], [3,'Natalia Silva','Valentina Ramos','r','ABONO',0], [3,'Andrea Torres','Mariana Lozano','r','PENDIENTE',0]
+    ];
+    var jugs = {}, movs = [];
+    P.forEach(function(r, k){
+      var cat = cats[r[0]], tarifa = r[3] === 'p' ? 'preventa' : 'regular';
+      var valor = tarifa === 'preventa' ? cat.precios.preventa : cat.valorInscripcion, mitad = valor / 2;
+      var iRef = tRef.collection('inscripciones').doc();
+      var fecha = ahora - (P.length - k) * dia * 1.2;
+      var d = { categoriaId: cat.id, categoriaNombre: cat.nombre, j1Nombre: r[1], j2Nombre: r[2], individual: false, valor: valor,
+        pagadoJ1: 0, pagadoJ2: 0, exentoJ1: false, exentoJ2: false, motivoExencion: '', tarifaId: tarifa, tarifaNombre: tarifa === 'preventa' ? 'Preventa' : 'Regular',
+        valorLista: valor, precioAjustado: false, estadoPago: 'PENDIENTE', estadoIns: 'PENDIENTE', cuentaId: ctas[r[5]].id, metodoPago: ['Transferencia','Efectivo','Nequi'][r[5]], fecha: fecha };
+      var pagado = 0, nota = '';
+      if (r[4] === 'PAGADA') { d.pagadoJ1 = mitad; d.pagadoJ2 = mitad; d.estadoPago = 'APROBADO'; d.estadoIns = 'CONFIRMADA'; pagado = valor; }
+      else if (r[4] === 'ABONO') { d.pagadoJ1 = mitad; d.estadoPago = 'PARCIAL'; pagado = mitad; nota = 'Abono de ' + r[1]; }
+      else if (r[4] === 'CORTESIA_TOTAL') { d.exentoJ1 = true; d.exentoJ2 = true; d.motivoExencion = 'Patrocinador'; d.estadoPago = 'APROBADO'; d.estadoIns = 'CONFIRMADA'; }
+      else if (r[4] === 'CORTESIA_MITAD') { d.exentoJ2 = true; d.motivoExencion = 'Invitado'; d.pagadoJ1 = mitad; d.estadoPago = 'APROBADO'; d.estadoIns = 'CONFIRMADA'; pagado = mitad; }
+      else if (r[4] === 'CANCELADA') { d.estadoIns = 'CANCELADA'; }
+      b.set(iRef, d);
+      if (pagado > 0) movs.push({ tipo: 'INGRESO', concepto: 'Inscripción — ' + r[1] + ' / ' + r[2], categoria: 'Inscripciones', valor: pagado, cuentaId: d.cuentaId,
+        sourceType: 'INSCRIPCION', sourceId: iRef.id, attribJ1: d.pagadoJ1, attribJ2: d.pagadoJ2, observacion: nota, estado: 'ACTIVO', fecha: fecha + 3600000, creadoEn: fecha + 3600000, registradoPor: 'demo' });
+      if (r[4] !== 'CANCELADA') [r[1], r[2]].forEach(function(n){
+        jugs[n] = jugs[n] || { nombre: n, telefono: '', categorias: [cat.nombre], historial: [], creadoEn: ahora, demo: true, demoTorneo: tRef.id };
+        jugs[n].historial.push({ torneo: datos.nombre, categoria: cat.nombre, fecha: fecha, insId: iRef.id });
+      });
+    });
+    var extra = [
+      ['INGRESO','Patrocinio — Tienda Deportiva Demo','Patrocinios',1000000,0,16], ['INGRESO','Venta de bebidas','Ventas',180000,1,3],
+      ['GASTO','Alquiler de canchas (anticipo)','Canchas',600000,0,14], ['GASTO','Pelotas Penn x12','Pelotas',180000,1,10],
+      ['GASTO','Trofeos y medallas','Trofeos',350000,2,8], ['GASTO','Camisetas del torneo','Camisetas',500000,0,6], ['GASTO','Publicidad en redes','Marketing',120000,2,12]
+    ];
+    extra.forEach(function(e){ var f = ahora - e[5] * dia; movs.push({ tipo: e[0], concepto: e[1], categoria: e[2], valor: e[3], cuentaId: ctas[e[4]].id, estado: 'ACTIVO', fecha: f, creadoEn: f, registradoPor: 'demo' }); });
+    movs.forEach(function(m){ b.set(tRef.collection('movimientos').doc(), m); });
+    Object.keys(jugs).forEach(function(n){ b.set(userRef.collection('jugadores').doc(), jugs[n]); });
+    var rec = ymd(new Date(ahora + 7*dia));
+    b.set(tRef.collection('notas').doc(), { titulo: 'Antes del torneo', contenido: 'Cosas por resolver esta semana.', recordatorio: rec, creadoEn: ahora,
+      items: [{ texto: 'Confirmar canchas con el club', hecho: true }, { texto: 'Comprar pelotas y trofeos', hecho: true }, { texto: 'Enviar el cuadro a los jugadores', hecho: false }, { texto: 'Cobrar los saldos pendientes', hecho: false }] });
+    b.set(tRef.collection('notas').doc(), { titulo: 'Premios', contenido: 'Campeón y subcampeón de cada categoría: trofeo y bono de la tienda patrocinadora.', recordatorio: '', items: [], creadoEn: ahora - dia });
+    return b.commit().then(function(){ return { id: tRef.id, datos: datos }; });
+  }
+  byId('btnCargarDemo').addEventListener('click', function(){
+    var btn = byId('btnCargarDemo'); btn.disabled = true; btn.textContent = 'Cargando…';
+    cargarTorneoDemo().then(function(r){ enterTorneo(r.id, r.datos); })
+      .catch(function(e){ alert('No se pudo cargar el ejemplo: ' + (e && e.message || e)); })
+      .then(function(){ btn.disabled = false; btn.textContent = 'Cargar torneo de ejemplo'; });
+  });
 
   // El selector de Deporte decide si se muestra "Modalidad" (solo aplica a
   // Tenis: Pádel siempre es por parejas) y ajusta el texto de "Cupos
@@ -4427,6 +4527,13 @@
     });
     SUBCOLECCIONES_TORNEO.forEach(function(nombre){
       cadena = cadena.then(function(){ return eliminarColeccionCompleta(ref.collection(nombre)); });
+    });
+    // jugadores de ejemplo que creó el torneo demo
+    cadena = cadena.then(function(){
+      return userRef.collection('jugadores').where('demoTorneo', '==', id).get().then(function(snap){
+        if (snap.empty) return;
+        var b = fsdb.batch(); snap.forEach(function(d){ b.delete(d.ref); }); return b.commit();
+      });
     });
     return cadena.then(function(){ return ref.delete(); });
   }
