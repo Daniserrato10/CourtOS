@@ -294,6 +294,21 @@
   @keyframes splashBarrido { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
   #topBar { position: fixed; left: 0; top: 0; height: 3px; width: 0; z-index: 3500; background: var(--accent); border-radius: 0 2px 2px 0; opacity: 0; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { #topBar { transition: none !important; } }
+  #dlgModal { display: none; position: fixed; inset: 0; z-index: 4000; background: rgba(24,24,15,0.55); align-items: center; justify-content: center; padding: 24px; }
+  #dlgModal.show { display: flex; animation: introFundido 160ms ease-out both; }
+  #dlgCard { width: 100%; max-width: 380px; background: #fff; border-radius: 18px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.28); animation: dlgIn 220ms cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes dlgIn { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+  #dlgIcono { width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; background: var(--blue-bg); color: var(--blue-tx); }
+  #dlgIcono.peligro { background: var(--red-bg); color: var(--red-tx); }
+  #dlgTitulo { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; color: var(--ink); }
+  #dlgTexto { margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--gray-700, #555); white-space: pre-line; }
+  #dlgInputWrap { display: none; margin-top: 14px; text-align: left; }
+  #dlgInputWrap label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--gray-700, #555); }
+  #dlgBtns { display: flex; gap: 10px; margin-top: 20px; }
+  #dlgBtns .btn { flex: 1; padding: 11px 14px; font-size: 14px; }
+  #dlgOk.peligro { background: var(--red-tx); border-color: var(--red-tx); color: #fff; }
+  #dlgOk:disabled { opacity: .45; cursor: not-allowed; }
+  @media (prefers-reduced-motion: reduce) { #dlgCard, #dlgModal.show { animation: none !important; } }
   @keyframes introFundido { from { opacity: 0; } to { opacity: 1; } }
   @keyframes introEntra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes pantallaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -525,6 +540,16 @@
         <button class="btn btn-primary" id="btnRepGuardar" type="button">Cambiar jugador</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="dlgModal" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitulo">
+  <div id="dlgCard">
+    <div id="dlgIcono"></div>
+    <div id="dlgTitulo"></div>
+    <div id="dlgTexto"></div>
+    <div id="dlgInputWrap"><label for="dlgInput" id="dlgInputLbl"></label><input id="dlgInput" autocomplete="off"></div>
+    <div id="dlgBtns"><button class="btn" id="dlgCancel" type="button">Cancelar</button><button class="btn btn-primary" id="dlgOk" type="button">Aceptar</button></div>
   </div>
 </div>
 
@@ -2030,7 +2055,7 @@
     var en = inscripciones.find(function(x){
       return x.id !== i.id && x.estadoIns !== 'CANCELADA' && x.categoriaId === i.categoriaId && (impNorm(x.j1Nombre) === impNorm(nuevo) || impNorm(x.j2Nombre) === impNorm(nuevo));
     });
-    if (en && !confirm(nuevo + ' ya está inscrito en ' + i.categoriaNombre + ' con ' + (impNorm(en.j1Nombre) === impNorm(nuevo) ? (en.j2Nombre || 'nadie (pareja por confirmar)') : en.j1Nombre) + '.\n\n¿Cambiarlo de todas formas?')) return;
+    var seguir = function(){
     var btn = byId('btnRepGuardar'); btn.disabled = true;
     var upd = {};
     upd[slot === '1' ? 'j1Nombre' : 'j2Nombre'] = nuevo;
@@ -2043,6 +2068,9 @@
       cerrarCambioJugador();
       flashBarra(viejo ? 'Jugador cambiado' : 'Jugador agregado');
     }).catch(function(e){ alert('No se pudo cambiar: ' + (e && e.message || e)); }).then(function(){ btn.disabled = false; });
+    };
+    if (!en) { seguir(); return; }
+    confirmar({ titulo: 'Jugador ya inscrito', texto: nuevo + ' ya está inscrito en ' + i.categoriaNombre + ' con ' + (impNorm(en.j1Nombre) === impNorm(nuevo) ? (en.j2Nombre || 'nadie (pareja por confirmar)') : en.j1Nombre) + '.\n\n¿Cambiarlo de todas formas?', ok: 'Cambiar', peligro: true }, seguir);
   });
 
   function flashBarra(txt){
@@ -2055,9 +2083,10 @@
   });
   byId('btnGuardarCambios').addEventListener('click', guardarPendientes);
   byId('btnDescartarCambios').addEventListener('click', function(){
-    if (!confirm('¿Descartar los cambios sin guardar?')) return;
-    limpiarPendientes();
-    renderAll();
+    confirmar({ titulo: '¿Descartar los cambios?', texto: 'Lo que no has guardado se va a perder.', ok: 'Descartar', peligro: true }, function(){
+      limpiarPendientes();
+      renderAll();
+    });
   });
 
   // ---------- tarifas de inscripción (Regular, Preventa, ...) ----------
@@ -2746,11 +2775,12 @@
       });
       box.querySelectorAll('[data-del-adj]').forEach(function(b){
         b.addEventListener('click', function(){
-          if (!confirm('¿Quitar este comprobante? No se puede deshacer.')) return;
+          confirmar({ titulo: '¿Quitar este comprobante?', texto: 'No se puede deshacer.', ok: 'Quitar', peligro: true }, function(){
           movRef.collection('adjuntos').doc(b.dataset.delAdj).delete().then(function(){
             return movRef.update({ adjuntosN: firebase.firestore.FieldValue.increment(-1) });
           }).then(function(){ setTimeout(function(){ if (movDetalleId === movId) cargarAdjuntosDetalle(movId); }, 300); })
             .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+          });
         });
       });
     }).catch(function(e){
@@ -3392,10 +3422,11 @@
     box.querySelectorAll('[data-del-tarifa]').forEach(function(b){
       b.addEventListener('click', function(){
         var id = b.dataset.delTarifa, t = tarifaById(id);
-        if (!confirm('¿Eliminar la tarifa "'+t.nombre+'"? Las inscripciones ya registradas con ella conservan su valor y su nombre de tarifa.')) return;
+        confirmar({ titulo: '¿Eliminar la tarifa "'+t.nombre+'"?', texto: 'Las inscripciones ya registradas con ella conservan su valor y su nombre de tarifa.', ok: 'Eliminar', peligro: true }, function(){
         var patch = { tarifas: (torneoData.tarifas || []).filter(function(x){ return x.id !== id; }) };
         if (tarifaActivaId() === id) patch.tarifaActiva = TARIFA_BASE_ID;
         guardarTarifasTorneo(patch);
+        });
       });
     });
   }
@@ -3709,8 +3740,9 @@
     buscarUsosJugador(ju.nombre).then(function(usos){
       var nIns = 0, nTor = 0;
       usos.forEach(function(u){ nIns += u.ins.length; if (u.ins.length) nTor++; });
-      if (nIns && !confirm('Vas a cambiar "' + ju.nombre + '" por "' + nombre + '".\n\nTambién se corregirá en ' + nIns + ' inscripci' + (nIns === 1 ? 'ón' : 'ones') + ' (' + nTor + ' torneo' + (nTor === 1 ? '' : 's') + ') y en el texto de sus pagos.\n\nLos montos y los pagos no cambian. ¿Continuar?')) return;
-      return aplicarRenombre(usos, viejoNorm, nombre).then(guardar);
+      var seguir = function(){ return aplicarRenombre(usos, viejoNorm, nombre).then(guardar); };
+      if (!nIns) return seguir();
+      return confirmarP({ titulo: 'Cambiar nombre del jugador', texto: 'Vas a cambiar "' + ju.nombre + '" por "' + nombre + '".\n\nTambién se corregirá en ' + nIns + ' inscripci' + (nIns === 1 ? 'ón' : 'ones') + ' (' + nTor + ' torneo' + (nTor === 1 ? '' : 's') + ') y en el texto de sus pagos.\n\nLos montos y los pagos no cambian.', ok: 'Continuar' }).then(function(ok){ if (ok) return seguir(); });
     }).catch(function(e){ alert('No se pudo guardar: ' + (e && e.message || e)); }).then(fin);
   }
 
@@ -4325,7 +4357,7 @@
   });
 
   byId('btnLogout').addEventListener('click', function(){
-    if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cierras sesión se perderán.\n\n¿Cerrar sesión de todas formas?')) return;
+    if (Object.keys(pendientes).length) { confirmar({ titulo: 'Cambios sin guardar', texto: 'Si cierras sesión se perderán.', ok: 'Cerrar sesión', peligro: true }, function(){ if (auth) auth.signOut(); }); return; }
     if (auth) auth.signOut();
   });
   byId('btnLogoutFromTorneos').addEventListener('click', function(){ if (auth) auth.signOut(); });
@@ -4370,9 +4402,10 @@
         btn.addEventListener('click', function(e){
           e.stopPropagation();
           var t = torneos.find(function(x){ return x.id === btn.dataset.finalizarTorneo; });
-          if (!confirm('¿Marcar "'+(t?t.nombre:'este torneo')+'" como finalizado? Podrás seguir viendo toda su información después.')) return;
+          confirmar({ titulo: '¿Finalizar el torneo?', texto: '"'+(t?t.nombre:'este torneo')+'" se marca como finalizado. Podrás seguir viendo toda su información después.', ok: 'Finalizar' }, function(){
           userRef.collection('torneos').doc(btn.dataset.finalizarTorneo).update({ estado: 'FINALIZADA' })
             .catch(function(err){ alert('No se pudo actualizar: ' + err.message); });
+          });
         });
       });
       list.querySelectorAll('[data-eliminar-torneo]').forEach(function(btn){
@@ -4382,19 +4415,19 @@
           var t = torneos.find(function(x){ return x.id === id; });
           var nombre = t ? (t.nombre || 'Sin nombre') : 'este torneo';
           if (t && t.demo) {
-            if (!confirm('¿Eliminar el torneo de ejemplo? Se borran sus datos inventados. Tus torneos reales no se tocan.')) return;
-            btn.disabled = true; btn.textContent = '…';
-            eliminarTorneoCompleto(id).catch(function(err){ alert('No se pudo eliminar: ' + err.message); });
+            confirmar({ titulo: '¿Eliminar el torneo de ejemplo?', texto: 'Se borran sus datos inventados. Tus torneos reales no se tocan.', ok: 'Eliminar', peligro: true }, function(){
+              btn.disabled = true; btn.textContent = '…';
+              eliminarTorneoCompleto(id).catch(function(err){ alert('No se pudo eliminar: ' + err.message); });
+            });
             return;
           }
-          var escrito = prompt('Esto borra TODO lo del torneo "'+nombre+'" de forma permanente: inscripciones, movimientos, presupuesto, cuentas, categorías y notas. No se puede deshacer.\n\nEscribe el nombre exacto del torneo para confirmar:');
-          if (escrito === null) return;
-          if (escrito.trim() !== nombre) { alert('El nombre no coincide. No se eliminó nada.'); return; }
-          btn.disabled = true; btn.textContent = '…';
-          eliminarTorneoCompleto(id).then(function(){
-            alert('Torneo "'+nombre+'" eliminado.');
-          }).catch(function(err){
-            alert('No se pudo eliminar por completo: ' + err.message);
+          confirmar({ titulo: '¿Eliminar "'+nombre+'"?', texto: 'Esto borra TODO lo del torneo de forma permanente: inscripciones, movimientos, presupuesto, cuentas, categorías y notas. No se puede deshacer.', ok: 'Eliminar para siempre', peligro: true, input: { etiqueta: 'Para confirmar, escribe el nombre exacto del torneo', esperado: nombre, placeholder: nombre } }, function(){
+            btn.disabled = true; btn.textContent = '…';
+            eliminarTorneoCompleto(id).then(function(){
+              flashBarra('Torneo eliminado');
+            }).catch(function(err){
+              alert('No se pudo eliminar por completo: ' + err.message);
+            });
           });
         });
       });
@@ -4543,9 +4576,59 @@
     if (falta > 0) { if (!splashEspera) splashEspera = setTimeout(function(){ splashEspera = null; ocultarSplash(); }, falta); return; }
     clearTimeout(splashTimer); clearTimeout(splashEspera); splashEspera = null;
     sp.classList.add('out');
-    reanimarPantalla(140);
     setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 450);
   }
+  // ---------- Avisos y confirmaciones bonitas (reemplazan alert / confirm) ----------
+  var dlgCola = [], dlgActual = null;
+  var DLG_PELIGRO = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
+  var DLG_INFO = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.2"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg>';
+  // o: { titulo, texto, ok, cancelar, peligro, soloOk, input: { etiqueta, esperado, placeholder } }
+  function dlg(o, cb){ dlgCola.push({ o: o, cb: cb }); if (!dlgActual) dlgSiguiente(); }
+  function dlgSiguiente(){
+    if (dlgActual) return;
+    var it = dlgCola.shift(); if (!it) return;
+    dlgActual = it; var o = it.o;
+    byId('dlgIcono').className = o.peligro ? 'peligro' : '';
+    byId('dlgIcono').innerHTML = o.peligro ? DLG_PELIGRO : DLG_INFO;
+    byId('dlgTitulo').textContent = o.titulo || 'Aviso';
+    byId('dlgTexto').textContent = o.texto || ''; byId('dlgTexto').style.display = o.texto ? '' : 'none';
+    var ok = byId('dlgOk'), can = byId('dlgCancel'), inp = byId('dlgInput');
+    ok.textContent = o.ok || 'Aceptar'; ok.className = 'btn btn-primary' + (o.peligro ? ' peligro' : ''); ok.disabled = false;
+    can.textContent = o.cancelar || 'Cancelar'; can.style.display = o.soloOk ? 'none' : '';
+    byId('dlgInputWrap').style.display = o.input ? 'block' : 'none';
+    inp.value = '';
+    if (o.input) { byId('dlgInputLbl').textContent = o.input.etiqueta || ''; inp.placeholder = o.input.placeholder || ''; ok.disabled = true; }
+    byId('dlgModal').classList.add('show');
+    setTimeout(function(){ (o.input ? inp : (o.peligro && !o.soloOk ? can : ok)).focus(); }, 30);
+  }
+  function dlgCerrar(acepto){
+    var it = dlgActual; if (!it) return;
+    var valor = byId('dlgInput').value;
+    byId('dlgModal').classList.remove('show');
+    dlgActual = null;
+    if (acepto && it.cb) it.cb(valor); else if (!acepto && it.no) it.no();
+    setTimeout(dlgSiguiente, 180);
+  }
+  byId('dlgOk').addEventListener('click', function(){ dlgCerrar(true); });
+  byId('dlgCancel').addEventListener('click', function(){ dlgCerrar(false); });
+  byId('dlgModal').addEventListener('click', function(e){ if (e.target === this && dlgActual && !dlgActual.o.soloOk) dlgCerrar(false); });
+  byId('dlgInput').addEventListener('input', function(){
+    var o = dlgActual && dlgActual.o; if (!o || !o.input) return;
+    byId('dlgOk').disabled = this.value.trim() !== o.input.esperado;
+  });
+  document.addEventListener('keydown', function(e){
+    if (!dlgActual) return;
+    if (e.key === 'Escape') { e.preventDefault(); dlgCerrar(false); }
+    else if (e.key === 'Enter' && dlgActual.o.input && !byId('dlgOk').disabled) { e.preventDefault(); dlgCerrar(true); }
+  });
+  function confirmar(o, fn){ dlg(o, fn); }
+  function confirmarP(o){ return new Promise(function(res){ dlgCola.push({ o: o, cb: function(){ res(true); }, no: function(){ res(false); } }); if (!dlgActual) dlgSiguiente(); }); }
+  window.alert = function(m){
+    m = String(m == null ? '' : m);
+    var mal = /^(No se pudo|No se puede|Error|Falló)/i.test(m);
+    dlg({ titulo: mal ? 'Algo salió mal' : 'Aviso', texto: m, soloOk: true, peligro: mal });
+  };
+
   // Barra de progreso arriba: para cambios de pantalla normales. La pantalla actual se queda hasta que la nueva esté lista.
   var barraActiva = false, barraSwap = null, barraDesde = 0, barraTimer = null, barraSeg = null;
   function barraIniciar(swap){
@@ -4577,7 +4660,8 @@
     var sp = byId('splash'); if (!sp) return;
     if (sp.style.display !== 'none' && !sp.classList.contains('out')) { clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000); return; }
     splashDesde = Date.now(); clearTimeout(splashEspera); splashEspera = null;
-    sp.style.display = 'flex'; void sp.offsetWidth; sp.classList.remove('out');
+    // Aparece de golpe (sin fundido) para que no se alcance a ver la pantalla de atrás
+    sp.style.transition = 'none'; sp.style.display = 'flex'; sp.classList.remove('out'); void sp.offsetWidth; sp.style.transition = '';
     clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 5000);
   }
   function introRender(){
@@ -4903,12 +4987,14 @@
     byId('sh_lista').querySelectorAll('[data-sh-quitar]').forEach(function(b){
       b.addEventListener('click', function(){
         var uid = b.dataset.shQuitar, m = (torneoData.miembros || {})[uid];
-        if (!m || !confirm('¿Quitarle el acceso a ' + (m.email || 'esta persona') + '? Dejará de ver el torneo de inmediato.')) return;
+        if (!m) return;
+        confirmar({ titulo: '¿Quitar el acceso?', texto: (m.email || 'Esta persona') + ' dejará de ver el torneo de inmediato.', ok: 'Quitar acceso', peligro: true }, function(){
         var upd = {}; upd['miembros.' + uid] = firebase.firestore.FieldValue.delete();
         torneoRef.update(upd).then(function(){
           if (m.email) return fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + String(m.email).toLowerCase()).delete().catch(function(){});
         }).then(function(){ flashBarra('Acceso quitado'); })
           .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+        });
       });
     });
     function invPorId(id){ return invitacionesTorneo.find(function(x){ return x.id === id; }); }
@@ -5011,9 +5097,10 @@
     });
     box.querySelectorAll('[data-inv-rechazar]').forEach(function(b){
       b.addEventListener('click', function(){
-        if (!confirm('¿Rechazar esta invitación?')) return;
+        confirmar({ titulo: '¿Rechazar la invitación?', ok: 'Rechazar', peligro: true }, function(){
         fsdb.collection('invitaciones').doc(b.dataset.invRechazar).update({ estado: 'RECHAZADA' })
           .catch(function(e){ alert('No se pudo rechazar: ' + e.message); });
+        });
       });
     });
   }
@@ -5058,11 +5145,12 @@
     box.querySelectorAll('[data-comp-salir]').forEach(function(b){
       b.addEventListener('click', function(){
         var t = buscar(b.dataset.compSalir); if (!t) return;
-        if (!confirm('¿Salir de "' + (t.nombre || 'este torneo') + '"? Dejarás de verlo; el dueño puede volver a invitarte.')) return;
+        confirmar({ titulo: '¿Salir de "' + (t.nombre || 'este torneo') + '"?', texto: 'Dejarás de verlo; el dueño puede volver a invitarte.', ok: 'Salir', peligro: true }, function(){
         var upd = {}; upd['miembros.' + currentUid] = firebase.firestore.FieldValue.delete();
         fsdb.collection('users').doc(t.ownerUid).collection('torneos').doc(t.id).update(upd).catch(function(){})
           .then(function(){ return userRef.collection('compartidos').doc(t.ownerUid + '_' + t.id).delete(); })
           .catch(function(e){ alert('No se pudo salir: ' + e.message); });
+        });
       });
     });
   }
@@ -5165,11 +5253,14 @@
   }
 
   byId('btnCambiarTorneo').addEventListener('click', function(){
-    if (Object.keys(pendientes).length && !confirm('Tienes cambios sin guardar. Si cambias de torneo se perderán.\n\n¿Cambiar de torneo de todas formas?')) return;
+    var salir = function(){
     teardownSubscriptions();
     torneoRef = null; torneoId = null; torneoData = {}; torneoOwnerUid = null; torneoOwnerEmail = ''; isAdminMode = false; permSig = null;
     barraSwap = null; barraTerminar(); ocultarSplash();
     showTorneoScreen();
+    };
+    if (Object.keys(pendientes).length) confirmar({ titulo: 'Cambios sin guardar', texto: 'Si cambias de torneo se perderán.', ok: 'Cambiar de torneo', peligro: true }, salir);
+    else salir();
   });
 
   var cargaPend = 0;
@@ -5367,10 +5458,11 @@
   });
   byId('btnAdmQuitar').addEventListener('click', function(){
     var u = admEditando; if (!u) return;
-    if (!confirm('¿Quitar el PRO a ' + u.email + '?')) return;
+    confirmar({ titulo: '¿Quitar el PRO?', texto: u.email, ok: 'Quitar PRO', peligro: true }, function(){
     fsdb.collection('users').doc(u.id).update({ plan: 'FREE', planHasta: 0 }).then(function(){
       u.plan = 'FREE'; u.planHasta = 0; cerrarAdmModal(); renderAdminUsuarios(); flashBarra('PRO quitado');
     }).catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+    });
   });
 
   // ---- Pagos
