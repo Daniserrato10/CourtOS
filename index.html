@@ -284,6 +284,15 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  #splash { position: fixed; inset: 0; z-index: 3000; background: var(--bg, #fbfaf6); display: flex; align-items: center; justify-content: center; transition: opacity 240ms ease; }
+  #splash.out { opacity: 0; pointer-events: none; }
+  #splash .wordmark { font-size: 26px; animation: splashPulso 1.4s ease-in-out infinite; }
+  @keyframes splashPulso { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+  @keyframes pantallaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .view.active, #torneoScreen, #admContent { animation: pantallaIn 240ms var(--ease-out, ease-out) both; }
+  #introScreen .intro-in { animation: pantallaIn 300ms var(--ease-out, ease-out) both; }
+  @media (prefers-reduced-motion: reduce) { .view.active, #torneoScreen, #admContent, #introScreen .intro-in, #splash .wordmark { animation: none !important; } #splash { transition: none; } }
+  @media print { .view.active, #torneoScreen, #admContent { animation: none !important; } }
   #ayudaModal { display: none; }
   #ayudaModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #ayudaModal details { border-top: 1px solid var(--border); padding: 10px 0; }
@@ -403,6 +412,8 @@
 <!-- ============================================================
      PANTALLA DE AUTENTICACIÓN
      ============================================================ -->
+<div id="splash" aria-hidden="true"><span class="wordmark">Court<span class="os">OS</span></span></div>
+
 <div id="authScreen">
 
   <div class="auth-showcase">
@@ -1537,6 +1548,7 @@
   if (NOT_CONFIGURED) {
     document.getElementById('setupBanner').style.display = 'block';
     document.getElementById('authCard').style.display = 'none';
+    setTimeout(function(){ var sp = document.getElementById('splash'); if (sp) sp.style.display = 'none'; }, 0);
   } else {
     firebase.initializeApp(firebaseConfig);
   }
@@ -4495,8 +4507,22 @@
     if (marcar && !introRepetir) introMarcarVista();
     introRepetir = false;
   }
+  // Pantalla de carga: tapa la app hasta saber quién eres y qué pantalla toca, para que no se vea parpadear otra antes
+  var splashTimer = setTimeout(function(){ ocultarSplash(); }, 6000);
+  function ocultarSplash(){
+    clearTimeout(splashTimer);
+    var sp = byId('splash'); if (!sp || sp.classList.contains('out')) return;
+    sp.classList.add('out');
+    setTimeout(function(){ if (sp.classList.contains('out')) sp.style.display = 'none'; }, 280);
+  }
+  function mostrarSplash(){
+    var sp = byId('splash'); if (!sp) return;
+    sp.style.display = 'flex'; void sp.offsetWidth; sp.classList.remove('out');
+    clearTimeout(splashTimer); splashTimer = setTimeout(function(){ ocultarSplash(); }, 6000);
+  }
   function introRender(){
     var d = INTRO[introPaso], ultimo = introPaso === INTRO.length - 1;
+    ['introIcono','introTitulo','introTexto'].forEach(function(id){ var e = byId(id); e.classList.remove('intro-in'); void e.offsetWidth; e.classList.add('intro-in'); });
     byId('introIcono').innerHTML = ICONOS[d.icono];
     byId('introTitulo').textContent = d.titulo;
     byId('introTexto').innerHTML = d.texto;
@@ -4520,6 +4546,10 @@
   }
   byId('btnIntroSaltar').addEventListener('click', function(){ introCerrar(true); });
   function evaluarIntro(){
+    evaluarIntroInterno();
+    if (userDocListo && torneosListos) ocultarSplash();
+  }
+  function evaluarIntroInterno(){
     if (!userDocListo || !torneosListos || introVista || torneosTotal !== 0 || !currentUid) return;
     if (byId('torneoScreen').style.display === 'none' || byId('introScreen').style.display === 'flex') return;
     try { if (localStorage.getItem(introClave()) === '1') { introVista = true; return; } } catch(e){}
@@ -5446,6 +5476,7 @@
   if (auth) {
     auth.onAuthStateChanged(function(user){
       if (user) {
+        if (!userDocListo || !torneosListos) mostrarSplash();
         userRef = fsdb.collection('users').doc(user.uid);
         currentUid = user.uid;
         byId('authScreen').style.display = 'none';
@@ -5465,6 +5496,7 @@
         byId('torneoScreen').style.display = 'none';
         byId('adminScreen').style.display = 'none';
         byId('authScreen').style.display = 'flex';
+        ocultarSplash();
       }
     });
   }
