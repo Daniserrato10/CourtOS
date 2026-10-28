@@ -303,6 +303,8 @@
   .cfg-fila { display: flex; align-items: center; gap: 14px; }
   .cfg-fila > div:nth-child(2) { flex: 1; min-width: 0; }
   @media (max-width: 520px) { .cfg-fila { flex-wrap: wrap; } }
+  #insBuscar { width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 9px 34px 9px 34px; font-family: inherit; font-size: 13px; outline: none; -webkit-appearance: none; appearance: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  #insBuscar:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
   #splash { position: fixed; inset: 0; z-index: 3000; background: var(--bg, #fbfaf6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 420ms ease; }
   #splash.out { opacity: 0; pointer-events: none; }
   #splash .wordmark { font-size: 30px; animation: splashEntra 520ms cubic-bezier(.2,.7,.2,1) both, splashPulso 2.4s ease-in-out 520ms infinite; }
@@ -1146,7 +1148,7 @@
         <button class="tab-btn" data-filter="PENDIENTE">Pendientes de pago</button>
         <button class="tab-btn" data-filter="CANCELADA">Canceladas</button>
       </div>
-      <div style="position:relative;flex:1;min-width:180px;max-width:280px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="insBuscar" type="search" placeholder="Buscar jugador o pareja" aria-label="Buscar por nombre" autocomplete="off" style="width:100%;padding-left:34px;"></div>
+      <div style="position:relative;flex:1;min-width:180px;max-width:280px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="insBuscar" type="text" placeholder="Buscar jugador o pareja" aria-label="Buscar por nombre" autocomplete="off"><button type="button" id="insBuscarX" aria-label="Borrar búsqueda" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;border-radius:999px;background:var(--gray-200);color:var(--gray-700);font-size:12px;line-height:1;cursor:pointer;">✕</button></div>
       <select id="insFiltroCat" aria-label="Filtrar por categoría" style="appearance:none;-webkit-appearance:none;background:#fff url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27 fill=%27none%27 stroke=%27%23666%27 stroke-width=%271.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m1 1 5 5 5-5%27/%3E%3C/svg%3E&quot;) no-repeat right 16px center;border:1px solid var(--border);border-radius:8px;padding:9px 38px 9px 13px;font-family:inherit;font-size:13px;"><option value="">Todas las categorías</option></select>
       </div>
 
@@ -2061,7 +2063,8 @@
 
 
   // ---------- Filtro por categoría y cambio de jugador en una inscripción ----------
-  byId('insBuscar').addEventListener('input', function(){ insBusqueda = impNorm(this.value); renderInscripciones(); });
+  byId('insBuscar').addEventListener('input', function(){ insBusqueda = impNorm(this.value); byId('insBuscarX').style.display = this.value ? 'block' : 'none'; renderInscripciones(); });
+  byId('insBuscarX').addEventListener('click', function(){ var b = byId('insBuscar'); b.value = ''; b.focus(); insBusqueda = ''; this.style.display = 'none'; renderInscripciones(); });
   byId('insFiltroCat').addEventListener('change', function(){ insCatFilter = byId('insFiltroCat').value; renderInscripciones(); });
   var repInsId = null;
   function abrirCambioJugador(id){
