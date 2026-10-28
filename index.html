@@ -1110,7 +1110,7 @@
         <div id="pg_resumen" class="muted" style="font-size:13px;"></div>
         <div class="formgrid">
           <div class="field"><label>¿Quién paga?</label><select id="pg_quien"></select></div>
-          <div class="field"><label>Monto a pagar ahora</label><input id="pg_monto" type="number"></div>
+          <div class="field"><label>Monto a pagar ahora</label><input id="pg_monto" type="number"><div id="pg_hint" class="muted" style="font-size:11.5px;display:none;margin-top:2px;"></div></div>
           <div class="field"><label>Cuenta de ingreso</label><select id="pg_cuenta"></select></div>
           <div class="field"><label>Método de pago</label>
             <select id="pg_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
@@ -4094,8 +4094,22 @@
     var quien = byId('pg_quien').value;
     var monto = quien === 'J1' ? saldoJ1 : quien === 'J2' ? saldoJ2 : quien === 'AMBOS' ? saldoJ1+saldoJ2 : 0;
     byId('pg_monto').value = Math.round(monto);
-    byId('pg_monto').readOnly = (quien === 'AMBOS');
+    // En pago conjunto el monto se puede cambiar (ej. abonaron 200.000 de 340.000): se reparte en proporción a lo que debe cada uno
+    byId('pg_monto').readOnly = false;
+    var hint = byId('pg_hint');
+    if (quien === 'AMBOS') { hint.style.display = 'block'; hint.textContent = 'Puedes cambiarlo si abonaron menos. Se reparte entre los dos en proporción a lo que debe cada uno.'; }
+    else hint.style.display = 'none';
   }
+  byId('pg_monto').addEventListener('input', function(){
+    if (byId('pg_quien').value !== 'AMBOS' || !pagoInsActual) return;
+    var v = parseFloat(this.value) || 0, i = pagoInsActual;
+    var sJ1 = Math.max(0, mitadJ(i, 1) - (i.pagadoJ1||0)), sJ2 = i.j2Nombre ? Math.max(0, mitadJ(i, 2) - (i.pagadoJ2||0)) : 0, tot = sJ1 + sJ2;
+    var hint = byId('pg_hint');
+    if (v > 0 && v <= tot + 1) {
+      var d1 = Math.min(sJ1, Math.round(v * sJ1 / tot)), d2 = Math.round(v) - d1;
+      hint.textContent = 'Se reparte: ' + i.j1Nombre + ' ' + money(d1) + ' · ' + i.j2Nombre + ' ' + money(d2) + '.';
+    } else if (v > tot + 1) hint.textContent = 'Supera lo que deben entre los dos (' + money(tot) + ').';
+  });
 
   byId('btnGuardarPago').addEventListener('click', function(){
     if (!torneoRef || !pagoInsActual) return;
@@ -4118,8 +4132,11 @@
       if (monto > saldoJ2 + 1) { alert('El monto supera lo que debe '+i.j2Nombre+' ('+money(saldoJ2)+').'); return; }
       deltaJ2 = monto; quienTexto = i.j2Nombre;
     } else if (quien === 'AMBOS') {
-      deltaJ1 = saldoJ1; deltaJ2 = saldoJ2; quienTexto = 'ambos';
-      monto = saldoJ1 + saldoJ2;
+      var totalDebe = saldoJ1 + saldoJ2;
+      if (monto > totalDebe + 1) { alert('El monto supera lo que deben entre los dos (' + money(totalDebe) + ').'); return; }
+      if (monto >= totalDebe - 1) { deltaJ1 = saldoJ1; deltaJ2 = saldoJ2; monto = totalDebe; }
+      else { deltaJ1 = Math.min(saldoJ1, Math.round(monto * saldoJ1 / totalDebe)); deltaJ2 = Math.round(monto) - deltaJ1; monto = Math.round(monto); }
+      quienTexto = 'ambos';
     } else { return; }
 
     var nuevoPagadoJ1 = (i.pagadoJ1||0) + deltaJ1;
