@@ -1141,6 +1141,21 @@
         </div>
       </div>
 
+      <div class="formpanel" id="formValor">
+        <div class="panel-title">Cambiar valor de la inscripción</div>
+        <div id="vl_resumen" class="muted" style="font-size:13px;"></div>
+        <div class="formgrid">
+          <div class="field"><label id="vl_lbl1">Jugador 1</label><select id="vl_tar1"></select><input id="vl_val1" type="number" min="0" step="1000" style="margin-top:6px;"><div class="muted" id="vl_pag1" style="font-size:11.5px;"></div></div>
+          <div class="field" id="vl_box2"><label id="vl_lbl2">Jugador 2</label><select id="vl_tar2"></select><input id="vl_val2" type="number" min="0" step="1000" style="margin-top:6px;"><div class="muted" id="vl_pag2" style="font-size:11.5px;"></div></div>
+        </div>
+        <div class="muted" id="vl_total" style="font-size:13px;font-weight:600;"></div>
+        <input type="hidden" id="vl_inscripcionId">
+        <div class="form-actions">
+          <button class="btn" data-close-form="valor">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarValor">Guardar valor</button>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <div class="tabs" id="insTabs" style="margin-bottom:0;">
         <button class="tab-btn active" data-filter="TODAS">Todas</button>
@@ -1705,11 +1720,15 @@
   // individual (torneo.individual=true, guardado al crearla) no hay
   // segundo jugador, así que toda la "mitad" de Jugador 1 es el valor
   // completo — si no, quedaría cobrando solo la mitad de lo que debe.
-  function mitadDe(i){ return i.individual ? i.valor : i.valor / 2; }
+  // Si se le cambió el valor por jugador (valorJ1 / valorJ2, ej. uno pagó preventa y el otro regular) se usa ese; si no, mitad y mitad.
+  function mitadDe(i, n){
+    if (!i.individual && n && typeof i['valorJ' + n] === 'number') return i['valorJ' + n];
+    return i.individual ? i.valor : i.valor / 2;
+  }
   // Cortesía (inscripción regalada o exenta): el valor de la inscripción no cambia,
   // pero la parte exenta de cada jugador no se cobra ni cuenta como saldo pendiente.
   function exentoDe(i, n){ return n === 1 ? !!i.exentoJ1 : !!i.exentoJ2; }
-  function mitadJ(i, n){ return exentoDe(i, n) ? 0 : mitadDe(i); }
+  function mitadJ(i, n){ return exentoDe(i, n) ? 0 : mitadDe(i, n); }
   function valorCobrable(i){ return i.individual ? mitadJ(i, 1) : mitadJ(i, 1) + mitadJ(i, 2); }
   function valorCortesia(i){ return Math.max(0, (i.valor || 0) - valorCobrable(i)); }
   function textoCortesia(i){
@@ -2613,7 +2632,7 @@
       return '<tr>' +
         '<td style="font-weight:600;">'+nombreUnidad+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-jug="'+i.id+'" title="Cambiar un jugador de esta inscripción" style="font-size:14px;margin-left:4px;vertical-align:baseline;">✎</button>' : '')+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="num">'+money(valorCobrable(i))+
+        '<td class="num">'+money(valorCobrable(i))+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-valor="'+i.id+'" title="Cambiar el valor de esta inscripción" style="font-size:13px;margin-left:2px;">✎</button>' : '')+
           (valorCortesia(i) ? '<div style="font-size:11px;font-weight:600;color:var(--accent);" title="'+esc(i.motivoExencion||'')+'">'+esc(textoCortesia(i))+' · −'+money(valorCortesia(i))+'</div>' : '')+
           (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
         '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
@@ -2628,6 +2647,9 @@
 
     document.querySelectorAll('[data-cortesia]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormCortesia(btn.dataset.cortesia); });
+    });
+    document.querySelectorAll('[data-cambiar-valor]').forEach(function(btn){
+      btn.addEventListener('click', function(){ abrirFormValor(btn.dataset.cambiarValor); });
     });
     document.querySelectorAll('[data-cambiar-jug]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirCambioJugador(btn.dataset.cambiarJug); });
@@ -4058,6 +4080,85 @@
       .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
+  // ---------- cambiar el valor de una inscripción (por jugador) ----------
+  // Sirve cuando uno de los dos pagó preventa y el otro va a pagar regular: cada jugador
+  // tiene su propio valor. Lo ya pagado se conserva y los saldos se recalculan.
+  var valorInsActual = null;
+  function abrirFormValor(insId){
+    if (!isAdminMode) { alert('Para cambiar el valor activa el modo administrador.'); return; }
+    var i = inscripciones.find(function(x){ return x.id === insId; });
+    if (!i) return;
+    valorInsActual = i;
+    var cat = categoriaById(i.categoriaId);
+    byId('vl_inscripcionId').value = insId;
+    byId('vl_resumen').innerHTML = '<strong>' + (i.individual ? esc(i.j1Nombre) : esc(i.j1Nombre) + ' / ' + (i.j2Nombre ? esc(i.j2Nombre) : 'Jugador 2 por confirmar')) + '</strong> — ' + esc(i.categoriaNombre) + ' · Valor actual: ' + money(i.valor);
+    [1, 2].forEach(function(n){
+      var sel = byId('vl_tar' + n);
+      var opts = tarifasTorneo().map(function(t){
+        var mitad = i.individual ? precioCategoria(cat, t.id) : precioCategoria(cat, t.id) / 2;
+        return '<option value="' + esc(t.id) + '" data-valor="' + Math.round(mitad) + '">' + esc(t.nombre) + ' — ' + money(mitad) + '</option>';
+      }).join('') + '<option value="__otro">Otro valor</option>';
+      sel.innerHTML = opts;
+      var actual = mitadDe(i, n);
+      var coincide = tarifasTorneo().find(function(t){ var m = i.individual ? precioCategoria(cat, t.id) : precioCategoria(cat, t.id) / 2; return Math.abs(m - actual) < 1; });
+      var tid = i['tarifaJ' + n + 'Id'];
+      sel.value = (tid && tarifasTorneo().some(function(t){ return t.id === tid; }) && coincide && coincide.id === tid) ? tid : (coincide ? coincide.id : '__otro');
+      byId('vl_val' + n).value = Math.round(actual);
+      byId('vl_pag' + n).textContent = (i['pagadoJ' + n] || 0) > 0 ? 'Ya pagó ' + money(i['pagadoJ' + n]) + ' (no se toca)' : '';
+    });
+    byId('vl_lbl1').textContent = i.individual ? 'Jugador' : i.j1Nombre;
+    byId('vl_lbl2').textContent = i.j2Nombre || 'Jugador 2';
+    byId('vl_box2').style.display = i.individual ? 'none' : '';
+    actualizarTotalValor();
+    openForm('valor');
+  }
+  [1, 2].forEach(function(n){
+    byId('vl_tar' + n).addEventListener('change', function(){
+      var op = this.options[this.selectedIndex];
+      if (this.value !== '__otro') byId('vl_val' + n).value = op.dataset.valor;
+      actualizarTotalValor();
+    });
+    byId('vl_val' + n).addEventListener('input', function(){
+      var sel = byId('vl_tar' + n), v = parseFloat(this.value) || 0, hit = null;
+      for (var k = 0; k < sel.options.length; k++) if (sel.options[k].dataset.valor !== undefined && Number(sel.options[k].dataset.valor) === Math.round(v)) { hit = sel.options[k].value; break; }
+      sel.value = hit || '__otro';
+      actualizarTotalValor();
+    });
+  });
+  function actualizarTotalValor(){
+    var i = valorInsActual; if (!i) return;
+    var v1 = parseFloat(byId('vl_val1').value) || 0, v2 = i.individual ? 0 : (parseFloat(byId('vl_val2').value) || 0);
+    byId('vl_total').textContent = 'Valor total de la inscripción: ' + money(v1 + v2) + (Math.round(v1 + v2) !== Math.round(i.valor) ? '  (antes ' + money(i.valor) + ')' : '');
+  }
+  byId('btnGuardarValor').addEventListener('click', function(){
+    if (!torneoRef || !valorInsActual) return;
+    var id = byId('vl_inscripcionId').value;
+    var i = inscripciones.find(function(x){ return x.id === id; });
+    if (!i) { alert('Esta inscripción ya no existe.'); closeForm('valor'); return; }
+    var v1 = Math.round(parseFloat(byId('vl_val1').value)), v2 = i.individual ? 0 : Math.round(parseFloat(byId('vl_val2').value));
+    if (!(v1 >= 0) || (!i.individual && !(v2 >= 0))) { alert('Escribe un valor válido para cada jugador.'); return; }
+    if (v1 + v2 <= 0) { alert('El valor de la inscripción debe ser mayor a 0.'); return; }
+    if (!i.exentoJ1 && (i.pagadoJ1 || 0) > v1 + 1) { alert(i.j1Nombre + ' ya pagó ' + money(i.pagadoJ1) + ', más que el nuevo valor (' + money(v1) + '). Primero anula ese pago en Financiero o sube el valor.'); return; }
+    if (!i.individual && !i.exentoJ2 && (i.pagadoJ2 || 0) > v2 + 1) { alert((i.j2Nombre || 'El Jugador 2') + ' ya pagó ' + money(i.pagadoJ2) + ', más que el nuevo valor (' + money(v2) + '). Primero anula ese pago en Financiero o sube el valor.'); return; }
+    var nuevo = Object.assign({}, i, i.individual ? { valor: v1 } : { valor: v1 + v2, valorJ1: v1, valorJ2: v2 });
+    var completoJ1 = (i.pagadoJ1 || 0) >= mitadJ(nuevo, 1) - 1;
+    var completoJ2 = i.individual ? true : (!i.j2Nombre ? !!i.exentoJ2 : (i.pagadoJ2 || 0) >= mitadJ(nuevo, 2) - 1);
+    var estadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : (pagadoTotalIns(i) > 0 ? 'PARCIAL' : 'PENDIENTE');
+    var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
+    // nombre de la tarifa: si cada uno tiene una distinta se muestra "Preventa + Regular"
+    function nomTar(n){ var sel = byId('vl_tar' + n); return sel.value === '__otro' ? 'Valor propio' : tarifaById(sel.value).nombre; }
+    var t1 = byId('vl_tar1').value, t2 = byId('vl_tar2').value;
+    var tarifaNombre = i.individual || nomTar(1) === nomTar(2) ? nomTar(1) : nomTar(1) + ' + ' + nomTar(2);
+    var cat = categoriaById(i.categoriaId);
+    var cambio = { fecha: Date.now(), por: currentUserEmail || '', de: { valor: i.valor, valorJ1: mitadDe(i, 1), valorJ2: i.individual ? 0 : mitadDe(i, 2) }, a: { valor: nuevo.valor, valorJ1: v1, valorJ2: v2 } };
+    var upd = { valor: nuevo.valor, tarifaNombre: tarifaNombre, precioAjustado: Math.round(nuevo.valor) !== Math.round(i.valorLista != null ? i.valorLista : precioCategoria(cat, i.tarifaId)),
+      estadoPago: estadoPago, estadoIns: estadoIns, valorCambios: firebase.firestore.FieldValue.arrayUnion(cambio) };
+    if (!i.individual) { upd.valorJ1 = v1; upd.valorJ2 = v2; upd.tarifaJ1Id = t1 === '__otro' ? '' : t1; upd.tarifaJ2Id = t2 === '__otro' ? '' : t2; }
+    var btn = byId('btnGuardarValor'); btn.disabled = true;
+    torneoRef.collection('inscripciones').doc(id).update(upd).then(function(){ closeForm('valor'); flashBarra('Valor actualizado'); })
+      .catch(function(e){ alert('No se pudo guardar: ' + e.message); }).then(function(){ btn.disabled = false; });
+  });
+
   // ============================================================
   // CONFIRMAR PAGO — individual (Jugador 1 / Jugador 2) o de la
   // pareja completa. Siempre genera UN solo movimiento por pago,
@@ -4906,7 +5007,7 @@
   // interfaz solo esconde lo que la persona no puede usar.
   var unsubCompartidos = null, unsubInvRecibidas = null, compartidosSeq = 0;
   var VISTA_MODULO = { inscripciones: 'inscripciones', viabilidad: 'viabilidad', notas: 'notas', financiero: 'financiero', presupuesto: 'presupuesto', reportes: 'financiero' };
-  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formCortesia: 'inscripciones', formLinea: 'presupuesto', formNota: 'notas' };
+  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formCortesia: 'inscripciones', formValor: 'inscripciones', formLinea: 'presupuesto', formNota: 'notas' };
   var NIVEL_TXT = { NO: 'Sin acceso', VER: 'Solo ver', EDITAR: 'Puede editar' };
 
   function aplicarPermisos(){
