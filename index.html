@@ -1146,6 +1146,7 @@
         <button class="tab-btn" data-filter="PENDIENTE">Pendientes de pago</button>
         <button class="tab-btn" data-filter="CANCELADA">Canceladas</button>
       </div>
+      <div style="position:relative;flex:1;min-width:180px;max-width:280px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="insBuscar" type="search" placeholder="Buscar jugador o pareja" aria-label="Buscar por nombre" autocomplete="off" style="width:100%;padding-left:34px;"></div>
       <select id="insFiltroCat" aria-label="Filtrar por categoría" style="appearance:none;-webkit-appearance:none;background:#fff url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27 fill=%27none%27 stroke=%27%23666%27 stroke-width=%271.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m1 1 5 5 5-5%27/%3E%3C/svg%3E&quot;) no-repeat right 16px center;border:1px solid var(--border);border-radius:8px;padding:9px 38px 9px 13px;font-family:inherit;font-size:13px;"><option value="">Todas las categorías</option></select>
       </div>
 
@@ -1672,7 +1673,7 @@
   // ---------- state ----------
   var categorias = [], cuentas = [], inscripciones = [], movimientos = [], presupuesto = [], notas = [];
   var jugadoresGlobal = []; // base de datos de jugadores, a nivel de cuenta (persiste entre torneos)
-  var insFilter = 'TODAS', finFilter = 'TODOS', insCatFilter = '';
+  var insFilter = 'TODAS', finFilter = 'TODOS', insCatFilter = '', insBusqueda = '';
   var unsubs = [];
 
   // ---------- helpers ----------
@@ -2060,6 +2061,7 @@
 
 
   // ---------- Filtro por categoría y cambio de jugador en una inscripción ----------
+  byId('insBuscar').addEventListener('input', function(){ insBusqueda = impNorm(this.value); renderInscripciones(); });
   byId('insFiltroCat').addEventListener('change', function(){ insCatFilter = byId('insFiltroCat').value; renderInscripciones(); });
   var repInsId = null;
   function abrirCambioJugador(id){
@@ -2589,13 +2591,12 @@
       selC.dataset.firma = firma;
     }
     selC.value = insCatFilter;
-    if (insCatFilter) {
-      list = list.filter(function(i){ return i.categoriaId === insCatFilter; });
-      byId('insSub').textContent = list.length + ' de ' + inscripciones.length + ' inscripciones';
-    }
+    if (insCatFilter) list = list.filter(function(i){ return i.categoriaId === insCatFilter; });
+    if (insBusqueda) list = list.filter(function(i){ return impNorm((i.j1Nombre || '') + ' ' + (i.j2Nombre || '')).indexOf(insBusqueda) >= 0; });
+    if (insCatFilter || insBusqueda) byId('insSub').textContent = list.length + ' de ' + inscripciones.length + ' inscripciones';
     if (!list.length){
-      byId('insBody').innerHTML = (insFilter !== 'TODAS' || insCatFilter)
-        ? vacioFila(6, vacioHtml('lista', 'No hay inscripciones con este filtro', 'Prueba con otro estado o con otra categoría.'))
+      byId('insBody').innerHTML = (insFilter !== 'TODAS' || insCatFilter || insBusqueda)
+        ? vacioFila(6, vacioHtml('lista', 'No hay inscripciones con este filtro', insBusqueda ? 'No encontramos ese nombre. Revisa cómo está escrito o prueba con otro estado o categoría.' : 'Prueba con otro estado o con otra categoría.'))
         : (!categorias.length
           ? vacioFila(6, vacioHtml('etiqueta', 'Primero crea tus categorías', 'Sin categorías no se puede inscribir a nadie. Se crean en modo administrador, con tu PIN.', isAdminMode ? { accion: 'categorias', texto: 'Crear categorías', modulo: 'dueno' } : null))
           : vacioFila(6, vacioHtml('personas', 'Aún no hay inscripciones', 'Registra la primera pareja con su categoría y su pago. Aparecerá aquí.', { accion: 'inscripcion', texto: '+ Nueva inscripción', modulo: 'inscripciones' })));
