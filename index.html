@@ -945,6 +945,7 @@
     </button>
     <div class="brand-mark" id="mobileBrandMark" style="width:22px;height:22px;font-size:11px;">T</div>
     <div style="font-weight:700;font-size:14px;" id="mobileBrandName">Mi Torneo</div>
+    <button id="btnDeshacerTop" aria-label="Deshacer" title="Deshacer" style="margin-left:auto;background:none;border:0;padding:8px;color:inherit;display:flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   </div>
   <div id="sidebarOverlay"></div>
 
@@ -1007,6 +1008,10 @@
       </nav>
     </div>
     <div class="sidebar-foot">
+      <button class="navitem" id="btnDeshacerSidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        Deshacer
+      </button>
       <button class="navitem" id="btnAyudaSidebar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.2.9-1.2 1.7"/><circle cx="12" cy="16.9" r=".6" fill="currentColor" stroke="none"/></svg>
         Ayuda
@@ -2656,26 +2661,66 @@
     if (vc.length) { var c = vc.slice().sort(function(a, b){ return (a.fecha || 0) - (b.fecha || 0); })[vc.length - 1]; items.push({ fecha: c.fecha || 0, titulo: 'Cambio de valor ' + money(c.de && c.de.valor) + ' → ' + money(c.a && c.a.valor), sub: fmtFechaHoraLarga(c.fecha) + (c.por ? ' · ' + c.por : ''), boton: 'Volver a ' + money(c.de && c.de.valor), tipo: 'valor', cambio: c }); }
     var rp = i.reemplazos || [];
     if (rp.length) { var r = rp.slice().sort(function(a, b){ return (a.fecha || 0) - (b.fecha || 0); })[rp.length - 1]; items.push({ fecha: r.fecha || 0, titulo: 'Cambio de jugador: ' + (r.de || 'nadie') + ' → ' + r.a, sub: fmtFechaHoraLarga(r.fecha) + (r.por ? ' · ' + r.por : ''), boton: 'Volver a ' + (r.de || 'vacío'), tipo: 'jugador', cambio: r }); }
+    items.forEach(function(it){ it.ins = i; });
     return items.sort(function(a, b){ return (b.fecha || 0) - (a.fecha || 0); });
   }
   function abrirDeshacer(){
     var i = inscripciones.find(function(x){ return x.id === insDetId; }); if (!i) return;
     if (!isAdminMode) { alert('Para deshacer movimientos o cambios activa el modo administrador (Configuración → Activar con PIN).'); return; }
-    var items = itemsDeshacer(i), box = byId('undoBody');
+    mostrarDeshacer(itemsDeshacer(i), false);
+  }
+  // Deshacer general: lo último que se hizo en todo el torneo (pagos, movimientos, inscripciones, cortesías, cambios)
+  function itemsGlobales(){
+    var items = [];
+    movimientos.filter(function(m){ return m.estado !== 'ANULADO'; }).forEach(function(m){
+      var ins = m.sourceType === 'INSCRIPCION' ? inscripciones.find(function(x){ return x.id === m.sourceId; }) : null;
+      if (ins) {
+        var par = ins.j1Nombre + (ins.j2Nombre ? ' / ' + ins.j2Nombre : '');
+        items.push({ fecha: m.fecha || 0, titulo: 'Pago de ' + money(m.valor) + ' — ' + par, sub: 'Pago de inscripción · ' + fmtFechaHoraLarga(m.fecha), boton: 'Anular pago', tipo: 'pago', id: m.id, ins: ins });
+      } else {
+        items.push({ fecha: m.fecha || 0, titulo: (m.tipo === 'GASTO' ? 'Gasto' : 'Ingreso') + ' de ' + money(m.valor) + ' — ' + (m.concepto || ''), sub: 'Movimiento · ' + fmtFechaHoraLarga(m.fecha), boton: 'Anular', tipo: 'pago', id: m.id });
+      }
+    });
+    inscripciones.forEach(function(i){
+      if (i.estadoIns !== 'CANCELADA' && i.fecha) items.push({ fecha: i.fecha, titulo: 'Inscripción de ' + i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : ''), sub: i.categoriaNombre + ' · ' + fmtFechaHoraLarga(i.fecha), boton: 'Eliminar', tipo: 'crear', ins: i });
+      itemsDeshacer(i).forEach(function(it){ if (it.tipo !== 'pago' && it.fecha) items.push(it); });
+    });
+    return items.sort(function(a, b){ return (b.fecha || 0) - (a.fecha || 0); }).slice(0, 20);
+  }
+  function abrirDeshacerGlobal(){
+    if (!torneoRef) return;
+    if (!isAdminMode) { alert('Para deshacer activa el modo administrador (Configuración → Activar con PIN).'); return; }
+    mostrarDeshacer(itemsGlobales(), true);
+  }
+  function mostrarDeshacer(items, global){
+    var box = byId('undoBody');
     box.innerHTML = items.length ? items.map(function(it, k){
       return '<div class="undo-item"><div style="min-width:0;"><div class="u-t">' + esc(it.titulo) + '</div><div class="u-s">' + esc(it.sub) + '</div></div><button class="btn" data-undo="' + k + '" style="flex-shrink:0;padding:6px 12px;font-size:12.5px;">' + esc(it.boton) + '</button></div>';
-    }).join('') + '<div class="muted" style="font-size:12px;margin:2px 0 10px;">Un pago anulado se descuenta de quien lo hizo. Los cambios de valor y de jugador solo se deshacen del más reciente hacia atrás.</div>'
-      : '<div class="muted" style="padding:8px 0 14px;">No hay nada para deshacer en esta inscripción.</div>';
-    box.querySelectorAll('[data-undo]').forEach(function(b){ b.addEventListener('click', function(){ ejecutarDeshacer(i, items[Number(b.dataset.undo)]); }); });
+    }).join('') + '<div class="muted" style="font-size:12px;margin:2px 0 10px;">' + (global ? 'Lo más reciente primero. ' : '') + 'Un pago anulado se descuenta de quien lo hizo. Los cambios de valor y de jugador solo se deshacen del más reciente hacia atrás.</div>'
+      : '<div class="muted" style="padding:8px 0 14px;">No hay nada para deshacer.</div>';
+    box.querySelectorAll('[data-undo]').forEach(function(b){ b.addEventListener('click', function(){ var it = items[Number(b.dataset.undo)]; ejecutarDeshacer(it.ins, it); }); });
     byId('undoModal').classList.add('show');
   }
+  byId('btnDeshacerSidebar').addEventListener('click', function(){ abrirDeshacerGlobal(); closeSidebarMobile(); });
+  byId('btnDeshacerTop').addEventListener('click', abrirDeshacerGlobal);
   function cerrarDeshacer(){ byId('undoModal').classList.remove('show'); }
   byId('btnUndoCerrar').addEventListener('click', cerrarDeshacer);
   byId('undoModal').addEventListener('click', function(e){ if (e.target === this) cerrarDeshacer(); });
   function ejecutarDeshacer(i, it){
-    var ref = torneoRef.collection('inscripciones').doc(i.id);
     var fallo = function(e){ alert('No se pudo deshacer: ' + (e && e.message || e)); };
     if (it.tipo === 'pago') { cerrarDeshacer(); anularMovimiento(it.id); return; }
+    var ref = torneoRef.collection('inscripciones').doc(i.id);
+    if (it.tipo === 'crear') {
+      var pagadoYa = pagadoTotalIns(i);
+      confirmar({ titulo: '¿Eliminar la inscripción?', peligro: true, ok: 'Eliminar',
+        texto: (i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : '')) + (pagadoYa > 0 ? '\n\nYa tiene ' + money(pagadoYa) + ' pagado. Esos pagos NO se borran solos: anúlalos aparte desde esta misma lista.' : '') }, function(){
+        cerrarDeshacer();
+        eliminarConDeshacer(ref, 'Inscripción eliminada: ' + i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : ''),
+          function(){ return quitarInscripcionDeJugadores(i); },
+          function(){ return Promise.all([i.j1Nombre, i.j2Nombre].filter(Boolean).map(function(n){ return sincronizarJugador(n, i.categoriaNombre, i.id); })); });
+      });
+      return;
+    }
     if (it.tipo === 'cortesia') {
       confirmar({ titulo: '¿Quitar la cortesía?', texto: 'Se vuelve a cobrar la parte de ' + (it.n === 1 ? i.j1Nombre : (i.j2Nombre || 'Jugador 2')) + '.', ok: 'Quitar cortesía' }, function(){
         var nuevo = Object.assign({}, i); nuevo['exentoJ' + it.n] = false;
@@ -2769,7 +2814,7 @@
     var acc = '';
     if (i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO' && puedeEditar('inscripciones')) acc += '<button class="btn btn-primary" id="idtCobrar">Cobrar</button>';
     var tieneCortesia = !!(i.exentoJ1 || i.exentoJ2);
-    if (i.estadoIns !== 'CANCELADA' && puedeEditar('inscripciones') && (tieneCortesia || (i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0)))) acc = '<button class="btn" id="idtCortesia">' + (tieneCortesia ? 'Cambiar o quitar cortesía' : 'Cortesía') + '</button>' + acc;
+    if (i.estadoIns !== 'CANCELADA' && puedeEditar('inscripciones') && (tieneCortesia || (i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0)))) acc = '<button class="btn" id="idtCortesia">' + 'Cortesía' + '</button>' + acc;
     var hayDeshacer = puedeEditar('inscripciones') && itemsDeshacer(i).length > 0;
     byId('insDetAcc').innerHTML = (hayDeshacer ? '<button class="btn" id="idtDeshacer" style="margin-right:auto;">Deshacer…</button>' : '') + (acc || '<button class="btn" id="idtCerrar">Cerrar</button>');
     var bD = byId('idtDeshacer'); if (bD) bD.addEventListener('click', abrirDeshacer);
@@ -2787,7 +2832,7 @@
     if (isAdminMode) renderCategoriasAdmin();
 
     byId('insThUnidad').textContent = torneoEsAmbas() ? 'Inscrito' : labelUnidad();
-    byId('insSub').textContent = inscripciones.length + ' inscripción' + (inscripciones.length===1?'':'es');
+    byId('insSub').textContent = inscripciones.length + (inscripciones.length===1 ? ' inscripción' : ' inscripciones');
     var list = inscripciones.slice().sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
     if (insFilter !== 'TODAS') list = list.filter(function(i){ return i.estadoIns === insFilter; });
     var selC = byId('insFiltroCat');
