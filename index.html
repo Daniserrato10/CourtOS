@@ -1311,7 +1311,7 @@
         <div class="formgrid">
           <div class="field"><label>Tipo</label><select id="m_tipo"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select></div>
           <div class="field"><label>Concepto</label><input id="m_concepto" placeholder="Arriendo de canchas"></div>
-          <div class="field"><label>Categoría</label><input id="m_categoria" list="categoriaSuggestions" placeholder="Canchas / Sede"><datalist id="categoriaSuggestions"></datalist></div>
+          <div class="field"><label>Categoría</label><input id="m_categoria" list="categoriaSuggestions" placeholder="Elige del presupuesto o escribe"><datalist id="categoriaSuggestions"></datalist></div>
           <div class="field"><label>Valor</label><input id="m_valor" type="number" placeholder="0"></div>
           <div class="field"><label>Cuenta</label><select id="m_cuenta"></select></div>
           <div class="field" style="grid-column:1/-1;"><label>Descripción (opcional)</label><input id="m_descripcion" placeholder="Ej: patrocinio de Nike, factura #123, detalle adicional..."></div>
@@ -2423,13 +2423,35 @@
     return String(s||'').trim().toLowerCase()
       .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
   }
+  // Etiqueta de una línea: "Patrocinios · Master Rips" cuando hay varias del mismo concepto.
+  function etiquetaLinea(l){ return l.concepto + (l.descripcion ? ' · ' + l.descripcion : ''); }
+  // ¿A qué línea del presupuesto pertenece un movimiento?
+  //  1) si quedó vinculado (lineaId) → esa línea;
+  //  2) si no, por categoría = concepto; y si hay varias líneas con el mismo concepto,
+  //     gana la que su descripción (Master Rips…) aparezca en el concepto/descripción del movimiento;
+  //  3) si ninguna coincide, la línea del mismo concepto sin descripción (o la primera).
+  function lineaDeMovimiento(m){
+    if (m.lineaId && presupuesto.some(function(l){ return l.id === m.lineaId; })) return m.lineaId;
+    var cat = normalizaTexto(m.categoria); if (!cat) return null;
+    var cands = presupuesto.filter(function(l){ return l.tipo === m.tipo && normalizaTexto(l.concepto) === cat; });
+    if (!cands.length) return null;
+    if (cands.length === 1) return cands[0].id;
+    var txt = normalizaTexto((m.concepto || '') + ' ' + (m.descripcion || ''));
+    var hit = cands.filter(function(l){ var d = normalizaTexto(l.descripcion); return d && txt.indexOf(d) >= 0; });
+    if (hit.length) return hit.sort(function(a, b){ return b.descripcion.length - a.descripcion.length; })[0].id;
+    var sinDesc = cands.filter(function(l){ return !normalizaTexto(l.descripcion); });
+    return (sinDesc[0] || cands[0]).id;
+  }
+  function catEtiqueta(m){
+    var id = lineaDeMovimiento(m), l = id && presupuesto.find(function(x){ return x.id === id; });
+    return l && l.descripcion && normalizaTexto(l.concepto) === normalizaTexto(m.categoria) ? etiquetaLinea(l) : (m.categoria || '');
+  }
   function realDeLinea(linea){
     var s = 0;
-    var nombreLinea = normalizaTexto(linea.concepto);
     movimientos.forEach(function(m){
       if (!movActivo(m)) return;
       if (m.tipo !== linea.tipo) return;
-      if (normalizaTexto(m.categoria) !== nombreLinea) return;
+      if (lineaDeMovimiento(m) !== linea.id) return;
       s += (m.valor || 0);
     });
     return s;
@@ -3012,7 +3034,7 @@
       var hTs = movHoraTs(m);
       return '<tr data-mov-row="'+m.id+'" style="cursor:pointer;" title="Ver detalle">' +
         '<td class="muted" style="'+tachado+'white-space:nowrap;">'+fmtDate(m.fecha)+(hTs ? '<div style="font-size:11.5px;margin-top:1px;">'+fmtHora(hTs)+'</div>' : '')+'</td>' +
-        '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' <span title="Tiene comprobante">📎</span>' : '')+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(m.categoria||'')+
+        '<td style="'+tachado+'"><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' <span title="Tiene comprobante">📎</span>' : '')+'</div><div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(catEtiqueta(m))+
           (m.descripcion ? ' — '+esc(m.descripcion) : '') +
           (anulado ? '<br><span style="color:var(--red-tx);">Anulado por '+esc(m.anuladoPor||'—')+' · '+esc(m.motivoAnulacion||'sin motivo')+'</span>' : '') +
           '</div></td>' +
@@ -3194,7 +3216,7 @@
   }
 
   function fillCategoriaDatalist(){
-    var nombres = presupuesto.map(function(l){ return l.concepto; }).filter(Boolean);
+    var nombres = presupuesto.filter(function(l){ return l.concepto; }).map(etiquetaLinea);
     byId('categoriaSuggestions').innerHTML = nombres.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
   }
   function fillJugadoresDatalist(){
@@ -3372,7 +3394,7 @@
       var cuenta = cuentaById(m.cuentaId);
       var esIng = m.tipo === 'INGRESO';
       return '<tr><td class="muted" style="white-space:nowrap;">'+esc(movFechaHoraTexto(m))+'</td>' +
-        '<td><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' 📎' : '')+'</div><div class="muted" style="font-size:11.5px;">'+esc(m.categoria||'')+'</div></td>' +
+        '<td><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' 📎' : '')+'</div><div class="muted" style="font-size:11.5px;">'+esc(catEtiqueta(m))+'</div></td>' +
         '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
         '<td class="num" style="color:var(--green-tx);">'+(esIng?money(m.valor):'—')+'</td>' +
         '<td class="num" style="color:var(--red-tx);">'+(esIng?'—':money(m.valor))+'</td></tr>';
@@ -4803,13 +4825,19 @@
     btnGuardar.disabled = true;
     if (archivos.length) btnGuardar.textContent = 'Subiendo comprobante…';
     function listo(){ btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Movimiento'; }
+    // Si eligió una línea del presupuesto (ej. "Patrocinios · Master Rips"), queda vinculada a ella
+    var tipoMov = byId('m_tipo').value, catTxt = byId('m_categoria').value.trim(), lineaSel = null;
+    var cn = normalizaTexto(catTxt);
+    var exactas = presupuesto.filter(function(l){ return l.tipo === tipoMov && normalizaTexto(etiquetaLinea(l)) === cn; });
+    if (exactas.length && exactas[0].descripcion) { lineaSel = exactas[0]; catTxt = lineaSel.concepto; }
     torneoRef.collection('movimientos').add({
       tipo: byId('m_tipo').value, concepto: concepto,
-      categoria: byId('m_categoria').value.trim(), valor: valor,
+      categoria: catTxt, valor: valor,
       descripcion: byId('m_descripcion').value.trim(),
       cuentaId: cuentaId, estado: 'ACTIVO', fecha: Date.now(),
       creadoEn: Date.now(), registradoPor: currentUserEmail
     }).then(function(ref){
+      if (lineaSel) ref.update({ lineaId: lineaSel.id });
       return archivos.length ? subirAdjuntos(ref, archivos) : null;
     }).then(function(){
       byId('m_concepto').value = ''; byId('m_categoria').value = ''; byId('m_valor').value = ''; byId('m_descripcion').value = '';
