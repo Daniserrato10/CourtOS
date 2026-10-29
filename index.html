@@ -355,6 +355,11 @@
   #introScreen { display: none; position: fixed; inset: 0; z-index: 1500; background: var(--ink) radial-gradient(ellipse 700px 420px at 50% -5%, rgba(42,93,149,0.6) 0%, transparent 65%); color: #fff; align-items: center; justify-content: center; padding: 24px; padding-top: calc(24px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   #introScreen .intro-dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,255,255,0.28); transition: all 200ms ease; }
   #introScreen .intro-dot.on { width: 22px; background: var(--login-blue); }
+  #undoModal { display: none; }
+  #undoModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  .undo-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; }
+  .undo-item .u-t { font-weight: 600; font-size: 13.5px; }
+  .undo-item .u-s { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
   #insDetModal { display: none; }
   #insDetModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #tbodyIns tr[data-ins-det], #insBody tr[data-ins-det] { cursor: pointer; }
@@ -557,6 +562,16 @@
 <div id="undoToast" role="status"><span id="undoTxt"></span><button id="btnUndo" type="button">Deshacer</button></div>
 
 <div id="offlineBar" role="status" style="display:none;position:fixed;top:0;left:0;right:0;z-index:300;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;">Sin conexión: puedes ver lo que ya cargó, pero los cambios no se guardarán hasta que vuelva internet.</div>
+
+<div id="undoModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:229; justify-content:center; align-items:center; padding:20px;">
+  <div class="card" style="width:100%; max-width:460px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border);">
+      <div style="font-weight:700; font-size:15px;">¿Qué quieres deshacer?</div>
+      <button class="logout-btn" id="btnUndoCerrar" title="Cerrar">✕</button>
+    </div>
+    <div id="undoBody" style="padding:16px 20px 8px; overflow-y:auto;"></div>
+  </div>
+</div>
 
 <div id="insDetModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:227; justify-content:center; align-items:center; padding:20px;">
   <div class="card" style="width:100%; max-width:480px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
@@ -2620,6 +2635,89 @@
   function cerrarDetalleIns(){ insDetId = null; byId('insDetModal').classList.remove('show'); }
   byId('btnInsDetCerrar').addEventListener('click', cerrarDetalleIns);
   byId('insDetModal').addEventListener('click', function(e){ if (e.target === this) cerrarDetalleIns(); });
+  // ---------- deshacer movimientos o cambios de una inscripción ----------
+  function estadosDe(n){
+    var completoJ1 = (n.pagadoJ1 || 0) >= mitadJ(n, 1) - 1;
+    var completoJ2 = n.individual ? true : (!n.j2Nombre ? !!n.exentoJ2 : (n.pagadoJ2 || 0) >= mitadJ(n, 2) - 1);
+    var estadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : (pagadoTotalIns(n) > 0 ? 'PARCIAL' : 'PENDIENTE');
+    return { estadoPago: estadoPago, estadoIns: estadoPago === 'APROBADO' ? 'CONFIRMADA' : (n.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE') };
+  }
+  function itemsDeshacer(i){
+    var items = [];
+    movimientos.filter(function(m){ return m.sourceType === 'INSCRIPCION' && m.sourceId === i.id && m.estado !== 'ANULADO'; }).forEach(function(m){
+      var a1 = m.attribJ1 || 0, a2 = m.attribJ2 || 0;
+      var quien = (a1 > 0 && a2 > 0) ? 'los dos' : (a2 > 0 ? (i.j2Nombre || 'Jugador 2') : i.j1Nombre);
+      items.push({ fecha: m.fecha || 0, titulo: 'Pago de ' + money(m.valor), sub: 'Pagó ' + quien + ' · ' + fmtFechaHoraLarga(m.fecha), boton: 'Anular pago', tipo: 'pago', id: m.id });
+    });
+    [1, 2].forEach(function(n){
+      if (i['exentoJ' + n] && !(n === 2 && i.individual)) items.push({ fecha: i.cortesiaFecha || 0, titulo: 'Cortesía de ' + (n === 1 ? i.j1Nombre : (i.j2Nombre || 'Jugador 2')), sub: (i.motivoExencion ? i.motivoExencion + ' · ' : '') + (i.cortesiaFecha ? fmtFechaHoraLarga(i.cortesiaFecha) : 'vigente'), boton: 'Quitar cortesía', tipo: 'cortesia', n: n });
+    });
+    var vc = i.valorCambios || [];
+    if (vc.length) { var c = vc.slice().sort(function(a, b){ return (a.fecha || 0) - (b.fecha || 0); })[vc.length - 1]; items.push({ fecha: c.fecha || 0, titulo: 'Cambio de valor ' + money(c.de && c.de.valor) + ' → ' + money(c.a && c.a.valor), sub: fmtFechaHoraLarga(c.fecha) + (c.por ? ' · ' + c.por : ''), boton: 'Volver a ' + money(c.de && c.de.valor), tipo: 'valor', cambio: c }); }
+    var rp = i.reemplazos || [];
+    if (rp.length) { var r = rp.slice().sort(function(a, b){ return (a.fecha || 0) - (b.fecha || 0); })[rp.length - 1]; items.push({ fecha: r.fecha || 0, titulo: 'Cambio de jugador: ' + (r.de || 'nadie') + ' → ' + r.a, sub: fmtFechaHoraLarga(r.fecha) + (r.por ? ' · ' + r.por : ''), boton: 'Volver a ' + (r.de || 'vacío'), tipo: 'jugador', cambio: r }); }
+    return items.sort(function(a, b){ return (b.fecha || 0) - (a.fecha || 0); });
+  }
+  function abrirDeshacer(){
+    var i = inscripciones.find(function(x){ return x.id === insDetId; }); if (!i) return;
+    if (!isAdminMode) { alert('Para deshacer movimientos o cambios activa el modo administrador (Configuración → Activar con PIN).'); return; }
+    var items = itemsDeshacer(i), box = byId('undoBody');
+    box.innerHTML = items.length ? items.map(function(it, k){
+      return '<div class="undo-item"><div style="min-width:0;"><div class="u-t">' + esc(it.titulo) + '</div><div class="u-s">' + esc(it.sub) + '</div></div><button class="btn" data-undo="' + k + '" style="flex-shrink:0;padding:6px 12px;font-size:12.5px;">' + esc(it.boton) + '</button></div>';
+    }).join('') + '<div class="muted" style="font-size:12px;margin:2px 0 10px;">Un pago anulado se descuenta de quien lo hizo. Los cambios de valor y de jugador solo se deshacen del más reciente hacia atrás.</div>'
+      : '<div class="muted" style="padding:8px 0 14px;">No hay nada para deshacer en esta inscripción.</div>';
+    box.querySelectorAll('[data-undo]').forEach(function(b){ b.addEventListener('click', function(){ ejecutarDeshacer(i, items[Number(b.dataset.undo)]); }); });
+    byId('undoModal').classList.add('show');
+  }
+  function cerrarDeshacer(){ byId('undoModal').classList.remove('show'); }
+  byId('btnUndoCerrar').addEventListener('click', cerrarDeshacer);
+  byId('undoModal').addEventListener('click', function(e){ if (e.target === this) cerrarDeshacer(); });
+  function ejecutarDeshacer(i, it){
+    var ref = torneoRef.collection('inscripciones').doc(i.id);
+    var fallo = function(e){ alert('No se pudo deshacer: ' + (e && e.message || e)); };
+    if (it.tipo === 'pago') { cerrarDeshacer(); anularMovimiento(it.id); return; }
+    if (it.tipo === 'cortesia') {
+      confirmar({ titulo: '¿Quitar la cortesía?', texto: 'Se vuelve a cobrar la parte de ' + (it.n === 1 ? i.j1Nombre : (i.j2Nombre || 'Jugador 2')) + '.', ok: 'Quitar cortesía' }, function(){
+        var nuevo = Object.assign({}, i); nuevo['exentoJ' + it.n] = false;
+        var upd = { estadoPago: estadosDe(nuevo).estadoPago, estadoIns: estadosDe(nuevo).estadoIns };
+        upd['exentoJ' + it.n] = false;
+        if (!nuevo.exentoJ1 && !nuevo.exentoJ2) upd.motivoExencion = '';
+        ref.update(upd).then(function(){ cerrarDeshacer(); flashBarra('Cortesía quitada'); }).catch(fallo);
+      });
+      return;
+    }
+    if (it.tipo === 'valor') {
+      var c = it.cambio, de = c.de || {};
+      var v1 = de.valorJ1, v2 = de.valorJ2;
+      if (!i.individual && !i.exentoJ1 && (i.pagadoJ1 || 0) > v1 + 1) { alert(i.j1Nombre + ' ya pagó ' + money(i.pagadoJ1) + ', más de lo que quedaría (' + money(v1) + '). Primero anula ese pago.'); return; }
+      if (!i.individual && !i.exentoJ2 && (i.pagadoJ2 || 0) > v2 + 1) { alert((i.j2Nombre || 'El Jugador 2') + ' ya pagó ' + money(i.pagadoJ2) + ', más de lo que quedaría (' + money(v2) + '). Primero anula ese pago.'); return; }
+      confirmar({ titulo: '¿Volver al valor anterior?', texto: 'El valor pasa de ' + money(i.valor) + ' a ' + money(de.valor) + '. Lo ya pagado se conserva.', ok: 'Volver' }, function(){
+        var igual = !i.individual && Math.abs(v1 - v2) < 1;
+        var nuevo = Object.assign({}, i, { valor: de.valor });
+        if (igual) { delete nuevo.valorJ1; delete nuevo.valorJ2; } else if (!i.individual) { nuevo.valorJ1 = v1; nuevo.valorJ2 = v2; }
+        var tar = tarifaById(i.tarifaId), cat = categoriaById(i.categoriaId);
+        var vl = i.valorLista != null ? i.valorLista : precioCategoria(cat, i.tarifaId);
+        var est = estadosDe(nuevo);
+        var upd = { valor: de.valor, tarifaNombre: tar.nombre, precioAjustado: Math.round(de.valor) !== Math.round(vl), estadoPago: est.estadoPago, estadoIns: est.estadoIns,
+          valorCambios: firebase.firestore.FieldValue.arrayRemove(c) };
+        if (!i.individual) { upd.valorJ1 = igual ? firebase.firestore.FieldValue.delete() : v1; upd.valorJ2 = igual ? firebase.firestore.FieldValue.delete() : v2; upd.tarifaJ1Id = firebase.firestore.FieldValue.delete(); upd.tarifaJ2Id = firebase.firestore.FieldValue.delete(); }
+        ref.update(upd).then(function(){ cerrarDeshacer(); flashBarra('Valor anterior restaurado'); }).catch(fallo);
+      });
+      return;
+    }
+    if (it.tipo === 'jugador') {
+      var r = it.cambio, slot = r.puesto === 'J2' ? 2 : 1, viejo = r.de || '', actual = slot === 1 ? i.j1Nombre : (i.j2Nombre || '');
+      confirmar({ titulo: '¿Volver al jugador anterior?', texto: (actual || 'El jugador actual') + ' sale de la inscripción' + (viejo ? ' y vuelve ' + viejo + '.' : '.'), ok: 'Volver' }, function(){
+        var upd = { reemplazos: firebase.firestore.FieldValue.arrayRemove(r) };
+        upd[slot === 1 ? 'j1Nombre' : 'j2Nombre'] = viejo;
+        ref.update(upd).then(function(){
+          return quitarInscripcionDeJugadores({ id: i.id, categoriaNombre: i.categoriaNombre, j1Nombre: actual, j2Nombre: '' });
+        }).then(function(){ return viejo ? sincronizarJugador(viejo, i.categoriaNombre, i.id) : null; })
+          .then(function(){ cerrarDeshacer(); flashBarra('Jugador anterior restaurado'); }).catch(fallo);
+      });
+    }
+  }
+
   function renderDetalleIns(){
     var i = inscripciones.find(function(x){ return x.id === insDetId; });
     if (!i) { cerrarDetalleIns(); return; }
@@ -2670,8 +2768,11 @@
     byId('insDetBody').innerHTML = h;
     var acc = '';
     if (i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO' && puedeEditar('inscripciones')) acc += '<button class="btn btn-primary" id="idtCobrar">Cobrar</button>';
-    if (i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0) && puedeEditar('inscripciones')) acc = '<button class="btn" id="idtCortesia">Cortesía</button>' + acc;
-    byId('insDetAcc').innerHTML = acc || '<button class="btn" id="idtCerrar">Cerrar</button>';
+    var tieneCortesia = !!(i.exentoJ1 || i.exentoJ2);
+    if (i.estadoIns !== 'CANCELADA' && puedeEditar('inscripciones') && (tieneCortesia || (i.estadoPago !== 'APROBADO' && i.estadoIns !== 'CONFIRMADA' && pagadoTotalIns(i) < (i.valor || 0)))) acc = '<button class="btn" id="idtCortesia">' + (tieneCortesia ? 'Cambiar o quitar cortesía' : 'Cortesía') + '</button>' + acc;
+    var hayDeshacer = puedeEditar('inscripciones') && itemsDeshacer(i).length > 0;
+    byId('insDetAcc').innerHTML = (hayDeshacer ? '<button class="btn" id="idtDeshacer" style="margin-right:auto;">Deshacer…</button>' : '') + (acc || '<button class="btn" id="idtCerrar">Cerrar</button>');
+    var bD = byId('idtDeshacer'); if (bD) bD.addEventListener('click', abrirDeshacer);
     var bC = byId('idtCobrar'); if (bC) bC.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirFormPago(id); });
     var bX = byId('idtCortesia'); if (bX) bX.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirFormCortesia(id); });
     var bE = byId('idtCerrar'); if (bE) bE.addEventListener('click', cerrarDetalleIns);
@@ -4162,7 +4263,7 @@
     var estadoPago = (completoJ1 && completoJ2) ? 'APROBADO' : (pagadoTotalIns(i) > 0 ? 'PARCIAL' : 'PENDIENTE');
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
     torneoRef.collection('inscripciones').doc(id).update({
-      exentoJ1: ex1, exentoJ2: ex2, motivoExencion: (ex1 || ex2) ? byId('cx_motivo').value.trim() : '',
+      exentoJ1: ex1, exentoJ2: ex2, motivoExencion: (ex1 || ex2) ? byId('cx_motivo').value.trim() : '', cortesiaFecha: (ex1 || ex2) ? Date.now() : 0,
       estadoPago: estadoPago, estadoIns: estadoIns
     }).then(function(){ closeForm('cortesia'); flashBarra('Cortesía guardada'); })
       .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
