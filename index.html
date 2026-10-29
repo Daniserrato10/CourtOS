@@ -355,6 +355,49 @@
   #introScreen { display: none; position: fixed; inset: 0; z-index: 1500; background: var(--ink) radial-gradient(ellipse 700px 420px at 50% -5%, rgba(42,93,149,0.6) 0%, transparent 65%); color: #fff; align-items: center; justify-content: center; padding: 24px; padding-top: calc(24px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   #introScreen .intro-dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,255,255,0.28); transition: all 200ms ease; }
   #introScreen .intro-dot.on { width: 22px; background: var(--login-blue); }
+  #notaEditor { display: none; position: fixed; inset: 0; z-index: 230; background: rgba(24,24,15,0.55); align-items: stretch; justify-content: center; padding: 28px 16px; }
+  #notaEditor.show { display: flex; animation: overlayIn 180ms ease-out; }
+  #neHoja { width: 100%; max-width: 720px; background: #fff; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.28); }
+  #neBarra { display: flex; align-items: center; gap: 4px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  #neBarra .logout-btn.on { color: var(--accent); }
+  #neCuerpo { flex: 1; overflow-y: auto; padding: 22px 34px 60px; }
+  #neTitulo { width: 100%; border: 0; outline: none; font-family: inherit; font-size: 26px; font-weight: 800; letter-spacing: -0.4px; color: var(--ink); padding: 4px 0; background: transparent; }
+  #neTitulo::placeholder { color: var(--gray-500); opacity: .6; }
+  .nb { position: relative; display: flex; align-items: flex-start; gap: 8px; padding: 2px 0; }
+  .nb-t { flex: 1; min-width: 0; outline: none; font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.6em; }
+  .nb-t:empty::before { content: attr(data-ph); color: var(--gray-500); opacity: .55; pointer-events: none; }
+  .nb[data-tipo="titulo"] .nb-t { font-size: 19px; font-weight: 700; margin-top: 8px; }
+  .nb-sp { width: 18px; flex-shrink: 0; }
+  .nb-dot { width: 18px; flex-shrink: 0; height: 1.6em; display: flex; align-items: center; justify-content: center; }
+  .nb-dot::before { content: ''; width: 5px; height: 5px; border-radius: 999px; background: var(--ink); }
+  .nb-ck { width: 17px; height: 17px; margin: 5px 1px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+  .nb.hecho .nb-t { color: var(--gray-500); text-decoration: line-through; }
+  .nb-hr { flex: 1; border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
+  .nb-mn { position: absolute; left: -26px; top: 3px; width: 22px; height: 24px; border: 0; background: none; color: var(--gray-500); border-radius: 6px; cursor: pointer; opacity: 0; font-size: 15px; line-height: 1; }
+  .nb:hover .nb-mn, .nb:focus-within .nb-mn { opacity: 1; }
+  .nb-mn:hover { background: var(--gray-200); }
+  @media (hover: none) { .nb-mn { opacity: .55; left: -24px; } }
+  #neAgregar { margin-top: 10px; background: none; border: 0; color: var(--gray-500); font-family: inherit; font-size: 13px; cursor: pointer; padding: 6px 0; }
+  #neAgregar:hover { color: var(--ink); }
+  #neMenu { display: none; position: fixed; z-index: 240; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); padding: 6px; min-width: 190px; }
+  #neMenu button { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; color: var(--ink); }
+  #neMenu button:hover:not(:disabled) { background: var(--gray-200); }
+  #neMenu button.on { font-weight: 700; color: var(--accent); }
+  #neMenu button:disabled { opacity: .4; cursor: default; }
+  #neMenu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+  .buscador { width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px 9px 34px; font-family: inherit; font-size: 13px; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .buscador:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+  .nota-card { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }
+  .nota-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .nota-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .nc-cuerpo { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--gray-700); }
+  .nc-l { display: flex; align-items: flex-start; gap: 7px; overflow-wrap: anywhere; }
+  .nc-l.hecho { color: var(--gray-500); text-decoration: line-through; }
+  .nc-ck { width: 12px; height: 12px; border: 1.5px solid var(--gray-500); border-radius: 3px; margin-top: 3px; flex-shrink: 0; }
+  .nc-ck.on { background: var(--accent); border-color: var(--accent); }
+  .nc-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--gray-500); margin-top: 7px; flex-shrink: 0; }
+  @media (max-width: 640px) { #notaEditor { padding: 0; } #neHoja { border-radius: 0; max-width: none; } #neCuerpo { padding: 18px 20px 60px 38px; } }
+  @media (prefers-reduced-motion: reduce) { .nota-card { transition: none; } }
   #undoModal { display: none; }
   #undoModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   .undo-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; }
@@ -562,6 +605,27 @@
 <div id="undoToast" role="status"><span id="undoTxt"></span><button id="btnUndo" type="button">Deshacer</button></div>
 
 <div id="offlineBar" role="status" style="display:none;position:fixed;top:0;left:0;right:0;z-index:300;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;">Sin conexión: puedes ver lo que ya cargó, pero los cambios no se guardarán hasta que vuelva internet.</div>
+
+<div id="notaEditor" role="dialog" aria-modal="true" aria-label="Editar nota">
+  <div id="neHoja">
+    <div id="neBarra">
+      <button class="logout-btn" id="neCerrar" title="Cerrar" aria-label="Cerrar" style="font-size:15px;padding:6px 10px;">← Notas</button>
+      <div style="flex:1;"></div>
+      <span id="neEstado" class="muted" style="font-size:12px;"></span>
+      <button class="logout-btn" id="neVis" style="font-size:12.5px;padding:6px 10px;" title="Quién ve esta nota"></button>
+      <button class="logout-btn" id="nePin" title="Fijar arriba" aria-label="Fijar arriba"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3l7 7-3 1-3.5 3.5.5 4.5-1.5 1.5-4-5-5 5-1-1 5-5-5-4L8 8l4.5.5L16 5z"/></svg></button>
+      <button class="logout-btn" id="neBorrar" title="Eliminar nota" aria-label="Eliminar nota"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
+    </div>
+    <div id="neCuerpo">
+      <div id="neTipo" class="muted" style="font-size:12px;margin-bottom:6px;"></div>
+      <input id="neTitulo" placeholder="Título" autocomplete="off" aria-label="Título de la nota">
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0 14px;font-size:12.5px;color:var(--gray-500);"><label for="neRecordatorio">Recordatorio</label><input id="neRecordatorio" type="date" style="border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12.5px;font-family:inherit;"></div>
+      <div id="neBloques"></div>
+      <button id="neAgregar" type="button">+ Agregar un bloque</button>
+    </div>
+  </div>
+  <div id="neMenu"></div>
+</div>
 
 <div id="undoModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:229; justify-content:center; align-items:center; padding:20px;">
   <div class="card" style="width:100%; max-width:460px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
@@ -1531,25 +1595,14 @@
       <div class="page-head">
         <div>
           <div class="page-title">Notas</div>
-          <div class="page-sub">Recordatorios y pendientes de este torneo</div>
+          <div class="page-sub" id="notasSub">Se guardan solas. Cada nota es del equipo o solo tuya.</div>
         </div>
-        <button class="btn btn-primary" id="btnNuevaNota" data-w="notas" data-toggle-form="nota">+ Nueva Nota</button>
+        <button class="btn btn-primary" id="btnNuevaNota">+ Nueva nota</button>
       </div>
 
-      <div class="formpanel" id="formNota">
-        <div class="panel-title">Nueva Nota</div>
-        <div class="field"><label>Título</label><input id="n_titulo" placeholder="Ej: Antes del torneo"></div>
-        <div class="field"><label>Contenido (opcional)</label><textarea id="n_contenido" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;resize:vertical;"></textarea></div>
-        <div class="field"><label>Recordatorio (opcional)</label><input id="n_recordatorio" type="date" style="max-width:200px;"></div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--gray-700);">Checklist (opcional)</label>
-          <div id="n_itemsList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
-          <button class="btn" id="btnAgregarItemNota" style="margin-top:8px;padding:6px 12px;font-size:12px;">+ Agregar ítem</button>
-        </div>
-        <div class="form-actions">
-          <button class="btn" data-close-form="nota">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarNota">Guardar Nota</button>
-        </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+
+        <div style="position:relative;flex:1;min-width:180px;max-width:280px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="notaBuscar" type="text" class="buscador" placeholder="Buscar en las notas" aria-label="Buscar en las notas" autocomplete="off"></div>
       </div>
 
       <div id="notasGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px;"></div>
@@ -2866,8 +2919,7 @@
         '<td class="num">'+money(valorCobrable(i))+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-valor="'+i.id+'" title="Cambiar el valor de esta inscripción" style="font-size:13px;margin-left:2px;">✎</button>' : '')+
           (valorCortesia(i) ? '<div style="font-size:11px;font-weight:600;color:var(--accent);" title="'+esc(i.motivoExencion||'')+'">'+esc(textoCortesia(i))+' · −'+money(valorCortesia(i))+'</div>' : '')+
           (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
-        '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+
-          (!i.individual && pagado > 0 ? '<div class="muted" style="font-size:11px;font-weight:500;line-height:1.5;white-space:nowrap;">'+[1,2].filter(function(n){ return (i['pagadoJ'+n]||0) > 0; }).map(function(n){ var nom = (n === 1 ? i.j1Nombre : i.j2Nombre) || ''; return '<div>'+esc(nom.split(' ')[0])+' '+money(i['pagadoJ'+n])+'</div>'; }).join('')+'</div>' : '')+'</td>' +
+        '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
         '<td>'+chip(ESTADO_INS, i.estadoIns)+'</td>' +
         '<td><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;">' +
           (puedeCobrar ? '<button class="btn" data-w="inscripciones" data-cobrar="'+i.id+'" style="padding:5px 10px;font-size:12px;">Cobrar</button>' : '') +
@@ -4094,79 +4146,294 @@
     return Promise.all(tareas);
   }
 
-  // ---------- render: notas ----------
-  var notaItemsTemp = []; // checklist en construcción mientras se arma el formulario de "Nueva Nota"
-  function renderNotaItemsForm(){
-    byId('n_itemsList').innerHTML = notaItemsTemp.map(function(txt, i){
-      return '<div style="display:flex;gap:6px;"><input value="'+esc(txt)+'" data-nota-item-idx="'+i+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;">' +
-        '<button class="logout-btn" data-nota-item-del="'+i+'">✕</button></div>';
-    }).join('');
-    document.querySelectorAll('[data-nota-item-idx]').forEach(function(inp){
-      inp.addEventListener('input', function(){ notaItemsTemp[parseInt(inp.dataset.notaItemIdx,10)] = inp.value; });
-    });
-    document.querySelectorAll('[data-nota-item-del]').forEach(function(btn){
-      btn.addEventListener('click', function(){ notaItemsTemp.splice(parseInt(btn.dataset.notaItemDel,10),1); renderNotaItemsForm(); });
-    });
-  }
-  byId('btnAgregarItemNota').addEventListener('click', function(){ notaItemsTemp.push(''); renderNotaItemsForm(); });
-  byId('btnNuevaNota').addEventListener('click', function(){ notaItemsTemp = []; renderNotaItemsForm(); });
+  // ---------- notas: editor tipo Notion (se guarda solo) ----------
+  // Dos tipos: "Del torneo" (las ve quien tenga acceso a Notas) y "Mías" (solo tú, en tu cuenta).
+  // Cada nota es un título + bloques: texto, título, pendiente (casilla), viñeta y separador.
+  var notasPers = [], notaTab = 'torneo', notaBusq = '';
+  var NOTA_COLORES = null;
+  var edNota = null;       // nota abierta en el editor: { id, pers, titulo, bloques, fijada, recordatorio, lectura }
+  var edTimer = null, edSucia = false, edGuardando = false;
 
-  byId('btnGuardarNota').addEventListener('click', function(){
-    if (!torneoRef) return;
-    var titulo = byId('n_titulo').value.trim();
-    if (!titulo) { alert('Escribe un título para la nota.'); return; }
-    var items = notaItemsTemp.filter(function(t){ return t.trim(); }).map(function(t){ return { texto: t.trim(), hecho: false }; });
-    torneoRef.collection('notas').add({
-      titulo: titulo, contenido: byId('n_contenido').value.trim(),
-      recordatorio: byId('n_recordatorio').value || '', items: items, creadoEn: Date.now()
-    }).then(function(){
-      byId('n_titulo').value = ''; byId('n_contenido').value = ''; byId('n_recordatorio').value = '';
-      notaItemsTemp = []; renderNotaItemsForm();
-      closeForm('nota');
-    }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
-  });
+  function notaUid(){ return 'b' + Math.random().toString(36).slice(2, 9); }
+  // Las notas anteriores (contenido + checklist) se muestran como bloques sin tocar sus datos
+  function bloquesDe(n){
+    if (Array.isArray(n.bloques)) return n.bloques.map(function(b){ return Object.assign({}, b); });
+    var bl = [];
+    if (n.contenido) String(n.contenido).split('\n').forEach(function(l){ bl.push({ id: notaUid(), tipo: 'texto', texto: l }); });
+    (n.items || []).forEach(function(it){ bl.push({ id: notaUid(), tipo: 'pendiente', texto: it.texto || '', hecho: !!it.hecho }); });
+    if (!bl.length) bl.push({ id: notaUid(), tipo: 'texto', texto: '' });
+    return bl;
+  }
+  function notaRef(id, pers){ return pers ? userRef.collection('notasPersonales').doc(id) : torneoRef.collection('notas').doc(id); }
+  function notaClave(){ return torneoOwnerUid + '_' + torneoId; }
 
   function renderNotas(){
-    var lista = notas.slice().sort(function(a,b){ return (b.creadoEn||0)-(a.creadoEn||0); });
+    var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
+    var q = impNorm(notaBusq);
+    var lista = base.filter(function(n){
+      if (!q) return true;
+      return impNorm((n.titulo || '') + ' ' + bloquesDe(n).map(function(b){ return b.texto || ''; }).join(' ')).indexOf(q) >= 0;
+    }).sort(function(a, b){ return (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) || (b.editadoEn || b.creadoEn || 0) - (a.editadoEn || a.creadoEn || 0); });
     if (!lista.length){
-      byId('notasGrid').innerHTML = '<div class="card" style="grid-column:1/-1;">' + vacioHtml('nota', 'Aún no hay notas', 'Anota pendientes, recordatorios y listas del torneo para no olvidar nada.', { accion: 'nota', texto: '+ Nueva nota', modulo: 'notas' }) + '</div>';
+      byId('notasGrid').innerHTML = '<div class="card" style="grid-column:1/-1;">' + (q
+        ? vacioHtml('nota', 'No encontramos esa nota', 'Prueba con otra palabra.')
+        : vacioHtml('nota', 'Aún no hay notas', 'Anota pendientes, recordatorios y listas. Puedes dejar cada nota para todo el equipo o solo para ti.', { accion: 'nota-nueva', texto: '+ Nueva nota' })) + '</div>';
       return;
     }
     var hoyStr = new Date().toISOString().slice(0,10);
     byId('notasGrid').innerHTML = lista.map(function(n){
-      var items = n.items || [];
-      var vencida = n.recordatorio && n.recordatorio < hoyStr;
-      var hoy = n.recordatorio && n.recordatorio === hoyStr;
-      return '<div class="card" style="padding:16px 18px;display:flex;flex-direction:column;gap:8px;">' +
-        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
-          '<div style="font-weight:700;font-size:14px;">'+esc(n.titulo)+'</div>' +
-          '<button class="logout-btn" data-w="notas" data-del-nota="'+n.id+'">✕</button>' +
-        '</div>' +
-        (n.contenido ? '<div style="font-size:13px;color:var(--gray-700);white-space:pre-wrap;">'+esc(n.contenido)+'</div>' : '') +
-        (n.recordatorio ? '<div><span class="chip" style="background:'+(vencida?'var(--red-bg)':hoy?'var(--amber-bg)':'var(--gray-200)')+';color:'+(vencida?'var(--red-tx)':hoy?'var(--amber-tx)':'var(--gray-700)')+';">'+(vencida?'Vencido · ':hoy?'Hoy · ':'')+fmtDateFull(n.recordatorio)+'</span></div>' : '') +
-        (items.length ? '<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">' + items.map(function(it, idx){
-          return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;'+(it.hecho?'color:var(--gray-500);text-decoration:line-through;':'')+'">' +
-            '<input type="checkbox" data-wdis="notas" data-nota-toggle="'+n.id+'" data-item-idx="'+idx+'"'+(it.hecho?' checked':'')+'> '+esc(it.texto)+'</label>';
-        }).join('') + '</div>' : '') +
+      var bl = bloquesDe(n).filter(function(b){ return b.tipo === 'separador' || (b.texto || '').trim(); });
+      var vista = bl.slice(0, 5).map(function(b){
+        if (b.tipo === 'separador') return '<hr style="border:0;border-top:1px solid var(--border);margin:4px 0;">';
+        if (b.tipo === 'pendiente') return '<div class="nc-l ' + (b.hecho ? 'hecho' : '') + '"><span class="nc-ck' + (b.hecho ? ' on' : '') + '"></span>' + esc(b.texto) + '</div>';
+        if (b.tipo === 'vineta') return '<div class="nc-l"><span class="nc-dot"></span>' + esc(b.texto) + '</div>';
+        if (b.tipo === 'titulo') return '<div class="nc-l" style="font-weight:700;color:var(--ink);">' + esc(b.texto) + '</div>';
+        return '<div class="nc-l">' + esc(b.texto) + '</div>';
+      }).join('');
+      var vencida = n.recordatorio && n.recordatorio < hoyStr, hoy = n.recordatorio && n.recordatorio === hoyStr;
+      var pin = n.fijada ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent);flex-shrink:0;"><path d="M14 3l7 7-3 1-3.5 3.5.5 4.5-1.5 1.5-4-5-5 5-1-1 5-5-5-4L8 8l4.5.5L16 5z"/></svg>' : '';
+      return '<div class="card nota-card" data-nota-abrir="' + n.id + '" data-pers="' + (n._p ? 1 : 0) + '" tabindex="0" role="button" aria-label="Abrir nota ' + esc(n.titulo || 'sin título') + '">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;"><div style="font-weight:700;font-size:14px;' + (n.titulo ? '' : 'color:var(--gray-500);') + '">' + esc(n.titulo || 'Sin título') + '</div>' + pin + '</div>' +
+        (n._p ? '<div><span class="chip" style="background:var(--gray-200);color:var(--gray-700);">Solo yo</span></div>' : '') +
+        (vista ? '<div class="nc-cuerpo">' + vista + (bl.length > 5 ? '<div class="muted" style="font-size:11.5px;">+' + (bl.length - 5) + ' más</div>' : '') + '</div>' : '') +
+        (n.recordatorio ? '<div><span class="chip" style="background:' + (vencida ? 'var(--red-bg)' : hoy ? 'var(--amber-bg)' : 'var(--gray-200)') + ';color:' + (vencida ? 'var(--red-tx)' : hoy ? 'var(--amber-tx)' : 'var(--gray-700)') + ';">' + (vencida ? 'Vencida · ' : hoy ? 'Hoy · ' : '') + esc(n.recordatorio) + '</span></div>' : '') +
         '</div>';
     }).join('');
-
-    document.querySelectorAll('[data-nota-toggle]').forEach(function(cb){
-      cb.addEventListener('change', function(){
-        var n = notas.find(function(x){ return x.id === cb.dataset.notaToggle; });
-        if (!n) return;
-        var items = (n.items || []).slice();
-        items[parseInt(cb.dataset.itemIdx,10)] = Object.assign({}, items[parseInt(cb.dataset.itemIdx,10)], { hecho: cb.checked });
-        torneoRef.collection('notas').doc(n.id).update({ items: items })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
-      });
-    });
-    document.querySelectorAll('[data-del-nota]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        eliminarConDeshacer(torneoRef.collection('notas').doc(btn.dataset.delNota), 'Nota eliminada');
-      });
+    document.querySelectorAll('[data-nota-abrir]').forEach(function(c){
+      c.addEventListener('click', function(){ abrirNota(c.dataset.notaAbrir, c.dataset.pers === '1'); });
+      c.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirNota(c.dataset.notaAbrir, c.dataset.pers === '1'); } });
     });
   }
+  byId('notaBuscar').addEventListener('input', function(){ notaBusq = this.value; renderNotas(); });
+  document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-vacio="nota-nueva"]'); if (b) nuevaNota(); });
+  byId('btnNuevaNota').addEventListener('click', nuevaNota);
+
+  function nuevaNota(){
+    if (!torneoRef) return;
+    var pers = !puedeEditar('notas');
+    var ahora = Date.now();
+    var data = { titulo: '', bloques: [{ id: notaUid(), tipo: 'texto', texto: '' }], fijada: false, recordatorio: '', creadoEn: ahora, editadoEn: ahora };
+    if (pers) data.torneoKey = notaClave();
+    var ref = pers ? userRef.collection('notasPersonales').doc() : torneoRef.collection('notas').doc();
+    ref.set(data).catch(function(e){ alert('No se pudo crear la nota: ' + e.message); });
+    edNota = { id: ref.id, pers: pers, titulo: '', bloques: data.bloques, fijada: false, recordatorio: '', lectura: false, nueva: true };
+    pintarEditor(true);
+    byId('notaEditor').classList.add('show'); document.body.style.overflow = 'hidden';
+    setTimeout(function(){ byId('neTitulo').focus(); }, 60);
+  }
+  function abrirNota(id, pers){
+    var n = (pers ? notasPers : notas).find(function(x){ return x.id === id; }); if (!n) return;
+    edNota = { id: n.id, pers: pers, titulo: n.titulo || '', bloques: bloquesDe(n), fijada: !!n.fijada, recordatorio: n.recordatorio || '', lectura: !pers && !puedeEditar('notas') };
+    pintarEditor(true);
+    byId('notaEditor').classList.add('show'); document.body.style.overflow = 'hidden';
+  }
+
+  // --- guardado automático ---
+  function estadoGuardado(t){ byId('neEstado').textContent = t; }
+  function programarGuardado(){
+    if (!edNota || edNota.lectura) return;
+    edSucia = true; estadoGuardado('Guardando…');
+    clearTimeout(edTimer); edTimer = setTimeout(guardarNotaAhora, 700);
+  }
+  function guardarNotaAhora(){
+    clearTimeout(edTimer);
+    if (!edNota || !edSucia) return Promise.resolve();
+    edSucia = false;
+    var e = edNota;
+    var upd = { titulo: e.titulo, bloques: e.bloques.map(function(b){ var o = { id: b.id, tipo: b.tipo, texto: b.texto || '' }; if (b.tipo === 'pendiente') o.hecho = !!b.hecho; return o; }),
+      fijada: e.fijada, recordatorio: e.recordatorio || '', editadoEn: Date.now(),
+      contenido: firebase.firestore.FieldValue.delete(), items: firebase.firestore.FieldValue.delete() };
+    return notaRef(e.id, e.pers).update(upd).then(function(){ if (!edSucia) estadoGuardado('Guardado'); })
+      .catch(function(err){ edSucia = true; estadoGuardado('No se pudo guardar'); console.error(err); });
+  }
+  function notaVacia(e){ return !e.titulo.trim() && e.bloques.every(function(b){ return b.tipo === 'separador' ? false : !(b.texto || '').trim(); }); }
+  function cerrarNota(){
+    if (!edNota) return;
+    var e = edNota;
+    document.getElementById('neMenu').style.display = 'none';
+    var fin = function(){
+      if (!e.lectura && notaVacia(e)) notaRef(e.id, e.pers).delete().catch(function(){});
+      edNota = null; edSucia = false;
+      byId('notaEditor').classList.remove('show'); document.body.style.overflow = ''; renderNotas();
+    };
+    if (edSucia) guardarNotaAhora().then(fin); else fin();
+  }
+  byId('neCerrar').addEventListener('click', cerrarNota);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && edNota && !dlgActual && byId('neMenu').style.display !== 'block') cerrarNota(); });
+  window.addEventListener('beforeunload', function(){ if (edNota && edSucia) guardarNotaAhora(); });
+
+  // --- barra superior del editor ---
+  byId('neTitulo').addEventListener('input', function(){ if (!edNota) return; edNota.titulo = this.value; programarGuardado(); });
+  byId('neTitulo').addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); var p = byId('neBloques').querySelector('.nb-t'); if (p) p.focus(); } });
+  byId('neRecordatorio').addEventListener('change', function(){ if (!edNota) return; edNota.recordatorio = this.value; programarGuardado(); });
+  byId('nePin').addEventListener('click', function(){ if (!edNota || edNota.lectura) return; edNota.fijada = !edNota.fijada; this.classList.toggle('on', edNota.fijada); programarGuardado(); });
+  byId('neVis').addEventListener('click', function(){
+    if (!edNota || edNota.lectura) return;
+    var e = edNota; edSucia = true;
+    guardarNotaAhora().then(function(){
+      var viejo = notaRef(e.id, e.pers), nuevoPers = !e.pers, nuevo = notaRef(e.id, nuevoPers);
+      var data = { titulo: e.titulo, bloques: e.bloques.map(function(b){ var o = { id: b.id, tipo: b.tipo, texto: b.texto || '' }; if (b.tipo === 'pendiente') o.hecho = !!b.hecho; return o; }), fijada: e.fijada, recordatorio: e.recordatorio || '', creadoEn: Date.now(), editadoEn: Date.now() };
+      if (nuevoPers) data.torneoKey = notaClave();
+      nuevo.set(data).then(function(){ return viejo.delete(); }).then(function(){ e.pers = nuevoPers; if (edNota === e) pintarEditor(); }).catch(function(err){ alert('No se pudo cambiar: ' + err.message); });
+    });
+  });
+  byId('neBorrar').addEventListener('click', function(){
+    if (!edNota || edNota.lectura) return;
+    var e = edNota;
+    confirmar({ titulo: '¿Eliminar esta nota?', texto: e.titulo || 'Sin título', ok: 'Eliminar', peligro: true }, function(){
+      edSucia = false; clearTimeout(edTimer);
+      edNota = null; byId('notaEditor').classList.remove('show'); document.body.style.overflow = '';
+      eliminarConDeshacer(notaRef(e.id, e.pers), 'Nota eliminada');
+    });
+  });
+
+  // --- bloques ---
+  function pintarEditor(enfocarTitulo){
+    var e = edNota;
+    byId('neTitulo').value = e.titulo; byId('neTitulo').readOnly = e.lectura;
+    byId('neRecordatorio').value = e.recordatorio || ''; byId('neRecordatorio').disabled = e.lectura;
+    byId('nePin').classList.toggle('on', e.fijada); byId('nePin').style.display = e.lectura ? 'none' : '';
+    byId('neBorrar').style.display = e.lectura ? 'none' : '';
+    byId('neTipo').textContent = e.pers ? 'Solo tú la ves' : (e.lectura ? 'Nota del torneo · solo lectura' : 'La ve quien tenga acceso a Notas');
+    var v = byId('neVis'); v.style.display = e.lectura || !puedeEditar('notas') ? 'none' : ''; v.textContent = e.pers ? '🔒 Solo yo' : '👥 Equipo';
+    estadoGuardado(e.lectura ? '' : 'Guardado');
+    pintarBloques();
+  }
+  function pintarBloques(foco){
+    var e = edNota, box = byId('neBloques');
+    box.innerHTML = e.bloques.map(function(b){
+      var marca = b.tipo === 'pendiente' ? '<input type="checkbox" class="nb-ck" aria-label="Hecho"' + (b.hecho ? ' checked' : '') + (e.lectura ? ' disabled' : '') + '>'
+        : b.tipo === 'vineta' ? '<span class="nb-dot"></span>' : '<span class="nb-sp"></span>';
+      if (b.tipo === 'separador') return '<div class="nb" data-bid="' + b.id + '" data-tipo="separador">' + (e.lectura ? '' : '<button class="nb-mn" aria-label="Opciones del bloque" tabindex="-1">⋮</button>') + '<hr class="nb-hr"></div>';
+      return '<div class="nb' + (b.hecho ? ' hecho' : '') + '" data-bid="' + b.id + '" data-tipo="' + b.tipo + '">' + (e.lectura ? '' : '<button class="nb-mn" aria-label="Opciones del bloque" tabindex="-1">⋮</button>') + marca +
+        '<div class="nb-t" contenteditable="' + (e.lectura ? 'false' : 'true') + '" data-ph="' + (b.tipo === 'titulo' ? 'Título' : (e.bloques.length === 1 ? 'Escribe algo, o usa / para elegir un tipo' : '')) + '" spellcheck="true"></div></div>';
+    }).join('');
+    box.querySelectorAll('.nb').forEach(function(row){
+      var b = e.bloques.find(function(x){ return x.id === row.dataset.bid; });
+      var t = row.querySelector('.nb-t'); if (t) t.textContent = b.texto || '';
+    });
+    if (foco) enfocarBloque(foco.id, foco.pos);
+  }
+  function enfocarBloque(id, pos){
+    var row = byId('neBloques').querySelector('[data-bid="' + id + '"]'); if (!row) return;
+    var t = row.querySelector('.nb-t'); if (!t) return;
+    t.focus();
+    var r = document.createRange(), sel = window.getSelection();
+    if (t.firstChild) r.setStart(t.firstChild, Math.min(pos == null ? t.textContent.length : pos, t.textContent.length)); else r.setStart(t, 0);
+    r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+  }
+  function posCursor(t){
+    var sel = window.getSelection(); if (!sel.rangeCount) return 0;
+    var r = sel.getRangeAt(0), pre = r.cloneRange(); pre.selectNodeContents(t); pre.setEnd(r.endContainer, r.endOffset);
+    return pre.toString().length;
+  }
+  function bloqueDe(el){ var row = el.closest('.nb'); if (!row) return null; var i = edNota.bloques.findIndex(function(x){ return x.id === row.dataset.bid; }); return i < 0 ? null : { i: i, row: row, b: edNota.bloques[i] }; }
+  function cambiarTipo(i, tipo){
+    var b = edNota.bloques[i]; b.tipo = tipo;
+    if (tipo === 'separador') { b.texto = ''; }
+    if (tipo !== 'pendiente') delete b.hecho;
+    if (tipo === 'separador' && i === edNota.bloques.length - 1) edNota.bloques.push({ id: notaUid(), tipo: 'texto', texto: '' });
+    pintarBloques({ id: tipo === 'separador' ? edNota.bloques[i + 1].id : b.id, pos: null });
+    programarGuardado();
+  }
+  var nbBox = byId('neBloques');
+  nbBox.addEventListener('input', function(ev){
+    var t = ev.target.closest('.nb-t'); if (!t || edNota.lectura) return;
+    var d = bloqueDe(t); if (!d) return;
+    var txt = t.textContent.replace(/​/g, '');
+    // atajos al estilo Notion
+    if (d.b.tipo === 'texto') {
+      var atajo = /^(\[\]|\[ \]) $/.test(txt) ? 'pendiente' : /^[-*] $/.test(txt) ? 'vineta' : /^# $/.test(txt) ? 'titulo' : /^---$/.test(txt) ? 'separador' : null;
+      if (atajo) { d.b.texto = ''; cambiarTipo(d.i, atajo); return; }
+      if (txt === '/') { d.b.texto = '/'; abrirMenuBloque(d.i, t, true); programarGuardado(); return; }
+    }
+    d.b.texto = txt; programarGuardado();
+  });
+  nbBox.addEventListener('paste', function(ev){
+    var t = ev.target.closest('.nb-t'); if (!t || edNota.lectura) return;
+    ev.preventDefault();
+    var texto = (ev.clipboardData || window.clipboardData).getData('text/plain').replace(/\r/g, '');
+    var lineas = texto.split('\n');
+    document.execCommand('insertText', false, lineas[0]);
+    if (lineas.length > 1) {
+      var d = bloqueDe(t); var pos = d.i + 1;
+      lineas.slice(1).forEach(function(l){ edNota.bloques.splice(pos++, 0, { id: notaUid(), tipo: d.b.tipo === 'pendiente' || d.b.tipo === 'vineta' ? d.b.tipo : 'texto', texto: l }); });
+      d.b.texto = t.textContent; pintarBloques({ id: edNota.bloques[pos - 1].id, pos: null }); programarGuardado();
+    }
+  });
+  nbBox.addEventListener('change', function(ev){
+    var ck = ev.target.closest('.nb-ck'); if (!ck || edNota.lectura) return;
+    var d = bloqueDe(ck); if (!d) return;
+    d.b.hecho = ck.checked; d.row.classList.toggle('hecho', ck.checked); programarGuardado();
+  });
+  nbBox.addEventListener('click', function(ev){
+    var mn = ev.target.closest('.nb-mn'); if (!mn) return;
+    var d = bloqueDe(mn); if (d) abrirMenuBloque(d.i, mn, false);
+  });
+  nbBox.addEventListener('keydown', function(ev){
+    var t = ev.target.closest('.nb-t'); if (!t || edNota.lectura) return;
+    var d = bloqueDe(t); if (!d) return;
+    var off = posCursor(t), len = t.textContent.length;
+    if (ev.key === 'Enter' && !ev.shiftKey) {
+      ev.preventDefault();
+      var tipoLista = d.b.tipo === 'pendiente' || d.b.tipo === 'vineta';
+      if (tipoLista && len === 0) { cambiarTipo(d.i, 'texto'); return; }
+      var antes = t.textContent.slice(0, off), despues = t.textContent.slice(off);
+      d.b.texto = antes;
+      var nuevo = { id: notaUid(), tipo: tipoLista ? d.b.tipo : 'texto', texto: despues };
+      if (nuevo.tipo === 'pendiente') nuevo.hecho = false;
+      edNota.bloques.splice(d.i + 1, 0, nuevo);
+      pintarBloques({ id: nuevo.id, pos: 0 }); programarGuardado();
+    } else if (ev.key === 'Backspace' && off === 0 && window.getSelection().isCollapsed) {
+      if (d.b.tipo !== 'texto') { ev.preventDefault(); cambiarTipo(d.i, 'texto'); }
+      else if (d.i > 0) {
+        ev.preventDefault();
+        var prev = edNota.bloques[d.i - 1];
+        if (prev.tipo === 'separador') { edNota.bloques.splice(d.i - 1, 1); pintarBloques({ id: d.b.id, pos: 0 }); }
+        else { var junta = (prev.texto || '').length; prev.texto = (prev.texto || '') + d.b.texto; edNota.bloques.splice(d.i, 1); pintarBloques({ id: prev.id, pos: junta }); }
+        programarGuardado();
+      }
+    } else if (ev.key === 'ArrowUp' && off === 0 && d.i > 0) {
+      var p = edNota.bloques[d.i - 1]; if (p.tipo !== 'separador') { ev.preventDefault(); enfocarBloque(p.id, null); }
+    } else if (ev.key === 'ArrowDown' && off === len && d.i < edNota.bloques.length - 1) {
+      var nx = edNota.bloques[d.i + 1]; if (nx.tipo !== 'separador') { ev.preventDefault(); enfocarBloque(nx.id, 0); }
+    }
+  });
+
+  // --- menú de bloque (el ⋮ de cada bloque, o al escribir "/") ---
+  var neMenuIdx = -1, neMenuSlash = false;
+  function abrirMenuBloque(i, ancla, slash){
+    if (edNota.lectura) return;
+    neMenuIdx = i; neMenuSlash = !!slash;
+    var m = byId('neMenu'), b = edNota.bloques[i];
+    var ops = [['texto', 'Texto'], ['titulo', 'Título'], ['pendiente', 'Lista de pendientes'], ['vineta', 'Viñeta'], ['separador', 'Separador']];
+    var h = ops.map(function(o){ return '<button data-nm="tipo" data-v="' + o[0] + '"' + (b.tipo === o[0] ? ' class="on"' : '') + '>' + o[1] + '</button>'; }).join('');
+    if (!slash) h += '<hr><button data-nm="subir"' + (i === 0 ? ' disabled' : '') + '>Subir</button><button data-nm="bajar"' + (i === edNota.bloques.length - 1 ? ' disabled' : '') + '>Bajar</button><button data-nm="borrar" style="color:var(--red-tx);">Eliminar bloque</button>';
+    m.innerHTML = h; m.style.display = 'block';
+    var r = ancla.getBoundingClientRect(), mh = m.offsetHeight, mw = m.offsetWidth;
+    var top = r.bottom + 4; if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8);
+    m.style.top = top + 'px'; m.style.left = left + 'px';
+  }
+  function cerrarMenuBloque(){ byId('neMenu').style.display = 'none'; }
+  byId('neMenu').addEventListener('mousedown', function(e){ e.preventDefault(); });
+  byId('neMenu').addEventListener('click', function(ev){
+    var btn = ev.target.closest('button[data-nm]'); if (!btn || btn.disabled) return;
+    var i = neMenuIdx, bl = edNota.bloques, acc = btn.dataset.nm;
+    cerrarMenuBloque();
+    if (acc === 'tipo') { if (neMenuSlash && bl[i].texto === '/') bl[i].texto = ''; cambiarTipo(i, btn.dataset.v); }
+    else if (acc === 'subir' && i > 0) { var x = bl.splice(i, 1)[0]; bl.splice(i - 1, 0, x); pintarBloques({ id: x.id, pos: null }); programarGuardado(); }
+    else if (acc === 'bajar' && i < bl.length - 1) { var y = bl.splice(i, 1)[0]; bl.splice(i + 1, 0, y); pintarBloques({ id: y.id, pos: null }); programarGuardado(); }
+    else if (acc === 'borrar') { bl.splice(i, 1); if (!bl.length) bl.push({ id: notaUid(), tipo: 'texto', texto: '' }); pintarBloques({ id: bl[Math.min(i, bl.length - 1)].id, pos: null }); programarGuardado(); }
+  });
+  document.addEventListener('mousedown', function(e){ if (!e.target.closest('#neMenu') && !e.target.closest('.nb-mn')) cerrarMenuBloque(); });
+  byId('neBloques').addEventListener('keydown', function(ev){ if (ev.key === 'Escape' && byId('neMenu').style.display === 'block') { ev.stopPropagation(); cerrarMenuBloque(); } }, true);
+  byId('neAgregar').addEventListener('click', function(){
+    if (!edNota || edNota.lectura) return;
+    var ult = edNota.bloques[edNota.bloques.length - 1];
+    if (ult && ult.tipo === 'texto' && !(ult.texto || '').trim()) { enfocarBloque(ult.id, 0); return; }
+    var nb = { id: notaUid(), tipo: 'texto', texto: '' }; edNota.bloques.push(nb); pintarBloques({ id: nb.id, pos: 0 }); programarGuardado();
+  });
 
   // ---------- render all ----------
   function renderAll(){
@@ -5241,7 +5508,7 @@
   // interfaz solo esconde lo que la persona no puede usar.
   var unsubCompartidos = null, unsubInvRecibidas = null, compartidosSeq = 0;
   var VISTA_MODULO = { inscripciones: 'inscripciones', viabilidad: 'viabilidad', notas: 'notas', financiero: 'financiero', presupuesto: 'presupuesto', reportes: 'financiero' };
-  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formCortesia: 'inscripciones', formValor: 'inscripciones', formLinea: 'presupuesto', formNota: 'notas' };
+  var FORM_MODULO = { formInscripcion: 'inscripciones', formPago: 'inscripciones', formMovimiento: 'financiero', formCuenta: 'dueno', formCortesia: 'inscripciones', formValor: 'inscripciones', formLinea: 'presupuesto' };
   var NIVEL_TXT = { NO: 'Sin acceso', VER: 'Solo ver', EDITAR: 'Puede editar' };
 
   function aplicarPermisos(){
@@ -5635,7 +5902,7 @@
   function suscribirColecciones(){
     unsubCols.forEach(function(u){ try { u(); } catch(e){} });
     unsubCols = [];
-    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
+    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = []; notasPers = [];
     cargaPend = 0;
     var ver = puedeVer('inscripciones') || puedeVer('financiero');
     subscribe('categorias', function(a){ categorias = a.sort(function(x,y){return (x.orden||0)-(y.orden||0);}); });
@@ -5646,6 +5913,14 @@
     if (puedeVer('financiero')) subscribe('movimientos', function(a){ movimientos = a; });
     if (puedeVer('presupuesto') || puedeVer('financiero')) subscribe('presupuesto', function(a){ presupuesto = a; });
     if (puedeVer('notas')) subscribe('notas', function(a){ notas = a; });
+    if (userRef) {
+      cargaPend++;
+      unsubCols.push(userRef.collection('notasPersonales').where('torneoKey','==', torneoOwnerUid + '_' + torneoId).onSnapshot(function(snap){
+        notasPers = snap.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; });
+        if (cargaPend > 0) { cargaPend--; if (cargaPend === 0) { ocultarSplash(); barraTerminar(); } }
+        if (!edNota) renderNotas();
+      }, function(err){ console.error('notasPersonales', err); if (cargaPend > 0) { cargaPend--; if (cargaPend === 0) { ocultarSplash(); barraTerminar(); } } }));
+    }
     renderAll();
   }
 
@@ -5693,7 +5968,8 @@
     if (unsubTorneoDoc) { try { unsubTorneoDoc(); } catch(e){} unsubTorneoDoc = null; }
     if (unsubInvTorneo) { try { unsubInvTorneo(); } catch(e){} unsubInvTorneo = null; }
     invitacionesTorneo = []; cargaPend = 0;
-    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = [];
+    if (edNota) { edNota = null; edSucia = false; clearTimeout(edTimer); byId('notaEditor').classList.remove('show'); document.body.style.overflow = ''; }
+    categorias = []; cuentas = []; inscripciones = []; movimientos = []; presupuesto = []; notas = []; notasPers = [];
     limpiarPendientes();
   }
 
@@ -5884,6 +6160,7 @@
       return p;
     }).then(function(){ return eliminarColeccionCompleta(ref.collection('jugadores')); })
       .then(function(){ return eliminarColeccionCompleta(ref.collection('compartidos')); })
+      .then(function(){ return eliminarColeccionCompleta(ref.collection('notasPersonales')); })
       .then(function(){ return ref.delete(); });
   }
   byId('btnAdmEliminar').addEventListener('click', function(){
