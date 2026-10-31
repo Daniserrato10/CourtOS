@@ -1332,11 +1332,14 @@
       <div class="strip" id="finStats"></div>
       <div class="accounts-row" id="finCuentas"></div>
 
-      <div class="tabs" id="finTabs">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="tabs" id="finTabs" style="margin-bottom:0;">
         <button class="tab-btn active" data-filter="TODOS">Todos</button>
         <button class="tab-btn" data-filter="INGRESO">Ingresos</button>
         <button class="tab-btn" data-filter="GASTO">Gastos</button>
         <button class="tab-btn" data-filter="ANULADOS">Anulados</button>
+      </div>
+      <div style="position:relative;flex:1;min-width:180px;max-width:300px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="finBuscar" type="text" class="buscador" placeholder="Buscar movimiento" aria-label="Buscar movimiento" autocomplete="off"></div>
       </div>
 
       <div class="card table-wrap" style="flex:1;">
@@ -3017,6 +3020,18 @@
       list = list.filter(movActivo);
       if (finFilter !== 'TODOS') list = list.filter(function(m){ return m.tipo === finFilter; });
     }
+    if (finBusq) {
+      var palabras = finBusq.split(' ').filter(Boolean);
+      list = list.filter(function(m){
+        var cu = cuentaById(m.cuentaId);
+        var texto = impNorm([m.concepto, catEtiqueta(m), m.descripcion, cu ? cu.nombre : '', m.registradoPor, m.motivoAnulacion, String(m.valor || ''), money(m.valor || '')].join(' '));
+        return palabras.every(function(w){ return texto.indexOf(w) >= 0; });
+      });
+    }
+    if (!list.length && finBusq) {
+      byId('finBody').innerHTML = vacioFila(5, vacioHtml('lista', 'No encontramos ese movimiento', 'Prueba con otra palabra: concepto, categoría, cuenta, descripción o valor.'));
+      return;
+    }
     if (!list.length){
       byId('finBody').innerHTML = finFilter !== 'TODOS'
         ? vacioFila(5, vacioHtml('lista', 'No hay movimientos con este filtro', 'Prueba con otro filtro de arriba.'))
@@ -4189,6 +4204,8 @@
   function notaRef(id, pers){ return pers ? userRef.collection('notasPersonales').doc(id) : torneoRef.collection('notas').doc(id); }
   function notaClave(){ return torneoOwnerUid + '_' + torneoId; }
 
+  var finBusq = '';
+  byId('finBuscar').addEventListener('input', function(){ finBusq = impNorm(this.value); renderFinanciero(); });
   function renderNotas(){
     var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
     var q = impNorm(notaBusq);
