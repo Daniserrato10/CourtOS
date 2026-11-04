@@ -748,6 +748,7 @@
     <div style="padding:14px 22px 6px; overflow-y:auto;" id="movDetalleBody"></div>
     <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border); flex-shrink:0;">
       <input type="file" id="movAdjuntoInput" accept="image/*,application/pdf" multiple style="display:none;">
+      <button class="btn" id="btnEditarMov" style="margin-right:auto;">Editar</button>
       <button class="btn" id="btnAnularDesdeDetalle">Anular</button>
       <button class="btn btn-primary" id="btnCerrarMov2">Cerrar</button>
     </div>
@@ -3118,6 +3119,8 @@
     html += '<div id="movAdjuntos" style="padding:14px 0 8px;"></div>';
     byId('movDetalleBody').innerHTML = html;
     byId('btnAnularDesdeDetalle').style.display = (anulado || !isAdminMode) ? 'none' : '';
+    byId('btnEditarMov').style.display = (anulado || !puedeEditar('financiero')) ? 'none' : '';
+    byId('btnEditarMov').textContent = 'Editar';
     byId('movModal').classList.add('show');
     cargarAdjuntosDetalle(movId);
   }
@@ -3195,6 +3198,33 @@
     subirAdjuntos(torneoRef.collection('movimientos').doc(id), files).then(function(){
       setTimeout(function(){ if (movDetalleId === id) cargarAdjuntosDetalle(id); }, 400);
     }).catch(function(e){ alert('No se pudo subir: ' + e.message); });
+  });
+  // Editar texto de un movimiento (concepto, categoría, descripción). El valor, la fecha y la cuenta no se tocan.
+  byId('btnEditarMov').addEventListener('click', function(){
+    var id = movDetalleId, m = movimientos.find(function(x){ return x.id === id; });
+    if (!m || !puedeEditar('financiero')) return;
+    if (this.textContent === 'Guardar') {
+      var concepto = byId('me_concepto').value.trim();
+      if (!concepto) { alert('El concepto no puede quedar vacío.'); return; }
+      var cat = byId('me_categoria').value.trim(), desc = byId('me_descripcion').value.trim(), lineaSel = null;
+      var cn = normalizaTexto(cat);
+      var ex = presupuesto.filter(function(l){ return l.tipo === m.tipo && normalizaTexto(etiquetaLinea(l)) === cn; });
+      if (ex.length && ex[0].descripcion) { lineaSel = ex[0]; cat = lineaSel.concepto; }
+      var upd = { concepto: concepto, categoria: cat, descripcion: desc, lineaId: lineaSel ? lineaSel.id : firebase.firestore.FieldValue.delete() };
+      var btn = this; btn.disabled = true;
+      torneoRef.collection('movimientos').doc(id).update(upd).then(function(){
+        flashBarra('Movimiento actualizado');
+        setTimeout(function(){ if (movDetalleId === id) abrirDetalleMovimiento(id); }, 200);
+      }).catch(function(e){ alert('No se pudo guardar: ' + e.message); }).then(function(){ btn.disabled = false; });
+      return;
+    }
+    byId('movDetalleBody').innerHTML = '<div class="formgrid" style="grid-template-columns:1fr;padding:6px 0 10px;">' +
+      '<div class="field"><label>Concepto</label><input id="me_concepto" value="' + esc(m.concepto || '') + '"></div>' +
+      '<div class="field"><label>Categoría</label><input id="me_categoria" list="categoriaSuggestions" value="' + esc(catEtiqueta(m)) + '" placeholder="Elige del presupuesto o escribe"></div>' +
+      '<div class="field"><label>Descripción</label><input id="me_descripcion" value="' + esc(m.descripcion || '') + '" placeholder="Detalle adicional"></div>' +
+      '<div class="muted" style="font-size:12px;">El valor, la fecha y la cuenta no se pueden cambiar aquí. Si el valor está mal, anula el movimiento y regístralo de nuevo.</div></div>';
+    this.textContent = 'Guardar'; byId('btnAnularDesdeDetalle').style.display = 'none';
+    setTimeout(function(){ byId('me_descripcion').focus(); }, 50);
   });
   function cerrarDetalleMovimiento(){ byId('movModal').classList.remove('show'); movDetalleId = null; }
   function dayKeyLocal(ts){ var d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
