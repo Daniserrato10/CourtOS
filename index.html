@@ -1237,8 +1237,8 @@
         <div id="cx_resumen" class="muted" style="font-size:13px;"></div>
         <div class="formgrid">
           <div class="field"><label>Qué se regala</label><select id="cx_tipo"></select></div>
-          <div class="field" id="cx_montoWrap1" style="display:none;"><label id="cx_montoLbl1">Cortesía en pesos</label><input id="cx_monto1" type="number" min="0" placeholder="Ej: 50000"></div>
-          <div class="field" id="cx_montoWrap2" style="display:none;"><label id="cx_montoLbl2">Cortesía en pesos</label><input id="cx_monto2" type="number" min="0" placeholder="Ej: 50000"></div>
+          <div class="field" id="cx_montoWrap1" style="display:none;"><label id="cx_montoLbl1" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cortesía en pesos</label><input id="cx_monto1" type="number" min="0" placeholder="Ej: 50000"></div>
+          <div class="field" id="cx_montoWrap2" style="display:none;"><label id="cx_montoLbl2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cortesía en pesos</label><input id="cx_monto2" type="number" min="0" placeholder="Ej: 50000"></div>
           <div class="field"><label>Motivo (opcional)</label><input id="cx_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
         </div>
         <input type="hidden" id="cx_inscripcionId">
@@ -4603,7 +4603,7 @@
       opts += '<option value="J2">La mitad de ' + esc(i.j2Nombre || 'Jugador 2') + '</option>';
     }
     opts += '<option value="AMBOS">Toda la inscripción</option>';
-    opts += '<option value="MONTO">Un valor específico (en pesos)</option>';
+    opts += '<option value="MONTO">Un valor en pesos</option>';
     byId('cx_tipo').innerHTML = opts;
     byId('cx_tipo').value = (i.exentoJ1 && (i.individual || i.exentoJ2)) ? 'AMBOS' : (i.exentoJ1 ? 'J1' : (i.exentoJ2 ? 'J2' : ((montoCortesiaDe(i, 1) > 0 || montoCortesiaDe(i, 2) > 0) ? 'MONTO' : 'NINGUNA')));
     byId('cx_monto1').value = montoCortesiaDe(i, 1) || ''; byId('cx_monto2').value = montoCortesiaDe(i, 2) || '';
@@ -4616,8 +4616,9 @@
     var m = byId('cx_tipo').value === 'MONTO';
     byId('cx_montoWrap1').style.display = m ? '' : 'none';
     byId('cx_montoWrap2').style.display = m && !i.individual ? '' : 'none';
-    byId('cx_montoLbl1').textContent = i.individual ? 'Cortesía en pesos (máx. ' + money(mitadDe(i, 1)) + ')' : 'Cortesía a ' + i.j1Nombre + ' (máx. ' + money(mitadDe(i, 1)) + ')';
-    byId('cx_montoLbl2').textContent = 'Cortesía a ' + (i.j2Nombre || 'Jugador 2') + ' (máx. ' + money(mitadDe(i, 2)) + ')';
+    byId('cx_montoLbl1').textContent = i.individual ? 'Cortesía en pesos' : 'Cortesía a ' + i.j1Nombre;
+    byId('cx_montoLbl2').textContent = 'Cortesía a ' + (i.j2Nombre || 'Jugador 2');
+    byId('cx_monto1').placeholder = 'Máx. ' + money(mitadDe(i, 1)); byId('cx_monto2').placeholder = 'Máx. ' + money(mitadDe(i, 2));
   }
   byId('cx_tipo').addEventListener('change', cxMostrarMonto);
   byId('btnGuardarCortesia').addEventListener('click', function(){
