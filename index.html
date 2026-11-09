@@ -261,7 +261,7 @@
   #insBody tr.cobrando > td { background: #EEF4FB; }
   #insBody tr.cobro-fila:hover > td { background: transparent; }
   .pg-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: end; }
-  .cort-chips button.pg-mas { border-style: dashed; margin-left: auto; color: var(--gray-500); }
+  .cort-chips button.pg-mas { border-style: dashed; color: var(--gray-500); }
   @media (max-width: 900px) { .pg-row { grid-template-columns: 1fr 1fr; } }
   #formInscripcion .ins2 { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); gap: 28px; }
   .ins2-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -277,10 +277,31 @@
   .cort-chips button { border: 1px solid #DAD8D1; background: #fff; color: var(--gray-700); border-radius: 99px; padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cort-chips button:hover { border-color: #B9B7AE; }
   .cort-chips button.on { background: #E3EEF9; border-color: #BCD5EE; color: var(--accent); font-weight: 700; }
-  .ins-res { background: #F8F8F5; border: 1px solid #EFEEE9; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
-  .ins-res > div { display: flex; justify-content: space-between; gap: 10px; }
+  .ins-res { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; font-size: 12.5px; }
+  .ins-res > div { display: flex; gap: 5px; }
   .ins-res .k { color: var(--gray-500); }
-  .ins-res .tot { border-top: 1px solid var(--border); padding-top: 6px; }
+  .compacto { padding: 16px 18px; gap: 12px; }
+  .ins4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .pago-band { background: #F8F8F5; border: 1px solid #EFEEE9; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .pago-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ins5 { display: grid; grid-template-columns: 1.25fr 1.6fr 1fr 1.2fr 0.95fr; gap: 10px; align-items: start; }
+  .ins-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid #EFEEE9; padding-top: 12px; }
+  .ins-foot-btns { display: flex; gap: 10px; }
+  .pg-linea2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cort-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .cort-grid > #i_cmontos { display: contents; }
+  #formInscripcion .field, #formPago .field { gap: 4px; }
+  #formInscripcion .field label, #formPago .field label { font-size: 11.5px; }
+  #formInscripcion .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]), #formInscripcion .field select, #formPago .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]), #formPago .field select { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
+  #formInscripcion .cs-trigger, #formPago .cs-trigger { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
+  #formInscripcion .money .pre, #formPago .money .pre { height: 38px; line-height: 38px; left: 11px; font-size: 13px; }
+  #formInscripcion .money input, #formPago .money input { padding-left: 24px !important; }
+  #formInscripcion .money .auto-tag { top: 19px; font-size: 10.5px; }
+  .compacto .seg { height: 38px; border-radius: 8px; padding: 3px; gap: 3px; }
+  .compacto .seg button { font-size: 12.5px; border-radius: 6px; white-space: nowrap; padding: 0 6px; }
+  .compacto .cort-chips button { padding: 5px 11px; font-size: 12px; }
+  .compacto .cort-box { padding: 12px; gap: 10px; }
+  @media (max-width: 900px) { .ins4, .ins5, .cort-grid { grid-template-columns: 1fr 1fr; } }
   #formInscripcion .ins-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px; }
   .mas-opc-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
   .mas-opc-btn .mas-sub { font-weight: 500; color: var(--gray-500); }
@@ -1266,73 +1287,63 @@
         </div>
       </div>
 
-      <div class="formpanel" id="formInscripcion">
-        <div>
-          <div class="panel-title">Nueva Inscripción</div>
-          <div class="muted" style="font-size:13px;margin-top:2px;">El valor y la tarifa se calculan solos según la categoría.</div>
+      <div class="formpanel compacto" id="formInscripcion">
+        <div class="panel-title">Nueva Inscripción</div>
+        <div class="ins4">
+          <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
+          <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <datalist id="jugadoresSuggestions"></datalist>
+          <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
+          <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
         </div>
-        <div class="ins2">
-          <div class="ins2-col">
-            <div class="ins-lab">Pareja</div>
-            <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
-            <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
-            <datalist id="jugadoresSuggestions"></datalist>
-            <div class="ins-row2">
-              <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
-              <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
-            </div>
-            <div class="mas-opc-bar" style="border-top:none;padding-top:2px;">
-              <button type="button" class="mas-opc-btn" id="btnMasOpc" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Cortesía</span><span class="mas-sub" id="i_cortSub">opcional</span></button>
-            </div>
-            <div class="cort-box" id="i_masOpc" style="display:none;">
-              <div class="cort-chips" id="i_cortChips">
-                <button type="button" data-ct="J1" id="i_ctJ1">Mitad de Jugador 1</button>
-                <button type="button" data-ct="J2" id="i_ctJ2">Mitad de Jugador 2</button>
-                <button type="button" data-ct="AMBOS" id="i_ctAmbos">Toda la inscripción</button>
-                <button type="button" data-ct="MONTO">Otro monto</button>
-              </div>
-              <div class="ins-row2" id="i_cmontos" style="display:none;">
-                <div class="field"><label id="i_cmLbl1">Cortesía a Jugador 1</label><div class="money"><span class="pre">$</span><input id="i_cmonto1" type="number" min="0" step="1000" placeholder="0"></div></div>
-                <div class="field" id="i_cmWrap2"><label id="i_cmLbl2">Cortesía a Jugador 2</label><div class="money"><span class="pre">$</span><input id="i_cmonto2" type="number" min="0" step="1000" placeholder="0"></div></div>
-              </div>
-              <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
-              <input type="hidden" id="i_cortesia" value="NINGUNA">
-            </div>
-          </div>
-          <div class="ins2-sep"></div>
-          <div class="ins2-col">
-            <div class="ins-lab">Pago</div>
+        <div class="pago-band">
+          <div class="pago-head"><span class="ins-lab">Pago</span><div class="ins-res" id="i_resumen"></div></div>
+          <div class="ins5">
+            <div class="field"><label>Valor</label><div class="money"><span class="pre">$</span><input id="i_valor" class="con-auto" type="number" min="0" step="1000"><span class="auto-tag" id="i_autoTag">auto</span></div><div class="muted" id="i_valorHint" style="font-size:11px;"></div></div>
             <div class="field"><label>Estado del pago</label>
               <div class="seg" id="i_estSeg"><button type="button" data-est="PENDIENTE">Pendiente</button><button type="button" data-est="PARCIAL">Abono</button><button type="button" data-est="APROBADO">Pagó todo</button></div>
               <div style="display:none;"><select id="i_estadoPago"><option value="PENDIENTE">Pendiente</option><option value="PARCIAL">Parcial (abono)</option><option value="APROBADO" selected>Aprobado (pagó todo)</option></select></div>
             </div>
-            <div class="ins-row2">
-              <div class="field"><label>Valor</label><div class="money"><span class="pre">$</span><input id="i_valor" class="con-auto" type="number" min="0" step="1000"><span class="auto-tag" id="i_autoTag">auto</span></div><div class="muted" id="i_valorHint" style="font-size:11.5px;"></div></div>
-              <div class="field"><label>Monto pagado ahora</label><div class="money"><span class="pre">$</span><input id="i_pagado" type="number" value="0"></div></div>
-            </div>
-            <div class="ins-row2">
-              <div class="field"><label>Cuenta</label><select id="i_cuenta"></select></div>
-              <div class="field"><label>Método</label><select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select></div>
-            </div>
-            <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
-              <select id="i_quien">
-                <option value="J1">Jugador 1</option>
-                <option value="J2">Jugador 2</option>
-                <option value="AMBOS">Los dos (mitad y mitad)</option>
-              </select>
-              <div class="muted" id="i_quienHint" style="font-size:11.5px;"></div>
-            </div>
-            <div class="ins-res" id="i_resumen"></div>
+            <div class="field"><label>Monto pagado</label><div class="money"><span class="pre">$</span><input id="i_pagado" type="number" value="0"></div></div>
+            <div class="field"><label>Cuenta</label><select id="i_cuenta"></select></div>
+            <div class="field"><label>Método</label><select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select></div>
+          </div>
+          <div class="field" id="i_quienWrap" style="display:none;max-width:360px;"><label>¿Quién pagó?</label>
+            <select id="i_quien">
+              <option value="J1">Jugador 1</option>
+              <option value="J2">Jugador 2</option>
+              <option value="AMBOS">Los dos (mitad y mitad)</option>
+            </select>
+            <div class="muted" id="i_quienHint" style="font-size:11px;"></div>
           </div>
         </div>
-        <div class="form-actions">
-          <button class="btn" data-close-form="inscripcion">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarInscripcion">Guardar Inscripción</button>
+        <div class="cort-box" id="i_masOpc" style="display:none;">
+          <div class="cort-chips" id="i_cortChips">
+            <button type="button" data-ct="J1" id="i_ctJ1">Mitad de Jugador 1</button>
+            <button type="button" data-ct="J2" id="i_ctJ2">Mitad de Jugador 2</button>
+            <button type="button" data-ct="AMBOS" id="i_ctAmbos">Toda la inscripción</button>
+            <button type="button" data-ct="MONTO">Otro monto</button>
+          </div>
+          <div class="cort-grid">
+            <div id="i_cmontos" style="display:none;">
+              <div class="field"><label id="i_cmLbl1">Cortesía a Jugador 1</label><div class="money"><span class="pre">$</span><input id="i_cmonto1" type="number" min="0" step="1000" placeholder="0"></div></div>
+              <div class="field" id="i_cmWrap2"><label id="i_cmLbl2">Cortesía a Jugador 2</label><div class="money"><span class="pre">$</span><input id="i_cmonto2" type="number" min="0" step="1000" placeholder="0"></div></div>
+            </div>
+            <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
+          </div>
+          <input type="hidden" id="i_cortesia" value="NINGUNA">
+        </div>
+        <div class="ins-foot">
+          <button type="button" class="mas-opc-btn" id="btnMasOpc" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Cortesía</span><span class="mas-sub" id="i_cortSub">opcional</span></button>
+          <div class="ins-foot-btns">
+            <button class="btn" data-close-form="inscripcion">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarInscripcion">Guardar Inscripción</button>
+          </div>
         </div>
       </div>
 
-      <div class="formpanel" id="formPago">
-        <div id="pg_resumen" class="muted" style="font-size:13px;"></div>
+      <div class="formpanel compacto" id="formPago">
+        <div id="pg_resumen" class="muted" style="font-size:12.5px;"></div>
         <div class="pg-row">
           <div class="field" id="pg_quienWrap"><label>¿Quién paga?</label><div class="seg" id="pg_seg"></div><div style="display:none;"><select id="pg_quien"></select></div></div>
           <div class="field"><label>Monto a cobrar</label><div class="money"><span class="pre">$</span><input id="pg_monto" type="number"></div></div>
@@ -1342,24 +1353,38 @@
           </div>
         </div>
         <div id="pg_hint" class="muted" style="font-size:11.5px;display:none;"></div>
-        <div class="cort-chips" id="pg_chips">
-          <button type="button" id="pg_chSaldo"></button>
-          <button type="button" id="pg_chMitad"></button>
-          <button type="button" id="pg_chOtro">Otro monto</button>
-          <button type="button" class="pg-mas" id="pg_btnExtra">Fecha y nota</button>
+        <div class="pg-linea2">
+          <div class="cort-chips" id="pg_chips">
+            <button type="button" id="pg_chSaldo"></button>
+            <button type="button" id="pg_chMitad"></button>
+            <button type="button" id="pg_chOtro">Otro monto</button>
+            <button type="button" class="pg-mas" id="pg_btnExtra">Fecha y nota</button>
+          </div>
+          <div class="ins-foot-btns">
+            <button class="btn" data-close-form="pago">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+          </div>
         </div>
         <div class="ins-row2" id="pg_extra" style="display:none;">
           <div class="field"><label>Fecha</label><input id="pg_fecha" type="date"></div>
           <div class="field"><label>Observación (opcional)</label><input id="pg_obs" placeholder="Ej: pagó en cancha"></div>
         </div>
-        <input type="hidden" id="pg_inscripcionId">
-        <div class="form-actions" style="justify-content:space-between;">
-          <button class="btn" id="btnPagoCortesia" style="background:var(--gray-200);">Cortesía</button>
-          <div style="display:flex;gap:10px;">
-            <button class="btn" data-close-form="pago">Cancelar</button>
-            <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+        <div><button type="button" class="mas-opc-btn" id="btnPagoCortesia" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Cortesía</span><span class="mas-sub">opcional</span></button></div>
+        <div class="cort-box" id="pg_cortBox" style="display:none;">
+          <div class="cort-chips" id="pg_cortChips">
+            <button type="button" data-pct="J1" id="pg_ctJ1">Mitad de Jugador 1</button>
+            <button type="button" data-pct="J2" id="pg_ctJ2">Mitad de Jugador 2</button>
+            <button type="button" data-pct="AMBOS">Toda la inscripción</button>
+            <button type="button" data-pct="MONTO">Otro monto</button>
           </div>
+          <div class="cort-grid">
+            <div class="field" id="pg_cmWrap1" style="display:none;"><label id="pg_cmLbl1">Cortesía a Jugador 1</label><div class="money"><span class="pre">$</span><input id="pg_cm1" type="number" min="0" step="1000" placeholder="0"></div></div>
+            <div class="field" id="pg_cmWrap2" style="display:none;"><label id="pg_cmLbl2">Cortesía a Jugador 2</label><div class="money"><span class="pre">$</span><input id="pg_cm2" type="number" min="0" step="1000" placeholder="0"></div></div>
+            <div class="field" id="pg_cmotivoWrap" style="display:none;"><label>Motivo</label><input id="pg_cmotivo" placeholder="Ej: patrocinador, invitado, premio"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;"><button type="button" class="btn btn-primary" id="btnPagoCortAplicar" style="display:none;padding:6px 14px;font-size:12.5px;">Aplicar cortesía</button></div>
         </div>
+        <input type="hidden" id="pg_inscripcionId">
       </div>
 
       <div class="formpanel" id="formCortesia">
@@ -1846,7 +1871,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.3.4';
+  var APP_VERSION = '1.3.5';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -2875,7 +2900,7 @@
     var pagado = Math.max(0, parseFloat(byId('i_pagado').value) || 0), saldo = Math.max(0, cobrable - pagado);
     rs.innerHTML = '<div><span class="k">Valor</span><b>' + money(valor) + '</b></div>' +
       (cort > 0 ? '<div><span class="k">Cortesía</span><b style="color:#2F7C31;">− ' + money(cort) + '</b></div>' : '') +
-      '<div class="tot"><span class="k">Total a pagar</span><b>' + money(cobrable) + '</b></div>' +
+      '<div><span class="k">Total a pagar</span><b>' + money(cobrable) + '</b></div>' +
       '<div><span class="k">Paga ahora</span><b>' + money(pagado) + '</b></div>' +
       '<div><span class="k">Saldo</span><b style="color:' + (saldo > 0 ? '#9F6702' : '#2F7C31') + ';">' + money(saldo) + '</b></div>';
   }
@@ -4959,16 +4984,14 @@
     byId('cx_monto1').placeholder = 'Máx. ' + money(mitadDe(i, 1)); byId('cx_monto2').placeholder = 'Máx. ' + money(mitadDe(i, 2));
   }
   byId('cx_tipo').addEventListener('change', cxMostrarMonto);
-  byId('btnGuardarCortesia').addEventListener('click', function(){
+  function guardarCortesiaIns(id, t, raw1, raw2, motivo, alOk){
     if (!torneoRef) return;
-    var id = byId('cx_inscripcionId').value;
     var i = inscripciones.find(function(x){ return x.id === id; });
     if (!i) { alert('Esta inscripción ya no existe.'); closeForm('cortesia'); return; }
-    var t = byId('cx_tipo').value;
     var ex1 = (t === 'J1' || t === 'AMBOS'), ex2 = !i.individual && (t === 'J2' || t === 'AMBOS');
     var mt1 = 0, mt2 = 0;
     if (t === 'MONTO') {
-      mt1 = Math.max(0, parseFloat(byId('cx_monto1').value) || 0); mt2 = i.individual ? 0 : Math.max(0, parseFloat(byId('cx_monto2').value) || 0);
+      mt1 = Math.max(0, parseFloat(raw1) || 0); mt2 = i.individual ? 0 : Math.max(0, parseFloat(raw2) || 0);
       if (mt1 <= 0 && mt2 <= 0) { alert('Escribe cuánto de cortesía das.'); return; }
       if (mt1 > mitadDe(i, 1) + 0.5) { alert('La cortesía de ' + i.j1Nombre + ' no puede pasar de ' + money(mitadDe(i, 1)) + '. Si quieres regalarle todo, elige "Toda la inscripción".'); return; }
       if (mt2 > mitadDe(i, 2) + 0.5) { alert('La cortesía de ' + (i.j2Nombre || 'Jugador 2') + ' no puede pasar de ' + money(mitadDe(i, 2)) + '.'); return; }
@@ -4985,10 +5008,13 @@
     var estadoIns = estadoPago === 'APROBADO' ? 'CONFIRMADA' : (i.estadoIns === 'CANCELADA' ? 'CANCELADA' : 'PENDIENTE');
     torneoRef.collection('inscripciones').doc(id).update({
       exentoJ1: ex1, exentoJ2: ex2, cortesiaMontoJ1: mt1, cortesiaMontoJ2: mt2,
-      motivoExencion: tieneCortesiaIns(nuevo) ? byId('cx_motivo').value.trim() : '', cortesiaFecha: tieneCortesiaIns(nuevo) ? Date.now() : 0,
+      motivoExencion: tieneCortesiaIns(nuevo) ? String(motivo || '').trim() : '', cortesiaFecha: tieneCortesiaIns(nuevo) ? Date.now() : 0,
       estadoPago: estadoPago, estadoIns: estadoIns
-    }).then(function(){ closeForm('cortesia'); flashBarra('Cortesía guardada'); })
+    }).then(function(){ if (alOk) alOk(); else { closeForm('cortesia'); flashBarra('Cortesía guardada'); } })
       .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  }
+  byId('btnGuardarCortesia').addEventListener('click', function(){
+    guardarCortesiaIns(byId('cx_inscripcionId').value, byId('cx_tipo').value, byId('cx_monto1').value, byId('cx_monto2').value, byId('cx_motivo').value);
   });
 
   // ---------- cambiar el valor de una inscripción (por jugador) ----------
@@ -5106,6 +5132,7 @@
     if (ult && ult.cuenta && cuentas.some(function(c){ return c.id === ult.cuenta; })) byId('pg_cuenta').value = ult.cuenta;
     if (ult && ult.metodo) byId('pg_metodo').value = ult.metodo;
     byId('pg_extra').style.display = 'none';
+    pgPrepararCortesia();
 
     byId('pg_fecha').value = dayKeyLocal(Date.now());  // fecha local (toISOString daba el día siguiente después de las 7 p. m. en Colombia)
     byId('pg_obs').value = '';
@@ -5158,7 +5185,43 @@
   byId('pg_chOtro').addEventListener('click', function(){ var m = byId('pg_monto'); m.focus(); m.select(); });
   byId('pg_monto').addEventListener('input', sincronizarPagoUI);
   byId('pg_btnExtra').addEventListener('click', function(){ var x = byId('pg_extra'); x.style.display = x.style.display === 'none' ? '' : 'none'; });
-  byId('btnPagoCortesia').addEventListener('click', function(){ var id = pagoInsActual && pagoInsActual.id; closeForm('pago'); if (id) abrirFormCortesia(id); });
+  var pgCt = 'NINGUNA';
+  function pgSetCt(t){
+    pgCt = t;
+    document.querySelectorAll('#pg_cortChips button').forEach(function(b){ b.classList.toggle('on', b.dataset.pct === t); });
+    var ind = pagoInsActual && pagoInsActual.individual;
+    byId('pg_cmWrap1').style.display = t === 'MONTO' ? '' : 'none';
+    byId('pg_cmWrap2').style.display = t === 'MONTO' && !ind ? '' : 'none';
+    byId('pg_cmotivoWrap').style.display = t === 'NINGUNA' ? 'none' : '';
+    byId('btnPagoCortAplicar').style.display = t === 'NINGUNA' ? 'none' : '';
+  }
+  function pgPrepararCortesia(){
+    var i = pagoInsActual; if (!i) return;
+    byId('pg_ctJ1').textContent = 'Mitad de ' + nombreCorto(i.j1Nombre, 'Jugador 1');
+    byId('pg_ctJ2').textContent = 'Mitad de ' + nombreCorto(i.j2Nombre, 'Jugador 2');
+    byId('pg_ctJ1').style.display = byId('pg_ctJ2').style.display = i.individual ? 'none' : '';
+    byId('pg_cmLbl1').textContent = i.individual ? 'Monto de cortesía' : 'Cortesía a ' + nombreCorto(i.j1Nombre, 'Jugador 1');
+    byId('pg_cmLbl2').textContent = 'Cortesía a ' + nombreCorto(i.j2Nombre, 'Jugador 2');
+    byId('pg_cm1').value = montoCortesiaDe(i, 1) || ''; byId('pg_cm2').value = montoCortesiaDe(i, 2) || ''; byId('pg_cmotivo').value = i.motivoExencion || '';
+    var tipoPrev = (i.exentoJ1 && (i.individual || i.exentoJ2)) ? 'AMBOS' : (i.exentoJ1 ? 'J1' : (i.exentoJ2 ? 'J2' : ((montoCortesiaDe(i, 1) > 0 || montoCortesiaDe(i, 2) > 0) ? 'MONTO' : 'NINGUNA')));
+    byId('pg_cortBox').style.display = 'none';
+    var bt = byId('btnPagoCortesia'); bt.classList.remove('open'); bt.setAttribute('aria-expanded', 'false');
+    pgSetCt(tipoPrev);
+  }
+  byId('btnPagoCortesia').addEventListener('click', function(){
+    var box = byId('pg_cortBox'), abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none'; this.classList.toggle('open', abrir); this.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  });
+  document.querySelectorAll('#pg_cortChips button').forEach(function(b){
+    b.addEventListener('click', function(){ pgSetCt(pgCt === b.dataset.pct ? 'NINGUNA' : b.dataset.pct); });
+  });
+  byId('btnPagoCortAplicar').addEventListener('click', function(){
+    var id = pagoInsActual && pagoInsActual.id; if (!id || pgCt === 'NINGUNA') return;
+    guardarCortesiaIns(id, pgCt, byId('pg_cm1').value, byId('pg_cm2').value, byId('pg_cmotivo').value, function(){
+      flashBarra('Cortesía guardada');
+      setTimeout(function(){ abrirFormPago(id); }, 250);
+    });
+  });
   byId('pg_quien').addEventListener('change', actualizarMontoPago);
   function actualizarMontoPago(){
     if (!pagoInsActual) return;
