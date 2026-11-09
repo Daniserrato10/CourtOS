@@ -233,13 +233,58 @@
   .formpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; flex-direction: column; gap: 14px; transform-origin: top; box-shadow: var(--shadow-md); }
   .formpanel.open { display: flex; animation: formpanelIn 220ms var(--ease-out); }
   .formpanel.static { display: flex; max-width: 640px; }
+  .formpanel.centrado.open { position: fixed; z-index: 228; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 40px); overflow-y: auto; box-sizing: border-box; animation: formpanelCentro 200ms var(--ease-out); }
+  #formBackdrop { display: none; position: fixed; inset: 0; z-index: 227; background: rgba(24,24,15,0.55); }
+  #formBackdrop.show { display: block; animation: overlayIn 180ms ease-out; }
+  @keyframes formpanelCentro { from { opacity: 0; transform: translate(-50%, -48%) scale(0.98); } to { opacity: 1; transform: translate(-50%, -50%); } }
   @keyframes formpanelIn { from { opacity: 0; transform: scale(0.98) translateY(-4px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .formpanel.open { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .formpanel.open, .formpanel.centrado.open { animation: none; } }
   .formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 12px; font-weight: 600; color: var(--gray-700); }
-  .field input, .field select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--ink); outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
-  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--gray-700); }
+  .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]), .field select { box-sizing: border-box; width: 100%; height: 46px; background: #fff; border: 1px solid #DAD8D1; border-radius: 10px; padding: 0 14px; font-size: 14.5px; font-weight: 500; color: var(--ink); outline: none; box-shadow: 0 1px 2px rgba(15,23,42,0.05); transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .field textarea { box-sizing: border-box; width: 100%; min-height: 80px; border: 1px solid #DAD8D1; border-radius: 10px; padding: 10px 14px; font-size: 14.5px; outline: none; box-shadow: 0 1px 2px rgba(15,23,42,0.05); }
+  .field input::placeholder { color: #9a978c; font-weight: 400; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+  .field input:disabled { background: #F7F6F2; color: var(--gray-500); }
+  /* Dinero con $ y etiqueta "auto" */
+  .money { position: relative; }
+  .money .pre { position: absolute; left: 14px; top: 0; height: 46px; line-height: 46px; color: var(--gray-500); font-size: 14.5px; pointer-events: none; }
+  .money input { padding-left: 28px !important; }
+  .money input.con-auto { padding-right: 58px !important; }
+  .money .auto-tag { position: absolute; right: 10px; top: 23px; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: var(--gray-500); background: var(--gray-200); border-radius: 6px; padding: 2px 7px; pointer-events: none; }
+  .money input::-webkit-outer-spin-button, .money input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .money input[type=number] { -moz-appearance: textfield; }
+  /* Más opciones (inscripción) */
+  #formInscripcion.centrado.open { width: min(900px, calc(100vw - 24px)); }
+  #formInscripcion .ins-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px; }
+  .mas-opc-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .mas-opc-btn .mas-sub { font-weight: 500; color: var(--gray-500); }
+  .mas-opc-btn svg { transition: transform 150ms; }
+  .mas-opc-btn.open svg { transform: rotate(180deg); }
+  .mas-opc-bar { border-top: 1px solid #EFEEE9; padding-top: 14px; }
+  .mas-opc-box { background: #F8F8F5; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 14px; }
+  .mas-resumen { font-size: 13px; color: var(--gray-700); line-height: 1.45; background: var(--accent-bg); border: 1px solid #C4D8EF; border-radius: 10px; padding: 9px 12px; align-self: end; }
+  /* Listas de opciones propias (reemplazan el menú gris del navegador) */
+  .cs-native { display: none !important; }
+  .cs-trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 46px; box-sizing: border-box; border: 1px solid #DAD8D1; border-radius: 10px; background: #fff; padding: 0 14px; font: inherit; font-size: 14.5px; font-weight: 500; color: var(--ink); box-shadow: 0 1px 2px rgba(15,23,42,0.05); cursor: pointer; text-align: left; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .cs-trigger .cs-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cs-trigger svg { flex-shrink: 0; transition: transform 150ms; }
+  .cs-trigger:focus-visible, .cs-trigger.open { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+  .cs-trigger.open svg { transform: rotate(180deg); }
+  .cs-trigger:disabled { background: #F7F6F2; color: var(--gray-500); cursor: not-allowed; }
+  .cs-compact { width: auto; height: 36px; border-radius: 8px; border-color: var(--border); padding: 0 10px; font-size: 13px; font-weight: 600; box-shadow: none; }
+  td .cs-compact { height: 32px; }
+  .cs-panel { position: fixed; z-index: 5000; box-sizing: border-box; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,0.14), 0 2px 6px rgba(15,23,42,0.06); padding: 6px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; animation: csIn 120ms ease-out; }
+  @keyframes csIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .cs-op { padding: 10px 12px; border-radius: 8px; font-size: 14.5px; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; color: var(--ink); }
+  .cs-op.act { background: #F7F6F2; }
+  .cs-op.sel { background: var(--accent-bg); color: var(--accent); font-weight: 700; }
+  .cs-op.dis { opacity: .45; cursor: not-allowed; }
+  .cs-ot { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .cs-h { font-size: 12px; color: var(--gray-500); font-weight: 500; flex-shrink: 0; }
+  .cs-op.sel .cs-h { color: var(--gray-700); }
+  @media (prefers-reduced-motion: reduce) { .cs-panel { animation: none; } }
   .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
   .banner { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 16px 20px; }
@@ -253,6 +298,33 @@
   .tab-btn { font-weight: 500; font-size: 12.5px; padding: 7px 14px; border-radius: 7px; border: none; background: transparent; color: var(--gray-500); transition: background-color 150ms ease, color 150ms ease; }
   .tab-btn.active { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(24,24,15,0.08); }
 
+  /* Viabilidad de canchas */
+  .viab-top { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 18px; align-items: stretch; }
+  .viab-disp { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .viab-sec { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); }
+  .viab-res { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .viab-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; grid-auto-rows: 1fr; flex: 1; gap: 12px; }
+  .viab-kpis .kpi { justify-content: flex-start; padding: 26px 22px; }
+  .viab-kpis .kpi-val { font-size: 30px; }
+  .viab-kpis .kpi { gap: 6px; }
+  .viab-bar { height: 6px; border-radius: 99px; background: var(--gray-200); overflow: hidden; margin-top: 4px; }
+  .viab-bar > div { height: 100%; border-radius: 99px; }
+  .viab-chips { display: flex; gap: 6px; }
+  .viab-chip { flex: 1; border: none; padding: 9px 0; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 700; background: var(--gray-200); color: var(--gray-500); cursor: pointer; transition: background 150ms ease, color 150ms ease; }
+  .viab-chip.on { background: var(--ink); color: #fff; }
+  .viab-chip:disabled { opacity: .6; cursor: not-allowed; }
+  .viab-dia { display: flex; align-items: center; gap: 6px; }
+  .viab-dia b { flex: 0 0 68px; font-size: 13px; }
+  .viab-time, .viab-in { box-sizing: border-box; height: 34px; border: 1px solid #DAD8D1; border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; font-weight: 500; background: #fff; outline: none; }
+  .viab-time { width: 118px; padding: 0 8px; }
+  .viab-in { width: 100%; }
+  .viab-time:focus, .viab-in:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+  .viab-det { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; max-width: 330px; }
+  .viab-mini { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--gray-500); }
+  .viab-mini span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .viab-tabla table { table-layout: fixed; width: 100%; }
+  .viab-tabla td { vertical-align: middle; }
+  @media (max-width: 900px) { .viab-top { grid-template-columns: 1fr; } .viab-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   .two-col { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 18px; flex: 1; min-height: 0; }
   .catlist-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
   .bar-track { height: 8px; background: var(--gray-200); border-radius: 999px; overflow: hidden; }
@@ -496,7 +568,7 @@
     .kpi { padding: 16px; }
     .kpi-val { font-size: 18px; }
     .panels, .two-col { grid-template-columns: 1fr !important; }
-    .formgrid { grid-template-columns: 1fr !important; }
+    .formgrid, #formInscripcion .ins-grid, .mas-opc-box { grid-template-columns: 1fr !important; }
     .strip { flex-direction: column; }
     .strip > div + div { border-left: none; border-top: 1px solid var(--border); }
     .table-wrap { -webkit-overflow-scrolling: touch; }
@@ -1093,6 +1165,7 @@
         </div>
         <button class="logout-btn" id="btnLogout">Salir</button>
       </div>
+      <div id="appVersion" title="Versión de la aplicación" style="text-align:center;font-size:10.5px;color:var(--gray-500);letter-spacing:.3px;padding:8px 0 0;"></div>
     </div>
   </div>
 
@@ -1170,25 +1243,38 @@
 
       <div class="formpanel" id="formInscripcion">
         <div class="panel-title">Nueva Inscripción</div>
-        <div class="formgrid">
-          <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
-          <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
-          <div class="field"><label>Valor inscripción</label><input id="i_valor" type="number" min="0" step="1000"><div class="muted" id="i_valorHint" style="font-size:11.5px;margin-top:4px;"></div></div>
+        <div class="formgrid ins-grid">
           <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
           <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
           <datalist id="jugadoresSuggestions"></datalist>
-          <div class="field"><label>Método de pago</label>
-            <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
-          </div>
-          <div class="field"><label>Cuenta de ingreso</label><select id="i_cuenta"></select></div>
-          <div class="field"><label>Estado de pago</label>
+          <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
+          <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
+          <div class="field"><label>Valor</label><div class="money"><span class="pre">$</span><input id="i_valor" class="con-auto" type="number" min="0" step="1000"><span class="auto-tag" id="i_autoTag">auto</span></div><div class="muted" id="i_valorHint" style="font-size:11.5px;"></div></div>
+          <div class="field"><label>Estado del pago</label>
             <select id="i_estadoPago">
               <option value="PENDIENTE">Pendiente</option>
               <option value="PARCIAL">Parcial (abono)</option>
               <option value="APROBADO" selected>Aprobado (pagó todo)</option>
             </select>
           </div>
-          <div class="field"><label>Monto pagado ahora</label><input id="i_pagado" type="number" value="0"></div>
+          <div class="field"><label>Monto pagado ahora</label><div class="money"><span class="pre">$</span><input id="i_pagado" type="number" value="0"></div></div>
+          <div class="field"><label>Cuenta</label><select id="i_cuenta"></select></div>
+          <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
+            <select id="i_quien">
+              <option value="J1">Jugador 1</option>
+              <option value="J2">Jugador 2</option>
+              <option value="AMBOS">Los dos (mitad y mitad)</option>
+            </select>
+            <div class="muted" id="i_quienHint" style="font-size:11.5px;"></div>
+          </div>
+        </div>
+        <div class="mas-opc-bar">
+          <button type="button" class="mas-opc-btn" id="btnMasOpc" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Más opciones</span><span class="mas-sub">método de pago, cortesía y motivo</span></button>
+        </div>
+        <div class="mas-opc-box" id="i_masOpc" style="display:none;">
+          <div class="field"><label>Método de pago</label>
+            <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
+          </div>
           <div class="field"><label>Cortesía</label>
             <select id="i_cortesia">
               <option value="NINGUNA">Sin cortesía</option>
@@ -1198,14 +1284,7 @@
             </select>
           </div>
           <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
-          <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
-            <select id="i_quien">
-              <option value="J1">Jugador 1</option>
-              <option value="J2">Jugador 2</option>
-              <option value="AMBOS">Los dos (mitad y mitad)</option>
-            </select>
-            <div class="muted" id="i_quienHint" style="font-size:11.5px;margin-top:4px;"></div>
-          </div>
+          <div class="mas-resumen" id="i_cortesiaResumen" style="display:none;grid-column:1 / -1;"></div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="inscripcion">Cancelar</button>
@@ -1519,36 +1598,32 @@
         </div>
       </div>
 
-      <div class="two-col">
-        <div class="card" style="padding:22px;display:flex;flex-direction:column;gap:16px;overflow:auto;">
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Disponibilidad</div>
-            <div class="formgrid" style="grid-template-columns:1fr 1fr;">
-              <div class="field"><label>Canchas disponibles</label><input id="v_canchas" type="number" value="3"></div>
-              <div class="field"><label>Min. por partido</label><input id="v_duracion" type="number" value="75"></div>
-            </div>
-            <div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-top:4px;">Marca los días que se juega y su horario (puede variar día a día)</div>
-            <div id="v_diasSemana" style="display:flex;flex-direction:column;gap:6px;"></div>
-            <div class="muted" style="font-size:12px;" id="v_horasResumen"></div>
+      <div class="viab-top">
+        <div class="card viab-disp">
+          <div class="viab-sec">Disponibilidad</div>
+          <div class="formgrid" style="grid-template-columns:1fr 1fr;">
+            <div class="field"><label>Canchas disponibles</label><input id="v_canchas" type="number" value="3"></div>
+            <div class="field"><label>Min. por partido</label><input id="v_duracion" type="number" value="75"></div>
           </div>
+          <div class="field"><label>Días que se juega</label><div class="viab-chips" id="v_diasChips"></div></div>
+          <div id="v_diasSemana" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <div class="muted" style="font-size:12px;" id="v_horasResumen"></div>
+        </div>
+        <div class="viab-res">
+          <div class="banner" id="v_banner"></div>
+          <div class="kpi-grid viab-kpis" id="v_kpis"></div>
+        </div>
+      </div>
 
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);">Formato y estimado por categoría</div>
-          <div id="v_catlist" style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;"></div>
-
+      <div class="card table-wrap viab-tabla">
+        <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="font-weight:800;font-size:16px;">Formato y partidos por categoría</div>
           <button class="btn btn-primary" id="btnCalcularViabilidad">Calcular Viabilidad</button>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:14px;overflow:auto;">
-          <div class="banner" id="v_banner"></div>
-          <div class="kpi-grid" id="v_kpis" style="grid-template-columns:repeat(3,1fr);"></div>
-          <div class="card table-wrap" style="flex:1;">
-            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;">Partidos por Categoría</div>
-            <table class="datatable">
-              <thead><tr><th>Categoría</th><th id="vThUnidad" style="text-align:right">Parejas</th><th style="text-align:right">Partidos</th><th style="text-align:right">Horas cancha</th></tr></thead>
-              <tbody id="v_catBody"></tbody>
-            </table>
-          </div>
-        </div>
+        <table class="datatable">
+          <thead><tr><th style="width:16%">Categoría</th><th id="vThUnidad" style="text-align:right;width:10%">Parejas</th><th style="width:21%">Formato de juego</th><th style="width:31%">Datos del formato</th><th style="text-align:right;width:12%">Partidos</th><th style="text-align:right;width:10%">Horas</th></tr></thead>
+          <tbody id="v_catBody"></tbody>
+        </table>
       </div>
     </section>
 
@@ -1571,6 +1646,10 @@
             <div class="field"><label>Nombre</label><input id="j_nombre" placeholder="Nombre completo"></div>
             <div class="field"><label>Teléfono</label><input id="j_telefono" placeholder="3001234567"></div>
           </div>
+          <div id="j_histWrap" style="display:none;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:4px;">Historial de torneos</div>
+            <div id="j_histBody" style="max-height:200px;overflow-y:auto;"></div>
+          </div>
           <div class="form-actions">
             <button class="btn" data-close-form="jugador">Cancelar</button>
             <button class="btn btn-primary" id="btnGuardarJugador">Guardar Jugador</button>
@@ -1588,7 +1667,7 @@
         <div class="card table-wrap" style="flex:1;">
           <table class="datatable">
             <thead><tr>
-              <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th><th></th>
+              <th>Nombre</th><th>Teléfono</th><th>Categorías habituales</th><th style="text-align:right">Torneos jugados</th><th></th>
             </tr></thead>
             <tbody id="jugadoresBody"></tbody>
           </table>
@@ -1716,6 +1795,9 @@
 </div>
 
 <script>
+  // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
+  var APP_VERSION = '1.3.2';
+  (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; })();
 (function(){
   'use strict';
 
@@ -1861,7 +1943,10 @@
     var n = Object.keys(pendientes).length, bar = byId('saveBar');
     if (!bar) return;
     bar.classList.toggle('show', n > 0);
-    byId('saveBarTxt').textContent = n === 1 ? 'Tienes 1 cambio sin guardar' : 'Tienes ' + n + ' cambios sin guardar';
+    var soloElimina = n > 0 && Object.keys(pendientes).every(function(k){ return k.indexOf('presdel:') === 0; });
+    byId('saveBarTxt').textContent = soloElimina ? (n === 1 ? 'Se eliminará 1 línea del presupuesto' : 'Se eliminarán ' + n + ' líneas del presupuesto') : (n === 1 ? 'Tienes 1 cambio sin guardar' : 'Tienes ' + n + ' cambios sin guardar');
+    byId('btnGuardarCambios').textContent = soloElimina ? 'Confirmar' : 'Guardar cambios';
+    byId('btnDescartarCambios').textContent = soloElimina ? 'Cancelar' : 'Descartar';
   }
   function guardarPendientes(){
     var claves = Object.keys(pendientes);
@@ -2246,6 +2331,7 @@
   });
   byId('btnGuardarCambios').addEventListener('click', guardarPendientes);
   byId('btnDescartarCambios').addEventListener('click', function(){
+    if (Object.keys(pendientes).every(function(k){ return k.indexOf('presdel:') === 0; })) { limpiarPendientes(); renderAll(); return; }
     confirmar({ titulo: '¿Descartar los cambios?', texto: 'Lo que no has guardado se va a perder.', ok: 'Descartar', peligro: true }, function(){
       limpiarPendientes();
       renderAll();
@@ -2472,6 +2558,7 @@
 
   // ---------- nav ----------
   function setView(v){
+    (typeof FORMS_CENTRADOS !== 'undefined' && FORMS_CENTRADOS || []).forEach(function(id){ var e = byId(id); if (e) e.classList.remove('open'); });
     if (!v) return;
     document.querySelectorAll('.view').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
     document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
@@ -2499,6 +2586,111 @@
   byId('btnOpenSidebar').addEventListener('click', openSidebarMobile);
   byId('sidebarOverlay').addEventListener('click', closeSidebarMobile);
 
+  // ---------- Listas de opciones propias ----------
+  // Cada <select> de la app se esconde y se reemplaza por un botón + una lista con
+  // el estilo de CourtOS. El <select> original sigue ahí (el resto del código no cambia).
+  (function(){
+    var CHEV = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#787569" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    var CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+    var vDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    var abierto = null;
+    function sync(sel){
+      var t = sel._csTrig; if (!t) return;
+      var o = sel.options[sel.selectedIndex];
+      t.querySelector('.cs-txt').textContent = o ? o.textContent : ' ';
+      t.disabled = sel.disabled;
+      t.style.display = (sel.style.display === 'none' || sel.hidden) ? 'none' : '';
+    }
+    function cerrar(){
+      if (!abierto) return;
+      var a = abierto; abierto = null;
+      a.panel.remove(); a.sel._csTrig.classList.remove('open');
+      document.removeEventListener('mousedown', a.onDown, true);
+      document.removeEventListener('keydown', a.onKey, true);
+      window.removeEventListener('scroll', a.onScroll, true);
+      window.removeEventListener('resize', cerrar);
+    }
+    function elegir(sel, idx){
+      var o = sel.options[idx]; if (!o || o.disabled) return;
+      var cambio = sel.selectedIndex !== idx;
+      sel.selectedIndex = idx; sync(sel);
+      cerrar(); sel._csTrig.focus();
+      if (cambio) { sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    function abrir(sel){
+      if (abierto && abierto.sel === sel) { cerrar(); return; }
+      cerrar();
+      var t = sel._csTrig, p = document.createElement('div');
+      p.className = 'cs-panel'; p.setAttribute('role', 'listbox');
+      var ops = [].filter.call(sel.options, function(o){ return !o.hidden; });
+      p.innerHTML = ops.map(function(o){
+        return '<div class="cs-op' + (o.selected ? ' sel' : '') + (o.disabled ? ' dis' : '') + '" role="option" data-i="' + o.index + '"><span class="cs-ot">' + (o.selected ? CHECK : '') + '<span>' + esc(o.textContent) + '</span></span>' + (o.dataset.hint ? '<span class="cs-h">' + esc(o.dataset.hint) + '</span>' : '') + '</div>';
+      }).join('') || '<div class="cs-op dis">Sin opciones</div>';
+      document.body.appendChild(p);
+      var r = t.getBoundingClientRect(), w = Math.min(Math.max(r.width, 200), window.innerWidth - 16);
+      var left = Math.max(8, Math.min(r.left, window.innerWidth - 8 - w));
+      p.style.width = w + 'px'; p.style.left = left + 'px';
+      var abajo = window.innerHeight - r.bottom - 12, arriba = r.top - 12;
+      if (abajo < 180 && arriba > abajo) { p.style.bottom = (window.innerHeight - r.top + 4) + 'px'; p.style.maxHeight = Math.min(300, arriba) + 'px'; }
+      else { p.style.top = (r.bottom + 4) + 'px'; p.style.maxHeight = Math.min(300, abajo) + 'px'; }
+      t.classList.add('open');
+      var items = [].slice.call(p.querySelectorAll('.cs-op[data-i]')), act = items.findIndex(function(e){ return e.classList.contains('sel'); });
+      function marca(k){ items.forEach(function(e, n){ e.classList.toggle('act', n === k); }); if (items[k]) items[k].scrollIntoView({ block: 'nearest' }); act = k; }
+      if (act >= 0) marca(act);
+      items.forEach(function(e, n){
+        e.addEventListener('mouseenter', function(){ marca(n); });
+        e.addEventListener('click', function(){ elegir(sel, Number(e.dataset.i)); });
+      });
+      var a = abierto = { sel: sel, panel: p };
+      a.onDown = function(ev){ if (!p.contains(ev.target) && !t.contains(ev.target)) cerrar(); };
+      a.onScroll = function(ev){ if (!p.contains(ev.target)) cerrar(); };
+      a.onKey = function(ev){
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cerrar(); t.focus(); }
+        else if (ev.key === 'ArrowDown') { ev.preventDefault(); marca(Math.min(items.length - 1, act + 1)); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); marca(Math.max(0, act - 1)); }
+        else if (ev.key === 'Enter' || ev.key === ' ') { if (items[act]) { ev.preventDefault(); ev.stopPropagation(); elegir(sel, Number(items[act].dataset.i)); } }
+        else if (ev.key === 'Tab') cerrar();
+      };
+      document.addEventListener('mousedown', a.onDown, true);
+      document.addEventListener('keydown', a.onKey, true);
+      window.addEventListener('scroll', a.onScroll, true);
+      window.addEventListener('resize', cerrar);
+    }
+    function mejorar(sel){
+      if (sel._cs || sel.multiple || sel.size > 1 || sel.hasAttribute('data-native')) return;
+      sel._cs = true;
+      var t = document.createElement('button');
+      t.type = 'button'; t.className = 'cs-trigger' + (sel.closest('.field') ? '' : ' cs-compact');
+      t.innerHTML = '<span class="cs-txt"></span>' + CHEV;
+      if (sel.getAttribute('aria-label')) t.setAttribute('aria-label', sel.getAttribute('aria-label'));
+      t.setAttribute('aria-haspopup', 'listbox');
+      ['width', 'minWidth', 'maxWidth', 'flex', 'margin', 'marginTop', 'marginLeft'].forEach(function(k){ if (sel.style[k]) t.style[k] = sel.style[k]; });
+      sel._csTrig = t; sel.classList.add('cs-native');
+      sel.parentNode.insertBefore(t, sel.nextSibling);
+      Object.defineProperty(sel, 'value', { configurable: true, get: function(){ return vDesc.get.call(sel); }, set: function(v){ vDesc.set.call(sel, v); sync(sel); } });
+      t.addEventListener('click', function(){ abrir(sel); });
+      t.addEventListener('keydown', function(ev){ if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); abrir(sel); } });
+      new MutationObserver(function(){ sync(sel); }).observe(sel, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style', 'hidden', 'disabled', 'class'] });
+      sel.addEventListener('change', function(){ sync(sel); });
+      sync(sel);
+    }
+    function todos(raiz){ (raiz.querySelectorAll ? raiz.querySelectorAll('select') : []).forEach(mejorar); }
+    todos(document);
+    new MutationObserver(function(muts){
+      muts.forEach(function(m){ m.addedNodes.forEach(function(n){ if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') mejorar(n); else todos(n); }); });
+    }).observe(document.body, { childList: true, subtree: true });
+  })();
+  var FORMS_CENTRADOS = ['formInscripcion', 'formPago', 'formCortesia', 'formValor', 'formJugador'];
+  (function(){
+    var bd = document.createElement('div'); bd.id = 'formBackdrop'; document.body.appendChild(bd);
+    function sync(){ bd.classList.toggle('show', FORMS_CENTRADOS.some(function(id){ var e = byId(id); return e && e.classList.contains('open'); })); }
+    FORMS_CENTRADOS.forEach(function(id){
+      var e = byId(id); if (!e) return; e.classList.add('centrado'); document.body.appendChild(e);
+      new MutationObserver(sync).observe(e, { attributes: true, attributeFilter: ['class'] });
+    });
+    bd.addEventListener('click', function(){ FORMS_CENTRADOS.forEach(function(id){ var e = byId(id); if (e) e.classList.remove('open'); }); });
+    document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape' && bd.classList.contains('show') && !document.querySelector('#dlgModal.show')) bd.click(); });
+  })();
   function openForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.add('open'); }
   function closeForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.remove('open'); }
   function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -2547,7 +2739,7 @@
     var el = byId('i_categoria');
     var prev = el.value;
     var tid = byId('i_tarifa').value || tarifaActivaId();
-    el.innerHTML = categorias.map(function(c){ return '<option value="'+c.id+'">'+esc(c.nombre)+' — '+money(precioCategoria(c, tid))+'</option>'; }).join('');
+    el.innerHTML = categorias.map(function(c){ return '<option value="'+c.id+'" data-hint="'+money(precioCategoria(c, tid))+'">'+esc(c.nombre)+'</option>'; }).join('');
     if (prev && categorias.some(function(c){return c.id===prev;})) el.value = prev;
     updateValorInscripcion();
   }
@@ -2598,7 +2790,24 @@
     if (cobrable <= 0 && sel.value !== 'NINGUNA') { byId('i_estadoPago').value = 'APROBADO'; byId('i_pagado').value = 0; }
     else if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = cobrable;
     actualizarQuienPago();
+    pintarResumenCortesia();
   }
+  function pintarResumenCortesia(){
+    var rs = byId('i_cortesiaResumen'); if (!rs) return;
+    var sel = byId('i_cortesia');
+    if (sel.value === 'NINGUNA') { rs.style.display = 'none'; return; }
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat), ex = exencionesForm();
+    var j1 = esc(byId('i_j1').value.trim() || 'Jugador 1'), j2 = esc(byId('i_j2').value.trim() || 'Jugador 2');
+    var v = parseFloat(byId('i_valor').value) || 0, m = v / 2, a = ex.j1 ? 0 : m, b = ex.j2 ? 0 : m;
+    rs.innerHTML = ind ? (j1 + ' no pagará. Total a cobrar: <b>' + money(0) + '</b>') : (j1 + ' pagará <b>' + money(a) + '</b> y ' + j2 + ' <b>' + money(b) + '</b>. Total a cobrar: <b>' + money(a + b) + '</b>');
+    rs.style.display = '';
+  }
+  byId('i_valor').addEventListener('input', pintarResumenCortesia);
+  (function(){
+    var bt = byId('btnMasOpc'), box = byId('i_masOpc');
+    window.__masOpc = function(abrir){ box.style.display = abrir ? '' : 'none'; bt.classList.toggle('open', abrir); bt.setAttribute('aria-expanded', abrir ? 'true' : 'false'); };
+    bt.addEventListener('click', function(){ window.__masOpc(box.style.display === 'none'); });
+  })();
   byId('i_cortesia').addEventListener('change', actualizarCortesiaForm);
   ['i_j1', 'i_j2'].forEach(function(id){ byId(id).addEventListener('input', actualizarCortesiaForm); });
 
@@ -2610,6 +2819,7 @@
     if (!valorManual) {
       byId('i_valor').value = cat ? precio : '';
       byId('i_valorHint').textContent = '';
+      byId('i_autoTag').style.display = '';
       if (byId('i_estadoPago').value === 'APROBADO' && cat) byId('i_pagado').value = cobrableForm();
     }
     actualizarFormInscripcionSegunCategoria();
@@ -2645,6 +2855,7 @@
   // Si el organizador ajusta el valor a mano, se avisa y el pago "completo" lo sigue.
   byId('i_valor').addEventListener('input', function(){
     valorManual = true;
+    byId('i_autoTag').style.display = 'none';
     var cat = categoriaById(byId('i_categoria').value);
     var lista = cat ? precioCategoria(cat, byId('i_tarifa').value) : 0;
     var v = parseFloat(this.value) || 0;
@@ -2715,8 +2926,8 @@
         '<div style="font-weight:700;font-size:13.5px;color:'+color+';">'+sign+money(m.valor).replace('-','')+'</div></div>';
     }).join('') : '<div class="muted" style="padding:20px 0;">'+(finOk ? 'Aún no hay movimientos registrados.' : 'No tienes acceso a los movimientos de este torneo.')+'</div>';
   }
-  function kpiCard(lbl, val, sub){
-    return '<div class="kpi"><div class="kpi-lbl">'+esc(lbl)+'</div><div class="kpi-val">'+val+'</div>' + (sub?'<div class="kpi-sub">'+esc(sub)+'</div>':'') + '</div>';
+  function kpiCard(lbl, val, sub, extra){
+    return '<div class="kpi"><div class="kpi-lbl">'+esc(lbl)+'</div><div class="kpi-val">'+val+'</div>' + (sub?'<div class="kpi-sub">'+esc(sub)+'</div>':'') + (extra||'') + '</div>';
   }
 
   // ---------- detalle de una inscripción (al tocar la fila) ----------
@@ -2859,6 +3070,7 @@
     var h = '<div style="font-weight:700;font-size:16px;line-height:1.3;">' + (i.individual ? esc(i.j1Nombre) : esc(i.j1Nombre) + ' / ' + (i.j2Nombre ? esc(i.j2Nombre) : '<span class="muted">por confirmar</span>')) + '</div>' +
       '<div class="muted" style="margin-top:2px;">' + esc(i.categoriaNombre) + (i.tarifaNombre ? ' · ' + esc(i.tarifaNombre) + (i.precioAjustado ? ' (ajustado)' : '') : '') + '</div>' +
       '<div style="margin-top:8px;">' + chip(ESTADO_INS, i.estadoIns) + '</div>' +
+      (isAdminMode && i.estadoIns !== 'CANCELADA' && puedeEditar('inscripciones') ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button class="btn" id="idtEdJug" style="padding:6px 12px;font-size:12.5px;">Cambiar jugador</button><button class="btn" id="idtEdValor" style="padding:6px 12px;font-size:12.5px;">Cambiar valor</button></div>' : '') +
       '<div class="idt-sec">Por jugador</div>';
     jug.forEach(function(j){
       var val = mitadJ(i, j.n), exento = exentoDe(i, j.n), pag = i['pagadoJ' + j.n] || 0, debe = exento ? 0 : Math.max(0, val - pag), parcial = montoCortesiaDe(i, j.n);
@@ -2910,6 +3122,8 @@
     var bC = byId('idtCobrar'); if (bC) bC.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirFormPago(id); });
     var bX = byId('idtCortesia'); if (bX) bX.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirFormCortesia(id); });
     var bE = byId('idtCerrar'); if (bE) bE.addEventListener('click', cerrarDetalleIns);
+    var bEJ = byId('idtEdJug'); if (bEJ) bEJ.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirCambioJugador(id); });
+    var bEV = byId('idtEdValor'); if (bEV) bEV.addEventListener('click', function(){ var id = i.id; cerrarDetalleIns(); abrirFormValor(id); });
   }
 
   // ---------- render: inscripciones ----------
@@ -2950,9 +3164,9 @@
       var pagado = pagadoTotalIns(i);
       var puedeCobrar = i.estadoIns !== 'CANCELADA' && i.estadoPago !== 'APROBADO';
       return '<tr data-ins-det="'+i.id+'">' +
-        '<td style="font-weight:600;">'+nombreUnidad+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-jug="'+i.id+'" title="Cambiar un jugador de esta inscripción" style="font-size:14px;margin-left:4px;vertical-align:baseline;">✎</button>' : '')+'</td>' +
+        '<td style="font-weight:600;">'+nombreUnidad+'</td>' +
         '<td class="muted">'+esc(i.categoriaNombre)+'</td>' +
-        '<td class="num">'+money(valorCobrable(i))+(isAdminMode && i.estadoIns !== 'CANCELADA' ? ' <button class="logout-btn" data-cambiar-valor="'+i.id+'" title="Cambiar el valor de esta inscripción" style="font-size:13px;margin-left:2px;">✎</button>' : '')+
+        '<td class="num">'+money(valorCobrable(i))+
           (valorCortesia(i) ? '<div style="font-size:11px;font-weight:600;color:var(--accent);" title="'+esc(i.motivoExencion||'')+'">'+esc(textoCortesia(i))+' · −'+money(valorCortesia(i))+'</div>' : '')+
           (i.tarifaNombre ? '<div class="muted" style="font-size:11px;font-weight:500;">'+esc(i.tarifaNombre)+(i.precioAjustado?' · ajustado':'')+'</div>' : '')+'</td>' +
         '<td class="num" style="font-weight:600;color:'+(pagado>=valorCobrable(i)?'var(--green-tx)':(pagado>0?'var(--amber-tx)':'var(--gray-500)'))+';">'+money(pagado)+'</td>' +
@@ -2969,12 +3183,6 @@
     });
     document.querySelectorAll('#insBody tr[data-ins-det]').forEach(function(tr){
       tr.addEventListener('click', function(e){ if (e.target.closest('button, a, input, select')) return; abrirDetalleIns(tr.dataset.insDet); });
-    });
-    document.querySelectorAll('[data-cambiar-valor]').forEach(function(btn){
-      btn.addEventListener('click', function(){ abrirFormValor(btn.dataset.cambiarValor); });
-    });
-    document.querySelectorAll('[data-cambiar-jug]').forEach(function(btn){
-      btn.addEventListener('click', function(){ abrirCambioJugador(btn.dataset.cambiarJug); });
     });
     document.querySelectorAll('[data-cobrar]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormPago(btn.dataset.cobrar); });
@@ -3309,15 +3517,16 @@
       var diff = real - (l.valorProyectado||0);
       var esIngreso = l.tipo === 'INGRESO';
       var diffColor = (esIngreso ? diff >= 0 : diff <= 0) ? 'var(--green-tx)' : 'var(--red-tx)';
-      return '<tr>' +
-        '<td><div style="font-weight:600;">'+esc(l.concepto)+'</div>' +
+      var marcada = !!pendientes['presdel:'+l.id];
+      return '<tr'+(marcada ? ' style="opacity:.55;"' : '')+'>' +
+        '<td><div style="font-weight:600;'+(marcada ? 'text-decoration:line-through;' : '')+'">'+esc(l.concepto)+'</div>' +
           (l.descripcion ? '<div class="muted" style="font-size:11.5px;margin-top:1px;">'+esc(l.descripcion)+'</div>' : '') +
           '</td>' +
         '<td>'+chip(TIPO_MOV, l.tipo)+'</td>' +
         '<td class="num"><input type="number" value="'+pendVal('pres:'+l.id, l.valorProyectado||0)+'" data-linea-id="'+l.id+'" data-wdis="presupuesto" class="pres-input" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-weight:600;font-family:inherit;"></td>' +
         '<td class="num">'+money(real)+'</td>' +
         '<td class="num" style="font-weight:700;color:'+diffColor+';">'+(diff>=0?'+':'')+money(diff).replace('-','−')+'</td>' +
-        '<td><button class="logout-btn" data-w="presupuesto" data-del-linea="'+l.id+'" title="Eliminar">✕</button></td>' +
+        '<td>'+(marcada ? '<button class="btn" data-w="presupuesto" data-rest-linea="'+l.id+'" style="padding:4px 10px;font-size:12px;">Restaurar</button>' : '<button class="logout-btn" data-w="presupuesto" data-del-linea="'+l.id+'" title="Eliminar">✕</button>')+'</td>' +
         '</tr>';
     }).join('');
 
@@ -3333,9 +3542,14 @@
     });
     document.querySelectorAll('[data-del-linea]').forEach(function(btn){
       btn.addEventListener('click', function(){
-        var li = presupuesto.find(function(x){ return x.id === btn.dataset.delLinea; });
-        eliminarConDeshacer(torneoRef.collection('presupuesto').doc(btn.dataset.delLinea), 'Línea eliminada' + (li && li.concepto ? ': ' + li.concepto : ''));
+        var id = btn.dataset.delLinea;
+        delete pendientes['pres:'+id];
+        pend('presdel:'+id, true, function(){ return torneoRef.collection('presupuesto').doc(id).delete(); });
+        renderPresupuesto();
       });
+    });
+    document.querySelectorAll('[data-rest-linea]').forEach(function(btn){
+      btn.addEventListener('click', function(){ delete pendientes['presdel:'+btn.dataset.restLinea]; actualizarBarraCambios(); renderPresupuesto(); });
     });
   }
 
@@ -3572,50 +3786,39 @@
   function categoriasParaViabilidad(){
     return categorias.map(function(c){
       var r = computeCategoriaPartidos(c);
-      return { id: c.id, nombre: c.nombre, parejas: r.parejas, partidos: r.partidos };
+      return { id: c.id, nombre: c.nombre, parejas: r.parejas, partidos: r.partidos, pGrupos: r.partidosGrupos||0, pElim: r.partidosElim||0 };
     });
   }
 
   function renderViabilidadForm(){
     byId('vThUnidad').textContent = torneoEsAmbas() ? 'Inscritos' : labelUnidadPlural();
     if (!categorias.length){
-      byId('v_catlist').innerHTML = '<div class="muted" style="padding:12px 0;">Crea categorías primero (modo administrador → Inscripciones → Categorías).</div>';
+      byId('v_catBody').innerHTML = '<tr class="empty-row"><td colspan="6">Crea categorías primero (modo administrador → Inscripciones → Categorías).</td></tr>';
+      renderHorarioSemanal();
       return;
     }
-    byId('v_catlist').innerHTML = categorias.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}).map(function(c){
+    function mini(txt, attr, id, val){ return '<label class="viab-mini"><span>'+txt+'</span><input class="viab-in" type="number" min="0" data-'+attr+'="'+id+'" value="'+val+'"></label>'; }
+    byId('v_catBody').innerHTML = categorias.slice().sort(function(a,b){return (a.orden||0)-(b.orden||0);}).map(function(c){
       var esGrupos = c.viabFormato === 'GRUPOS';
       var hoy = inscritosHoy(c.id);
       var r = computeCategoriaPartidos(c);
       var individualCat = categoriaEsIndividual(c);
-      var unidadPluralMin = labelUnidadPlural(c).toLowerCase();
-      return '<div class="card" style="padding:14px 16px;">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-          '<span style="font-weight:700;font-size:13.5px;">'+esc(c.nombre)+'</span>' +
-          '<span class="muted" style="font-size:11px;">'+(hoy?('hoy: '+hoy+' inscritas'):'sin inscripciones aún')+' · '+r.partidos+' partido(s)</span>' +
-        '</div>' +
-        '<div class="formgrid" style="gap:8px;margin-bottom:'+(esGrupos?'8px':'0')+';">' +
-          '<div class="field"><label style="font-size:11px;">Formato</label>' +
-          '<select data-viab-formato="'+c.id+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;">' +
-            '<option value="DIRECTA"'+(!esGrupos?' selected':'')+'>Eliminación directa</option>' +
-            '<option value="GRUPOS"'+(esGrupos?' selected':'')+'>Grupos + Eliminación</option>' +
-          '</select></div>' +
-          (esGrupos ? '' :
-            '<div class="field"><label style="font-size:11px;">'+labelUnidadPlural(c)+' estimad'+(individualCat?'os':'as')+'</label>' +
-            '<input type="number" data-viab-parejas="'+c.id+'" value="'+(c.viabParejas||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>') +
-        '</div>' +
-        (esGrupos ?
-          '<div class="formgrid" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;">' +
-            '<div class="field"><label style="font-size:11px;">Núm. grupos</label>' +
-            '<input type="number" data-viab-grupos="'+c.id+'" value="'+(c.viabGrupos||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
-            '<div class="field"><label style="font-size:11px;">'+labelUnidad(c)+' / grupo</label>' +
-            '<input type="number" data-viab-jpg="'+c.id+'" value="'+(c.viabJugadoresPorGrupo||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
-            '<div class="field"><label style="font-size:11px;">Partidos elim.</label>' +
-            '<input type="number" data-viab-elim="'+c.id+'" value="'+(c.viabPartidosElim||0)+'" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;font-weight:600;"></div>' +
-          '</div>' +
-          '<div class="muted" style="font-size:11px;margin-top:8px;">'+r.parejas+' '+unidadPluralMin+' estimad'+(individualCat?'os':'as')+' · '+r.partidosGrupos+' partido(s) de grupos + '+r.partidosElim+' de eliminación</div>'
-          : '') +
-        '</div>';
-    }).join('');
+      var detalle = esGrupos
+        ? mini('Grupos', 'viab-grupos', c.id, c.viabGrupos||0) + mini('Por grupo', 'viab-jpg', c.id, c.viabJugadoresPorGrupo||0) + mini('Partidos elim.', 'viab-elim', c.id, c.viabPartidosElim||0)
+        : mini(labelUnidadPlural(c), 'viab-parejas', c.id, c.viabParejas||0);
+      return '<tr>' +
+        '<td><div style="font-weight:700;">'+esc(c.nombre)+'</div></td>' +
+        '<td class="num muted" id="vr-par-'+c.id+'">'+r.parejas+'</td>' +
+        '<td><select data-viab-formato="'+c.id+'">' +
+          '<option value="DIRECTA"'+(!esGrupos?' selected':'')+'>Eliminación directa</option>' +
+          '<option value="GRUPOS"'+(esGrupos?' selected':'')+'>Grupos + Eliminación</option>' +
+        '</select></td>' +
+        '<td><div class="viab-det">'+detalle+'</div></td>' +
+        '<td class="num"><div style="text-align:right;"><span id="vr-p-'+c.id+'">'+r.partidos+'</span></div>'+(esGrupos ? '<div class="muted" style="font-size:11px;text-align:right;white-space:nowrap;" title="Partidos de grupos + partidos de eliminación">'+r.partidosGrupos+' + '+r.partidosElim+' elim.</div>' : '')+'</td>' +
+        '<td class="num" id="vr-h-'+c.id+'"></td>' +
+        '</tr>';
+    }).join('') +
+    '<tr style="background:var(--gray-200);"><td style="font-weight:700;">Total</td><td class="num" style="font-weight:700;" id="vr-tot-par"></td><td></td><td></td><td class="num" style="font-weight:700;" id="vr-tot-p"></td><td class="num" style="font-weight:700;" id="vr-tot-h"></td></tr>';
 
     document.querySelectorAll('[data-viab-formato]').forEach(function(sel){
       sel.addEventListener('change', function(){
@@ -3658,39 +3861,41 @@
   }
   function renderHorarioSemanal(){
     var cfg = torneoData.viabDias || {};
-    byId('v_diasSemana').innerHTML = DIAS_SEMANA.map(function(d){
-      var c = cfg[d.key] || {};
-      return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-        '<label style="display:flex;align-items:center;gap:6px;min-width:110px;font-size:13px;font-weight:600;">' +
-        '<input type="checkbox" data-vd-activo="'+d.key+'"'+(c.activo?' checked':'')+'> '+d.label+'</label>' +
-        '<input type="time" data-vd-inicio="'+d.key+'" value="'+(c.inicio||'08:00')+'" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12.5px;font-family:inherit;width:110px;">' +
-        '<span class="muted" style="font-size:12px;">a</span>' +
-        '<input type="time" data-vd-fin="'+d.key+'" value="'+(c.fin||'18:00')+'" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12.5px;font-family:inherit;width:110px;">' +
-        '<span class="muted" style="font-size:11.5px;" id="vd-h-'+d.key+'">'+(c.activo?horasDelDia(c).toFixed(1)+'h':'')+'</span>' +
-        '</div>';
+    byId('v_diasChips').innerHTML = DIAS_SEMANA.map(function(d){
+      return '<button type="button" class="viab-chip'+((cfg[d.key]||{}).activo?' on':'')+'" data-vd-chip="'+d.key+'" aria-pressed="'+(!!(cfg[d.key]||{}).activo)+'">'+d.label.slice(0,3)+'</button>';
     }).join('');
+    byId('v_diasSemana').innerHTML = DIAS_SEMANA.filter(function(d){ return (cfg[d.key]||{}).activo; }).map(function(d){
+      var c = cfg[d.key] || {};
+      return '<div class="viab-dia"><b>'+d.label+'</b>' +
+        '<input class="viab-time" type="time" data-vd-inicio="'+d.key+'" value="'+(c.inicio||'08:00')+'">' +
+        '<span class="muted" style="font-size:12px;">a</span>' +
+        '<input class="viab-time" type="time" data-vd-fin="'+d.key+'" value="'+(c.fin||'18:00')+'">' +
+        '<span class="muted" style="font-size:11.5px;" id="vd-h-'+d.key+'">'+horasDelDia(c).toFixed(1)+'h</span>' +
+        '</div>';
+    }).join('') || '<div class="muted" style="font-size:12.5px;">Toca los días en que se juega para poner su horario.</div>';
 
-    function guardarDia(dia){
-      var activo = document.querySelector('[data-vd-activo="'+dia+'"]').checked;
-      var inicio = document.querySelector('[data-vd-inicio="'+dia+'"]').value;
-      var fin = document.querySelector('[data-vd-fin="'+dia+'"]').value;
-      var horas = horasDelDia({activo:activo, inicio:inicio, fin:fin});
-      byId('vd-h-'+dia).textContent = activo ? horas.toFixed(1)+'h' : '';
+    function guardarDia(dia, activo, inicio, fin){
       var nuevo = Object.assign({}, torneoData.viabDias || {});
       nuevo[dia] = { activo: activo, inicio: inicio, fin: fin };
       torneoData.viabDias = nuevo;
       torneoRef.set({ viabDias: nuevo }, { merge: true }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
       calcularViabilidad();
     }
-    document.querySelectorAll('[data-vd-activo]').forEach(function(cb){
-      cb.addEventListener('change', function(){ guardarDia(cb.dataset.vdActivo); });
+    document.querySelectorAll('[data-vd-chip]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var dia = b.dataset.vdChip, c = (torneoData.viabDias || {})[dia] || {};
+        guardarDia(dia, !c.activo, c.inicio || '08:00', c.fin || '18:00');
+        renderHorarioSemanal();
+        if (!puedeEditar('viabilidad')) document.querySelectorAll('[data-vd-chip],[data-vd-inicio],[data-vd-fin]').forEach(function(el){ el.disabled = true; });
+      });
     });
-    document.querySelectorAll('[data-vd-inicio]').forEach(function(inp){
-      inp.addEventListener('change', function(){ guardarDia(inp.dataset.vdInicio); });
-    });
-    document.querySelectorAll('[data-vd-fin]').forEach(function(inp){
-      inp.addEventListener('change', function(){ guardarDia(inp.dataset.vdFin); });
-    });
+    function cambioHora(dia){
+      var ini = document.querySelector('[data-vd-inicio="'+dia+'"]'), fin = document.querySelector('[data-vd-fin="'+dia+'"]');
+      var h = byId('vd-h-'+dia); if (h) h.textContent = horasDelDia({activo:true, inicio:ini.value, fin:fin.value}).toFixed(1)+'h';
+      guardarDia(dia, true, ini.value, fin.value);
+    }
+    document.querySelectorAll('[data-vd-inicio]').forEach(function(inp){ inp.addEventListener('change', function(){ cambioHora(inp.dataset.vdInicio); }); });
+    document.querySelectorAll('[data-vd-fin]').forEach(function(inp){ inp.addEventListener('change', function(){ cambioHora(inp.dataset.vdFin); }); });
   }
   function horasDisponiblesSemana(){
     var cfg = torneoData.viabDias || {};
@@ -3734,19 +3939,28 @@
       (viable ? 'Sobran '+margen.toFixed(1)+' horas de cancha con esta configuración.' : 'Faltan '+Math.abs(margen).toFixed(1)+' horas de cancha para completar los '+totalPartidos+' partidos programados.') +
       '</div></div>';
 
+    var pG = cats.reduce(function(a,c){return a+c.pGrupos;},0), pE = cats.reduce(function(a,c){return a+c.pElim;},0);
+    var barColor = ocupacion>100 ? '#C77D0A' : '#2F7C31';
+    var barra = '<div class="viab-bar"><div style="width:'+Math.min(ocupacion,100)+'%;background:'+barColor+';"></div></div>';
     byId('v_kpis').innerHTML =
-      kpiCard('Partidos Totales', String(totalPartidos)) +
-      kpiCard('Horas Necesarias', totalHoras.toFixed(1)+'h') +
-      kpiCard('Horas Disponibles', horasDisponibles.toFixed(1)+'h') +
-      kpiCard('Canchas Mínimas', String(canchasMinimas), canchasMinimas>canchas ? ('tienes '+canchas+' disponibles') : '') +
-      kpiCard('Ocupación Proyectada', ocupacion+'%') +
-      kpiCard('Margen', (margen>=0?'+':'')+margen.toFixed(1)+'h');
+      kpiCard('Partidos Totales', String(totalPartidos), pG ? (pG+' grupos + '+pE+' elim.') : (cats.length+' categoría(s)')) +
+      kpiCard('Horas Necesarias', totalHoras.toFixed(1)+'h', totalPartidos+' partidos × '+duracionMin+' min') +
+      kpiCard('Horas Disponibles', horasDisponibles.toFixed(1)+'h', semana.horas.toFixed(1)+'h × '+canchas+(canchas===1?' cancha':' canchas')) +
+      kpiCard('Canchas Mínimas', String(canchasMinimas), 'tienes '+canchas+(canchas===1?' cancha':' canchas')) +
+      kpiCard('Ocupación', ocupacion+'%', ocupacion>100 ? 'Supera lo disponible' : 'de la capacidad', barra) +
+      kpiCard('Margen', (margen>=0?'+':'')+margen.toFixed(1)+'h', margen>=0 ? 'horas de sobra' : 'horas por cubrir');
 
-    byId('v_catBody').innerHTML = rows.length ? rows.map(function(r){
-      return '<tr><td style="font-weight:600;">'+esc(r.nombre)+'</td><td class="num muted">'+r.parejas+'</td><td class="num">'+r.partidos+'</td><td class="num">'+r.horas.toFixed(1)+'h</td></tr>';
-    }).join('') + '<tr style="background:var(--gray-200);"><td style="font-weight:700;">Total</td><td class="num" style="font-weight:700;">'+cats.reduce(function(s,c){return s+c.parejas;},0)+'</td><td class="num" style="font-weight:700;">'+totalPartidos+'</td><td class="num" style="font-weight:700;">'+totalHoras.toFixed(1)+'h</td></tr>'
-      : '<tr class="empty-row"><td colspan="4">Crea categorías para poder calcular.</td></tr>';
+    cats.forEach(function(c, k){
+      var r = rows[k];
+      var a = byId('vr-par-'+c.id), b = byId('vr-p-'+c.id), h = byId('vr-h-'+c.id);
+      if (a) a.textContent = r.parejas; if (b) b.textContent = r.partidos; if (h) h.textContent = r.horas.toFixed(1)+'h';
+    });
+    var tp = byId('vr-tot-par'), tpa = byId('vr-tot-p'), th = byId('vr-tot-h');
+    if (tp) tp.textContent = cats.reduce(function(sm,c){return sm+c.parejas;},0);
+    if (tpa) tpa.textContent = totalPartidos;
+    if (th) th.textContent = totalHoras.toFixed(1)+'h';
   }
+  ['v_canchas','v_duracion'].forEach(function(id){ byId(id).addEventListener('input', calcularViabilidad); });
   byId('btnCalcularViabilidad').addEventListener('click', calcularViabilidad);
 
   // ---------- render: configuración ----------
@@ -3993,7 +4207,7 @@
   function historialDeJugador(j){ return j.historial || []; }
   var jugadoresListos = false;
   function renderJugadores(){
-    if (!jugadoresListos) { byId('jugadoresBody').innerHTML = vacioFila(6, '<div class="muted" style="padding:28px 0;text-align:center;">Cargando jugadores…</div>'); return; }
+    if (!jugadoresListos) { byId('jugadoresBody').innerHTML = vacioFila(5, '<div class="muted" style="padding:28px 0;text-align:center;">Cargando jugadores…</div>'); return; }
     var q = normalizaTexto(byId('jug_buscar').value);
     var lista = jugadoresGlobal.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
     // filtro por categoría (se arma con las categorías de todos los jugadores)
@@ -4011,66 +4225,33 @@
 
     if (!lista.length){
       byId('jugadoresBody').innerHTML = jugadoresGlobal.length
-        ? vacioFila(6, vacioHtml('lista', 'Sin resultados', 'Prueba con otra búsqueda o con otra categoría.'))
-        : vacioFila(6, vacioHtml('personas', 'Aún no tienes jugadores', 'Se van agregando solos cuando inscribes a alguien. También puedes crearlos a mano.', { accion: 'jugador', texto: '+ Nuevo jugador' }));
+        ? vacioFila(5, vacioHtml('lista', 'Sin resultados', 'Prueba con otra búsqueda o con otra categoría.'))
+        : vacioFila(5, vacioHtml('personas', 'Aún no tienes jugadores', 'Se van agregando solos cuando inscribes a alguien. También puedes crearlos a mano.', { accion: 'jugador', texto: '+ Nuevo jugador' }));
       return;
     }
     byId('jugadoresBody').innerHTML = lista.map(function(j){
       var cats = (j.categorias || []).join(', ') || '—';
       var hist = historialDeJugador(j);
-      return '<tr>' +
+      return '<tr'+(isAdminMode ? ' data-edit-jugador="'+j.id+'" style="cursor:pointer;" title="Toca para editar"' : '')+'>' +
         '<td style="font-weight:600;">'+esc(j.nombre)+'</td>' +
         '<td class="muted">'+esc(j.telefono||'—')+'</td>' +
         '<td class="muted">'+esc(cats)+'</td>' +
         '<td class="num">'+hist.length+'</td>' +
-        '<td><button class="btn" data-ver-historial="'+j.id+'" style="padding:5px 10px;font-size:12px;">'+(hist.length?'Ver historial':'')+'</button></td>' +
-        '<td style="white-space:nowrap;">'+(isAdminMode ? '<button class="btn" data-edit-jugador="'+j.id+'" style="padding:5px 10px;font-size:12px;">Editar</button> ' : '')+(isAdminMode ? '<button class="logout-btn" data-del-jugador="'+j.id+'" title="Eliminar jugador">✕</button>' : '')+'</td>' +
-        '</tr>' +
-        '<tr id="hist-'+j.id+'" style="display:none;"><td colspan="6" style="background:var(--gray-200);padding:12px 24px;">' +
-          (hist.length ? hist.map(function(h, k){ return {h:h, k:k}; }).sort(function(a,b){return (b.h.fecha||0)-(a.h.fecha||0);}).map(function(o){
-            var h = o.h;
-            return '<div style="font-size:12.5px;padding:3px 0;display:flex;gap:8px;align-items:center;"><span><strong>'+esc(h.torneo||'—')+'</strong> · '+esc(h.categoria||'—')+' · '+fmtDate(h.fecha)+'</span>' +
-              (isAdminMode ? '<button class="logout-btn" data-del-hist="'+j.id+'" data-hist-idx="'+o.k+'" title="Quitar esta participación del historial">✕</button>' : '') + '</div>';
-          }).join('') : '') +
-        '</td></tr>';
+        '<td style="white-space:nowrap;text-align:right;">'+(isAdminMode ? '<button class="logout-btn" data-del-jugador="'+j.id+'" title="Eliminar jugador">✕</button>' : '')+'</td>' +
+        '</tr>';
     }).join('');
 
-    document.querySelectorAll('[data-ver-historial]').forEach(function(btn){
-      if (!btn.textContent) return;
-      btn.addEventListener('click', function(){
-        var row = byId('hist-'+btn.dataset.verHistorial);
-        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-      });
-    });
-    document.querySelectorAll('[data-del-hist]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var j = jugadoresGlobal.find(function(x){ return x.id === btn.dataset.delHist; });
-        if (!j) return;
-        var hist = (j.historial || []).slice();
-        var k = parseInt(btn.dataset.histIdx, 10);
-        var h = hist[k];
-        if (!h) return;
-        var antes = (j.historial || []).slice(), catsAntes = (j.categorias || []).slice();
-        hist.splice(k, 1);
-        userRef.collection('jugadores').doc(j.id).update({ historial: hist, categorias: recalcularCategorias(hist) })
-          .then(function(){
-            ofrecerDeshacer('Quitado del historial de ' + j.nombre + ': ' + (h.categoria || '—'), function(){
-              return userRef.collection('jugadores').doc(j.id).update({ historial: antes, categorias: catsAntes });
-            });
-          })
-          .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
-      });
-    });
+    if (editandoJugadorId) pintarHistJugador();
     document.querySelectorAll('[data-edit-jugador]').forEach(function(btn){
-      btn.addEventListener('click', function(){
+      btn.addEventListener('click', function(e){
+        if (e.target.closest('button, a, input, select')) return;
         var ju = jugadoresGlobal.find(function(x){ return x.id === btn.dataset.editJugador; });
         if (!ju) return;
         editandoJugadorId = ju.id;
         byId('jTitulo').textContent = 'Editar jugador';
         byId('btnGuardarJugador').textContent = 'Guardar cambios';
         byId('j_nombre').value = ju.nombre || ''; byId('j_telefono').value = ju.telefono || '';
-        openForm('jugador');
-        byId('formJugador').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openForm('jugador'); pintarHistJugador();
         byId('j_nombre').focus();
       });
     });
@@ -4085,10 +4266,37 @@
   byId('jug_filtroCat').addEventListener('change', renderJugadores);
 
   var editandoJugadorId = null;
+  function pintarHistJugador(){
+    var wrap = byId('j_histWrap'); if (!wrap) return;
+    var j = editandoJugadorId ? jugadoresGlobal.find(function(x){ return x.id === editandoJugadorId; }) : null;
+    if (!j) { wrap.style.display = 'none'; return; }
+    var hist = historialDeJugador(j);
+    wrap.style.display = 'block';
+    byId('j_histBody').innerHTML = hist.length ? hist.map(function(h, k){ return {h:h, k:k}; }).sort(function(a,b){return (b.h.fecha||0)-(a.h.fecha||0);}).map(function(o){
+      var h = o.h;
+      return '<div style="font-size:13px;padding:7px 0;display:flex;gap:8px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-200);"><span><strong>'+esc(h.torneo||'—')+'</strong> · '+esc(h.categoria||'—')+' · '+fmtDate(h.fecha)+'</span>' +
+        (isAdminMode ? '<button class="logout-btn" data-del-hist="'+j.id+'" data-hist-idx="'+o.k+'" title="Quitar esta participación del historial">✕</button>' : '') + '</div>';
+    }).join('') : '<div class="muted" style="font-size:13px;">Aún no ha jugado ningún torneo.</div>';
+    byId('j_histBody').querySelectorAll('[data-del-hist]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var hist2 = (j.historial || []).slice(), k = parseInt(btn.dataset.histIdx, 10), h = hist2[k];
+        if (!h) return;
+        var antes = (j.historial || []).slice(), catsAntes = (j.categorias || []).slice();
+        hist2.splice(k, 1);
+        userRef.collection('jugadores').doc(j.id).update({ historial: hist2, categorias: recalcularCategorias(hist2) })
+          .then(function(){
+            ofrecerDeshacer('Quitado del historial de ' + j.nombre + ': ' + (h.categoria || '—'), function(){
+              return userRef.collection('jugadores').doc(j.id).update({ historial: antes, categorias: catsAntes });
+            });
+          })
+          .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+      });
+    });
+  }
   function jugadorFormANuevo(){
     editandoJugadorId = null;
     byId('jTitulo').textContent = 'Nuevo Jugador'; byId('btnGuardarJugador').textContent = 'Guardar Jugador';
-    byId('j_nombre').value = ''; byId('j_telefono').value = '';
+    byId('j_nombre').value = ''; byId('j_telefono').value = ''; pintarHistJugador();
   }
   byId('btnNuevoJugador').addEventListener('click', function(){ if (editandoJugadorId) jugadorFormANuevo(); });
   document.querySelectorAll('[data-close-form="jugador"]').forEach(function(b){ b.addEventListener('click', jugadorFormANuevo); });
@@ -4614,6 +4822,7 @@
       fillTarifaSelect();
       fillCategoriaSelect();
       actualizarQuienPago();
+      if (window.__masOpc) window.__masOpc(false);
       closeForm('inscripcion');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
@@ -5645,7 +5854,7 @@
     });
     document.querySelectorAll('[data-wdis]').forEach(function(el){ el.disabled = !puedeEditar(el.dataset.wdis); });
     if (!puedeEditar('viabilidad')) {
-      document.querySelectorAll('[data-viab-formato],[data-viab-parejas],[data-viab-grupos],[data-viab-jpg],[data-viab-elim],[data-vd-activo],[data-vd-inicio],[data-vd-fin]').forEach(function(el){ el.disabled = true; });
+      document.querySelectorAll('[data-viab-formato],[data-viab-parejas],[data-viab-grupos],[data-viab-jpg],[data-viab-elim],[data-vd-chip],[data-vd-inicio],[data-vd-fin]').forEach(function(el){ el.disabled = true; });
     }
     var activo = document.querySelector('.navitem.active');
     if (activo && activo.classList.contains('perm-hide')) setView('dashboard');
