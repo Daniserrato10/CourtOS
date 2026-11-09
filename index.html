@@ -249,7 +249,7 @@
   .field input:disabled { background: #F7F6F2; color: var(--gray-500); }
   /* Dinero con $ y etiqueta "auto" */
   .money { position: relative; }
-  .money .pre { position: absolute; left: 14px; top: 0; height: 46px; line-height: 46px; color: var(--gray-500); font-size: 14.5px; pointer-events: none; }
+  .money .pre { position: absolute; left: 14px; top: 0; height: 46px; display: flex; align-items: center; line-height: 1; color: var(--gray-500); font-size: 14.5px; font-weight: 500; pointer-events: none; }
   .money input { padding-left: 28px !important; }
   .money input.con-auto { padding-right: 58px !important; }
   .money .auto-tag { position: absolute; right: 10px; top: 23px; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: var(--gray-500); background: var(--gray-200); border-radius: 6px; padding: 2px 7px; pointer-events: none; }
@@ -294,7 +294,7 @@
   #formInscripcion .field label, #formPago .field label { font-size: 11.5px; }
   #formInscripcion .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]), #formInscripcion .field select, #formPago .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]), #formPago .field select { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
   #formInscripcion .cs-trigger, #formPago .cs-trigger { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
-  #formInscripcion .money .pre, #formPago .money .pre { height: 38px; line-height: 38px; left: 11px; font-size: 13px; }
+  #formInscripcion .money .pre, #formPago .money .pre { height: 38px; left: 11px; font-size: 13px; }
   #formInscripcion .money input, #formPago .money input { padding-left: 24px !important; }
   #formInscripcion .money .auto-tag { top: 19px; font-size: 10.5px; }
   .compacto .seg { height: 38px; border-radius: 8px; padding: 3px; gap: 3px; }
@@ -304,6 +304,14 @@
   @media (max-width: 900px) { .ins4, .ins5, .cort-grid { grid-template-columns: 1fr 1fr; } }
   #formInscripcion .ins-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px; }
   #insDetBody .field input, #insDetBody .field select, #movDetalleBody .field input, #movDetalleBody .field select { height: 38px; }
+  #insDetBody .cs-trigger, #movDetalleBody .cs-trigger { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
+  #insDetBody .field input, #insDetBody .field select, #movDetalleBody .field input, #movDetalleBody .field select { border-radius: 8px; padding: 0 11px; font-size: 13px; }
+  #insDetBody .money .pre, #movDetalleBody .money .pre, #datosModal .money .pre { height: 38px; left: 11px; font-size: 13px; }
+  #insDetBody .money input, #movDetalleBody .money input { padding-left: 24px !important; }
+  #insDetBody .field label, #movDetalleBody .field label { font-size: 12px; }
+  #insDetBody input::-webkit-calendar-picker-indicator, #movDetalleBody input::-webkit-calendar-picker-indicator { display: none !important; }
+  #movDetalleBody .mov-ed { gap: 12px 14px !important; }
+  #movDetalleBody .cs-trigger:disabled, #insDetBody .cs-trigger:disabled { background: #F4F3EF; }
   #movDetalleBody .money:has(input:disabled) { background: #F4F3EF; color: var(--gray-500); }
   #movDetalleBody input:disabled { background: #F4F3EF; color: var(--gray-500); }
   #insDetBody.ed { display: flex; flex-direction: column; gap: 12px; }
@@ -407,6 +415,55 @@
     #admSidebar { width: 100%; min-width: 0; height: auto; position: relative; padding: 14px; gap: 10px; }
     #admContent { padding: 22px 18px 40px; }
   }
+  .cfg-wrap2 { width: 100%; max-width: 1080px; margin: 0; display: flex; flex-direction: column; gap: 18px; }
+  .cfg-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .cfg-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .cfg-card { padding: 20px 22px !important; display: flex; flex-direction: column; gap: 14px; }
+  .cfg-card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .cfg-card-h .btn { white-space: nowrap; flex-shrink: 0; }
+  .cfg-card-t { font-weight: 800; font-size: 16px; letter-spacing: -0.02em; margin-bottom: 2px; }
+  .cfg-rows { margin: 0; display: flex; flex-direction: column; }
+  .cfg-rows > div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .cfg-rows > div:last-child { border-bottom: none; }
+  .cfg-rows dt { color: var(--gray-500); }
+  .cfg-rows dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+  .cfg-fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+  .cfg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  #datosModal .field input, #datosModal .field select, #datosModal .cs-trigger, #shInvModal .field input, #shInvModal .field select, #shInvModal .cs-trigger, #shEdModal .field select, #shEdModal .cs-trigger { height: 38px; border-radius: 8px; padding: 0 11px; font-size: 13px; }
+  #datosModal .field label, #shInvModal .field label, #shEdModal .field label { font-size: 12px; }
+  #datosModal .field input[type=date] { padding: 0 8px; }
+  .cfg-mark { width: 52px; height: 52px; border-radius: 14px; background: var(--accent-bg); color: var(--accent); font-weight: 800; font-size: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cfg-name { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .cfg-datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 24px; border-top: 1px solid var(--border); padding-top: 18px; }
+  .cfg-datos > div .k { font-size: 11px; font-weight: 700; color: var(--gray-500); letter-spacing: 0.5px; text-transform: uppercase; }
+  .cfg-datos > div .v { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; margin-top: 4px; overflow-wrap: anywhere; }
+  @media (max-width: 700px) { .cfg-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cfg-stepper { display: flex; align-items: flex-start; }
+  .cfg-step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; font-size: 12px; font-weight: 600; color: #9a978c; }
+  .cfg-step i { width: 22px; height: 22px; border-radius: 50%; background: var(--gray-200); color: #9a978c; font-style: normal; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .cfg-step.on { color: var(--ink); } .cfg-step.on i { background: var(--accent); color: #fff; }
+  .cfg-step.cur { font-weight: 800; } .cfg-step.cur i { box-shadow: 0 0 0 4px var(--accent-bg); }
+  .cfg-stline { flex: 1; height: 2px; background: var(--border); margin: 10px 8px 0; }
+  .cfg-stline.on { background: var(--accent); }
+  .cfg-prog { display: flex; flex-direction: column; gap: 12px; }
+  .cfg-pr-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+  .cfg-pr-top span:last-child { color: var(--gray-500); }
+  .cfg-pr-bar { height: 7px; background: var(--gray-200); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .cfg-pr-bar div { height: 100%; border-radius: 4px; background: var(--accent); }
+  .sh-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .sh-row:last-child { border-bottom: none; }
+  .sh-av { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sh-info { flex: 1; min-width: 0; }
+  .sh-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sh-mail { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; }
+  .sh-res { font-size: 12.5px; color: var(--gray-500); margin-top: 2px; }
+  .sh-sub { font-size: 11px; font-weight: 700; color: var(--gray-500); letter-spacing: 0.6px; text-transform: uppercase; padding: 14px 0 2px; }
+  .sh-btns { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .sh-btns .btn { padding: 6px 12px; font-size: 12.5px; }
+  .sh-modal { display: none; position: fixed; inset: 0; background: rgba(24,24,15,0.55); z-index: 200; justify-content: center; align-items: center; padding: 24px; }
+  .sh-modal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  .sh-modal .row-item { padding: 8px 0; }
+  @media (max-width: 900px) { .cfg-grid { grid-template-columns: 1fr; } .cfg-fgrid { grid-template-columns: 1fr; } }
   .cfg-wrap { width: 100%; max-width: 680px; margin: 0; display: flex; flex-direction: column; gap: 18px; }
   .cfg-wrap > * { max-width: none !important; }
   .cfg-hero { padding: 18px 20px !important; display: flex; flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -551,6 +608,14 @@
   #planModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
   #userPlanLabel { cursor: pointer; }
   #userPlanLabel:hover { text-decoration: underline; }
+  #repExportModal { display: none; }
+  #repExportModal.show { display: flex; animation: overlayIn 180ms ease-out; }
+  .rep-chk { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .rep-tabs { display: flex; gap: 4px; background: var(--gray-200); border-radius: 10px; padding: 4px; align-self: flex-start; max-width: 100%; overflow-x: auto; }
+  .rep-tabs button { border: none; background: none; border-radius: 7px; font: inherit; font-size: 13px; font-weight: 600; color: var(--gray-500); padding: 8px 14px; white-space: nowrap; cursor: pointer; }
+  .rep-tabs button:hover { color: var(--ink); }
+  .rep-tabs button.on { background: #fff; color: var(--ink); font-weight: 700; box-shadow: 0 1px 3px rgba(24,24,15,0.12); }
+  @media screen { [data-rep-tab].tab-off { display: none !important; } }
   #movModal { display: none; }
   #movModal.show { display: flex; animation: overlayIn 180ms ease-out; }
   #movModal.show .card { animation: modalIn 220ms var(--ease-out); box-shadow: var(--shadow-md); }
@@ -860,6 +925,109 @@
       <button class="logout-btn" id="btnCerrarPlan" title="Cerrar">✕</button>
     </div>
     <div style="padding:16px 22px 18px; overflow-y:auto;" id="planBody"></div>
+  </div>
+</div>
+
+<div id="repExportModal" style="position:fixed; inset:0; background:rgba(24,24,15,0.55); z-index:200; justify-content:center; align-items:center; padding:24px;">
+  <div class="card" style="width:100%; max-width:460px; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border);">
+      <div style="font-weight:700; font-size:15px;">Imprimir / Exportar</div>
+      <button class="logout-btn" id="btnRepExpCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span class="ins-lab">Qué incluir</span>
+        <span style="display:flex; gap:12px; font-size:12.5px; font-weight:600;"><a href="#" id="btnRepTodos" style="color:var(--accent);">Todos</a><a href="#" id="btnRepNinguno" style="color:var(--gray-500);">Ninguno</a></span>
+      </div>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="estado" checked> Estado de resultados</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="ingresos" checked> Ingresos por categoría</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="gastos" checked> Gastos por categoría</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="flujo" checked> Flujo de caja</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="tarifas" checked> Inscripciones por tarifa</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="cxc" checked> Cuentas por cobrar</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="presupuesto" checked> Presupuesto vs. real</label>
+      <label class="rep-chk"><input type="checkbox" data-report-toggle="detalle" checked> Detalle de movimientos <span class="muted" style="font-size:12px;font-weight:500;">solo Excel y CSV</span></label>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border);">
+      <button class="btn" id="btnRepExpCancelar" style="margin-right:auto;">Cancelar</button>
+      <button class="btn" id="btnRepExpCsv">CSV</button>
+      <button class="btn" id="btnRepExpXlsx">Excel</button>
+      <button class="btn btn-primary" id="btnRepExpImprimir">Imprimir PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="datosModal" class="sh-modal">
+  <div class="card" style="width:100%; max-width:600px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Editar datos del torneo</div>
+      <button class="logout-btn" id="btnDatosCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px; overflow-y:auto;" id="formConfig">
+      <div class="cfg-fgrid">
+        <div class="field"><label>Nombre</label><input id="cfg_nombre"></div>
+        <div class="field"><label>Deporte</label><input id="cfg_deporte" readonly style="background:var(--sidebar);color:var(--gray-500);cursor:not-allowed;"></div>
+        <div class="field"><label>Ciudad</label><input id="cfg_ciudad"></div>
+        <div class="field"><label>Club / Sede</label><input id="cfg_club"></div>
+        <div class="field"><label>Fecha inicio</label><input id="cfg_fechaInicio" type="date"></div>
+        <div class="field"><label>Fecha fin</label><input id="cfg_fechaFin" type="date"></div>
+        <div class="field"><label id="cfg_cuposLabel">Cupos totales (parejas)</label><input id="cfg_cupos" type="number"></div>
+        <div class="field"><label>Estado</label>
+          <select id="cfg_estado">
+            <option value="PLANIFICADA">Planificada</option>
+            <option value="ABIERTA">Abierta</option>
+            <option value="EN_CURSO">En curso</option>
+            <option value="FINALIZADA">Finalizada</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border);">
+      <button class="btn" id="btnCancelarConfig">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarConfig">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div id="shInvModal" class="sh-modal">
+  <div class="card" style="width:100%; max-width:560px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;">Invitar persona</div>
+      <button class="logout-btn" id="btnShInvCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;" id="shInvBody">
+      <div class="field"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
+      <div class="cfg-fgrid">
+        <div class="field"><label>Tu nombre (para el mensaje)</label><input id="sh_miNombre" placeholder="Ej: Daniel Serrato"></div>
+        <div class="field"><label>Rol</label>
+          <select id="sh_rol">
+            <option value="LECTOR">Lector — solo puede ver</option>
+            <option value="EDITOR">Editor — puede editar lo que tú elijas</option>
+          </select>
+        </div>
+      </div>
+      <div class="ins-lab">Qué puede hacer en cada parte</div>
+      <div id="sh_permisos"></div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border);">
+      <button class="btn" id="btnShInvCancelar" style="margin-right:auto;">Cancelar</button>
+      <button class="btn btn-primary" id="btnInvitar">Enviar invitación</button>
+    </div>
+  </div>
+</div>
+
+<div id="shEdModal" class="sh-modal">
+  <div class="card" style="width:100%; max-width:560px; max-height:calc(100vh - 40px); display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="font-weight:700; font-size:15px;" id="shEdTitulo">Permisos</div>
+      <button class="logout-btn" id="btnShEdCerrar" title="Cerrar">✕</button>
+    </div>
+    <div style="padding:16px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;" id="shEdBody"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border);">
+      <button class="btn" id="btnShEdQuitar" style="margin-right:auto;">Quitar acceso</button>
+      <button class="btn" id="btnShEdCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="btnShEdGuardar">Guardar cambios</button>
+    </div>
   </div>
 </div>
 
@@ -1563,7 +1731,7 @@
           <div class="page-title">Reportes</div>
           <div class="page-sub">Cuánto entró, cuánto salió, en qué se gastó y cómo va contra lo presupuestado</div>
         </div>
-        <button class="btn btn-primary no-print" id="btnImprimirReporte">🖨️ Imprimir / Exportar PDF <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
+        <button class="btn btn-primary no-print" id="btnImprimirReporte">Imprimir / Exportar <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
       </div>
 
       <div class="print-only" id="repPrintHead" style="display:none;">
@@ -1582,36 +1750,25 @@
         <span class="muted" style="font-size:12px;">Si no filtras, se muestra todo el histórico del torneo.</span>
       </div>
 
-      <div class="card no-print" style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <span style="font-weight:700; font-size:13px;">Qué incluir al exportar</span>
-          <div style="display:flex; gap:8px;">
-            <button class="btn" id="btnRepTodos" style="padding:6px 12px; font-size:12px;">Reporte general (todos)</button>
-            <button class="btn" id="btnRepNinguno" style="padding:6px 12px; font-size:12px;">Ninguno</button>
-          </div>
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:13px;">
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="estado" checked> Estado de Resultados</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="ingresos" checked> Ingresos por Categoría</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="gastos" checked> Gastos por Categoría</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="flujo" checked> Flujo de Caja</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="detalle" checked> Detalle de Movimientos</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="tarifas" checked> Inscripciones por Tarifa</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="cxc" checked> Cuentas por Cobrar</label>
-          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-report-toggle="presupuesto" checked> Presupuesto vs. Real</label>
-        </div>
-      </div>
-
       <div class="kpi-grid" id="repKpis"></div>
 
-      <div class="panel" data-report-section="estado">
+      <div class="rep-tabs no-print" id="repTabs">
+        <button data-rep-go="estado" class="on">Estado de resultados</button>
+        <button data-rep-go="gastos">Ingresos y gastos</button>
+        <button data-rep-go="flujo">Flujo de caja</button>
+        <button data-rep-go="tarifas">Inscripciones</button>
+        <button data-rep-go="cxc">Por cobrar</button>
+        <button data-rep-go="presupuesto">Presupuesto</button>
+      </div>
+
+      <div class="panel" data-report-section="estado" data-rep-tab="estado">
         <div class="panel-title">Estado de Resultados</div>
         <table class="datatable" style="margin-top:10px;">
           <tbody id="repEstadoResultados"></tbody>
         </table>
       </div>
 
-      <div class="panels" style="flex:none;">
+      <div class="panels" style="flex:none;" data-rep-tab="gastos">
         <div class="panel" data-report-section="ingresos">
           <div class="panel-title">Ingresos por Categoría</div>
           <div id="repIngresos"></div>
@@ -1622,7 +1779,7 @@
         </div>
       </div>
 
-      <div class="panel" data-report-section="flujo">
+      <div class="panel" data-report-section="flujo" data-rep-tab="flujo">
         <div class="panel-title">Flujo de Caja (saldo acumulado día a día)</div>
         <table class="datatable" style="margin-top:10px;">
           <thead><tr><th>Fecha</th><th style="text-align:right">Ingresos del día</th><th style="text-align:right">Gastos del día</th><th style="text-align:right">Saldo Acumulado</th></tr></thead>
@@ -1630,15 +1787,7 @@
         </table>
       </div>
 
-      <div class="panel" data-report-section="detalle">
-        <div class="panel-title">Detalle de Movimientos (con fecha y hora)</div>
-        <table class="datatable" style="margin-top:10px;">
-          <thead><tr><th>Fecha y hora</th><th>Concepto</th><th>Cuenta</th><th style="text-align:right">Ingreso</th><th style="text-align:right">Gasto</th></tr></thead>
-          <tbody id="repDetalleBody"></tbody>
-        </table>
-      </div>
-
-      <div class="panel" data-report-section="tarifas">
+      <div class="panel" data-report-section="tarifas" data-rep-tab="tarifas">
         <div class="panel-title">Inscripciones por Tarifa (todas las inscripciones activas)</div>
         <table class="datatable" style="margin-top:10px;">
           <thead><tr><th>Tarifa</th><th style="text-align:right">Inscripciones</th><th style="text-align:right">Valor total</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Por cobrar</th></tr></thead>
@@ -1647,7 +1796,7 @@
         <div class="muted" id="repCortesias" style="font-size:12.5px;margin-top:10px;"></div>
       </div>
 
-      <div class="panel" data-report-section="cxc">
+      <div class="panel" data-report-section="cxc" data-rep-tab="cxc">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="panel-title">Cuentas por Cobrar (inscripciones con saldo pendiente hoy)</div>
           <span style="font-weight:800; font-size:16px;" id="repCxCTotal">$0</span>
@@ -1658,7 +1807,7 @@
         </table>
       </div>
 
-      <div class="panel" data-report-section="presupuesto">
+      <div class="panel" data-report-section="presupuesto" data-rep-tab="presupuesto">
         <div class="panel-title">Presupuesto vs. Real</div>
         <table class="datatable" style="margin-top:10px;">
           <thead><tr><th>Concepto</th><th>Tipo</th><th style="text-align:right">Presupuestado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th></tr></thead>
@@ -1666,7 +1815,7 @@
         </table>
       </div>
 
-      <div class="card no-print" style="padding:14px 20px; font-size:12.5px; color:var(--gray-500);">
+      <div class="card no-print" data-rep-tab="cxc" style="padding:14px 20px; font-size:12.5px; color:var(--gray-500);">
         ℹ️ <strong>Cuentas por pagar</strong> todavía no aplica: en CourtOS un gasto se registra cuando ya se pagó, así que hoy no existe el concepto de "factura pendiente de pagar". Si necesitas rastrear compromisos de gasto antes de pagarlos, lo podemos agregar como una funcionalidad aparte.
       </div>
     </section>
@@ -1716,7 +1865,7 @@
           <div class="page-title">Jugadores <span style="font-size:10px;font-weight:700;background:var(--accent-bg);color:var(--accent);padding:2px 7px;border-radius:5px;vertical-align:middle;">PRO</span></div>
           <div class="page-sub">Base de datos compartida entre todos tus torneos — no se borra al crear uno nuevo</div>
         </div>
-        <button class="btn btn-primary" id="btnNuevoJugador" data-toggle-form="jugador">+ Nuevo Jugador</button>
+        <div style="display:flex;gap:8px;"><button class="btn" id="btnExportarJugadores">Exportar</button><button class="btn btn-primary" id="btnNuevoJugador" data-toggle-form="jugador">+ Nuevo Jugador</button></div>
       </div>
 
       <div id="jugadoresLock" style="display:none;"></div>
@@ -1777,53 +1926,48 @@
 
     <!-- CONFIGURACIÓN -->
     <section class="view" data-view="configuracion">
-     <div class="cfg-wrap">
+     <div class="cfg-wrap2">
       <div class="page-head">
         <div>
           <div class="page-title">Configuración del Torneo</div>
-          <div class="page-sub">Datos generales de este torneo, protegidos con PIN</div>
+          <div class="page-sub">Datos, equipo y administración de este torneo</div>
         </div>
       </div>
 
-      <div class="card cfg-hero" id="adminBanner">
-        <div class="cfg-ico" id="adminIcono"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
-        <div class="cfg-txt">
-          <div class="cfg-titulo" id="adminBannerTitulo">Modo Administrador</div>
+      <div class="card cfg-card" id="cfgPortada" style="gap:20px;padding:24px 26px !important;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div class="cfg-mark" id="cfgMark">T</div>
+          <div style="flex:1;min-width:180px;">
+            <div class="cfg-name" id="cfgNombre"></div>
+            <div class="muted" id="cfgMeta" style="font-size:14px;margin-top:2px;"></div>
+          </div>
+          <span id="cfgEstadoChip"></span>
+          <button class="btn" id="btnEditarDatos" style="display:none;">Editar datos</button>
+        </div>
+        <div class="cfg-datos" id="cfgDatos"></div>
+      </div>
+
+      <div class="card cfg-card" id="compartirCard" style="display:none;padding:0 !important;gap:0;overflow:hidden;">
+        <div class="cfg-card-h" style="padding:18px 22px;border-bottom:1px solid var(--border);">
+          <div><div class="cfg-card-t" style="margin:0;">Equipo</div><div class="muted" style="font-size:13px;margin-top:2px;">Quién puede ver y editar este torneo</div></div>
+          <button class="btn btn-primary" id="btnAbrirInvitar">+ Invitar persona</button>
+        </div>
+        <div id="compartirLock" style="display:none;padding:18px 22px;"></div>
+        <div id="compartirContenido" style="display:flex;flex-direction:column;padding:0 22px;">
+          <div id="sh_lista"></div>
+        </div>
+      </div>
+
+      <div class="card cfg-card" id="adminBanner" style="flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px !important;">
+        <div class="cfg-ico" id="adminIcono" style="margin:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
+        <div style="flex:1;min-width:220px;">
+          <div class="cfg-titulo" id="adminBannerTitulo" style="font-size:15px;">Modo Administrador</div>
           <div class="cfg-sub" id="adminBannerSub">Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.</div>
         </div>
         <div class="cfg-botones">
           <button class="btn" id="btnCambiarPin" style="display:none;">Cambiar PIN</button>
+          <button class="btn" id="btnFinalizarTorneo" style="display:none;">Finalizar torneo</button>
           <button class="btn btn-primary" id="btnToggleAdmin">Activar</button>
-        </div>
-      </div>
-
-      <div class="card" id="configLockedMsg" style="padding:20px 22px;">
-        <div class="cfg-seccion">Datos del torneo</div>
-        <dl class="cfg-resumen" id="cfgResumen"></dl>
-        <div class="cfg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Activa el modo administrador arriba para editar estos datos.</span></div>
-      </div>
-
-      <div class="formpanel" id="formConfig">
-        <div class="cfg-seccion">Datos del torneo</div>
-        <div class="formgrid">
-          <div class="field"><label>Nombre</label><input id="cfg_nombre"></div>
-          <div class="field"><label>Deporte</label><input id="cfg_deporte" readonly style="background:var(--sidebar);color:var(--gray-500);cursor:not-allowed;"></div>
-          <div class="field"><label>Ciudad</label><input id="cfg_ciudad"></div>
-          <div class="field"><label>Club / Sede</label><input id="cfg_club"></div>
-          <div class="field"><label>Fecha inicio</label><input id="cfg_fechaInicio" type="date"></div>
-          <div class="field"><label>Fecha fin</label><input id="cfg_fechaFin" type="date"></div>
-          <div class="field"><label id="cfg_cuposLabel">Cupos totales (parejas)</label><input id="cfg_cupos" type="number"></div>
-          <div class="field"><label>Estado</label>
-            <select id="cfg_estado">
-              <option value="PLANIFICADA">Planificada</option>
-              <option value="ABIERTA">Abierta</option>
-              <option value="EN_CURSO">En curso</option>
-              <option value="FINALIZADA">Finalizada</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" id="btnGuardarConfig">Guardar Cambios</button>
         </div>
       </div>
 
@@ -1834,35 +1978,6 @@
           <div class="cfg-sub" style="font-size:12.5px;margin-top:2px;">Este torneo ya está finalizado. Genera un PDF con todo lo financiero de principio a fin: Estado de Resultados, categorías, flujo de caja y presupuesto vs. real.</div>
         </div>
         <button class="btn btn-primary" id="btnReporteGeneral" style="flex-shrink:0;">Generar Reporte <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:5px;margin-left:4px;">PRO</span></button>
-      </div>
-
-      <div class="card" id="compartirCard" style="display:none; padding:20px 22px; flex-direction:column; gap:14px;">
-        <div class="cfg-fila" style="align-items:flex-start;">
-          <div class="cfg-ico blue" style="margin:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.2A6.5 6.5 0 0 1 21.5 20"/></svg></div>
-          <div>
-          <div class="cfg-titulo" style="font-size:14.5px;">Compartir este torneo</div>
-          <div class="muted" style="font-size:12.5px; margin-top:2px; line-height:1.55;">Invita a otra persona por su correo. Tú decides qué puede ver y qué puede editar, y puedes cambiarlo o quitarle el acceso cuando quieras. Nadie más que tú puede eliminar el torneo, cambiar el PIN, anular movimientos ni eliminar inscripciones.</div>
-          </div>
-        </div>
-        <div id="compartirLock" style="display:none;"></div>
-        <div id="compartirContenido" style="display:flex; flex-direction:column; gap:14px;">
-          <div class="formgrid">
-            <div class="field" style="grid-column:1/-1;"><label>Correo de la persona</label><input id="sh_email" type="email" placeholder="persona@correo.com"></div>
-            <div class="field" style="grid-column:1/-1;"><label>Tu nombre (para el mensaje de la invitación)</label><input id="sh_miNombre" placeholder="Ej: Daniel Serrato"></div>
-            <div class="field" style="grid-column:1/-1;"><label>Rol</label>
-              <select id="sh_rol">
-                <option value="LECTOR">Lector — solo puede ver</option>
-                <option value="EDITOR">Editor — puede editar lo que tú elijas</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <div class="muted" style="font-size:12px; margin-bottom:4px;">Qué puede hacer en cada parte</div>
-            <div id="sh_permisos"></div>
-          </div>
-          <div class="form-actions"><button class="btn btn-primary" id="btnInvitar">Enviar invitación</button></div>
-          <div id="sh_lista" style="display:flex; flex-direction:column; gap:10px;"></div>
-        </div>
       </div>
 
       <div class="muted" style="font-size:12px;">
@@ -1878,7 +1993,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.3.7';
+  var APP_VERSION = '1.4.1';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3332,6 +3447,7 @@
     byId('ed_cmW1').style.display = t === 'MONTO' ? '' : 'none';
     if (byId('ed_cmW2')) byId('ed_cmW2').style.display = t === 'MONTO' ? '' : 'none';
     byId('ed_motW').style.display = t === 'NINGUNA' ? 'none' : '';
+    var cg = document.querySelector('#ed_cortBox .cort-grid'); if (cg) cg.style.display = t === 'NINGUNA' ? 'none' : '';
     byId('ed_cortSub').textContent = t === 'NINGUNA' ? 'opcional' : (t === 'AMBOS' ? 'toda la inscripción' : (t === 'MONTO' ? 'otro monto' : 'mitad de un jugador'));
     edRecalc(i);
   }
@@ -4013,18 +4129,6 @@
         '<td class="num" style="font-weight:700;">'+money(acumulado)+'</td></tr>';
     }).join('') : '<tr class="empty-row"><td colspan="4">Sin movimientos en este rango.</td></tr>';
 
-    // ---- Detalle de movimientos: uno por uno, con fecha y hora ----
-    var detalle = enRango.slice().sort(function(a,b){ return (a.fecha||0)-(b.fecha||0); });
-    byId('repDetalleBody').innerHTML = detalle.length ? detalle.map(function(m){
-      var cuenta = cuentaById(m.cuentaId);
-      var esIng = m.tipo === 'INGRESO';
-      return '<tr><td class="muted" style="white-space:nowrap;">'+esc(movFechaHoraTexto(m))+'</td>' +
-        '<td><div style="font-weight:600;">'+esc(m.concepto)+(m.adjuntosN > 0 ? ' 📎' : '')+'</div><div class="muted" style="font-size:11.5px;">'+esc(catEtiqueta(m))+'</div></td>' +
-        '<td class="muted">'+esc(cuenta?cuenta.nombre:'—')+'</td>' +
-        '<td class="num" style="color:var(--green-tx);">'+(esIng?money(m.valor):'—')+'</td>' +
-        '<td class="num" style="color:var(--red-tx);">'+(esIng?'—':money(m.valor))+'</td></tr>';
-    }).join('') : '<tr class="empty-row"><td colspan="5">Sin movimientos en este rango.</td></tr>';
-
     // ---- Inscripciones por tarifa (preventa, regular, ...): foto del estado actual ----
     var porTarifa = {}, ordenTarifas = [];
     inscripciones.filter(function(i){ return i.estadoIns !== 'CANCELADA'; }).forEach(function(i){
@@ -4081,8 +4185,125 @@
   });
   byId('btnImprimirReporte').addEventListener('click', function(){
     if (!esPro()) { alert('Exportar a PDF es una función PRO de tu cuenta. Actívala para poder descargar tus reportes.'); return; }
-    window.print();
+    byId('repExportModal').classList.add('show');
   });
+  function cerrarRepExport(){ byId('repExportModal').classList.remove('show'); }
+  byId('btnRepExpCerrar').addEventListener('click', cerrarRepExport);
+  byId('btnRepExpCancelar').addEventListener('click', cerrarRepExport);
+  byId('repExportModal').addEventListener('click', function(e){ if (e.target === byId('repExportModal')) cerrarRepExport(); });
+  byId('btnRepExpImprimir').addEventListener('click', function(){
+    aplicarSeleccionReporte(); cerrarRepExport();
+    setTimeout(function(){ window.print(); }, 150);
+  });
+  // ---------- exportar a Excel / CSV ----------
+  function expNum(t){
+    t = (t == null ? '' : String(t)).replace(/\s+/g, ' ').trim();
+    if (t === '—' || t === '-') return '';
+    var m = t.match(/^(-?)\$ ?([\d.]+)$/);
+    return m ? (m[1] ? -1 : 1) * parseInt(m[2].replace(/\./g, ''), 10) : t;
+  }
+  function expTabla(bodyId){
+    var body = byId(bodyId), tabla = body.closest('table');
+    var filas = [];
+    if (tabla && tabla.tHead) filas.push([].map.call(tabla.tHead.rows[0].cells, function(c){ return c.textContent.trim(); }));
+    [].forEach.call(body.rows, function(tr){
+      if (tr.classList.contains('empty-row')) return;
+      filas.push([].map.call(tr.cells, function(c){ return expNum(c.textContent); }));
+    });
+    return filas;
+  }
+  function expCategorias(id){
+    var filas = [['Categoría', '% del total', 'Valor']];
+    [].forEach.call(byId(id).querySelectorAll('.row-item'), function(r){
+      var sp = r.querySelectorAll('span');
+      var nombre = sp[0].textContent.trim(), pct = r.querySelector('.muted'), val = r.querySelector('span[style*="font-weight:700"]');
+      filas.push([nombre, pct ? pct.textContent.trim() : '', val ? expNum(val.textContent) : '']);
+    });
+    return filas;
+  }
+  function expHojas(){
+    var sel = {}; document.querySelectorAll('[data-report-toggle]').forEach(function(cb){ sel[cb.dataset.reportToggle] = cb.checked; });
+    var hojas = [];
+    if (sel.estado) {
+      var f = [['Concepto', 'Valor']];
+      [].forEach.call(byId('repEstadoResultados').rows, function(tr){
+        var c = tr.cells, t = c[1] ? c[1].textContent.trim() : '';
+        var m = t.match(/^(-?\$ ?[\d.]+) \((-?\d+)%\)$/);
+        f.push(c.length === 1 || (c[0].colSpan > 1) ? [c[0].textContent.trim(), ''] : (m ? [c[0].textContent.trim(), expNum(m[1]), m[2] + '%'] : [c[0].textContent.trim(), expNum(t)]));
+      });
+      hojas.push({ n: 'Estado de resultados', f: f });
+    }
+    if (sel.ingresos) hojas.push({ n: 'Ingresos por categoría', f: expCategorias('repIngresos') });
+    if (sel.gastos) hojas.push({ n: 'Gastos por categoría', f: expCategorias('repGastos') });
+    if (sel.flujo) hojas.push({ n: 'Flujo de caja', f: expTabla('repFlujoBody') });
+    if (sel.tarifas) hojas.push({ n: 'Inscripciones por tarifa', f: expTabla('repTarifasBody') });
+    if (sel.cxc) hojas.push({ n: 'Cuentas por cobrar', f: expTabla('repCxCBody') });
+    if (sel.presupuesto) hojas.push({ n: 'Presupuesto vs real', f: expTabla('repPresBody') });
+    if (sel.detalle) {
+      var f2 = [['Fecha', 'Hora', 'Tipo', 'Concepto', 'Categoría', 'Cuenta', 'Descripción', 'Valor']];
+      movimientosEnRango().slice().sort(function(a, b){ return (a.fecha || 0) - (b.fecha || 0); }).forEach(function(m){
+        var cu = cuentaById(m.cuentaId), ts = movHoraTs(m);
+        f2.push([dayKeyLocal(m.fecha), ts ? fmtHora(ts) : '', m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto', m.concepto || '', catEtiqueta(m), cu ? cu.nombre : '', m.descripcion || '', m.tipo === 'INGRESO' ? (m.valor || 0) : -(m.valor || 0)]);
+      });
+      hojas.push({ n: 'Detalle de movimientos', f: f2 });
+    }
+    return hojas;
+  }
+  function expBajar(blob, nombre){
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function expCSV(hojas, nombre){
+    function c(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+    var out = [];
+    hojas.forEach(function(h, k){
+      if (hojas.length > 1) out.push(c(h.n.toUpperCase()));
+      h.f.forEach(function(r){ out.push(r.map(c).join(';')); });
+      if (k < hojas.length - 1) out.push('');
+    });
+    expBajar(new Blob(['﻿' + out.join('\r\n')], { type: 'text/csv;charset=utf-8' }), nombre + '.csv');
+  }
+  function expXLSX(hojas, nombre){
+    return impCargarXLSX().then(function(){
+      var wb = XLSX.utils.book_new();
+      hojas.forEach(function(h){
+        var ws = XLSX.utils.aoa_to_sheet(h.f);
+        var anchos = [];
+        h.f.forEach(function(r){ r.forEach(function(v, i){ anchos[i] = Math.max(anchos[i] || 10, Math.min(48, String(v == null ? '' : v).length + 2)); }); });
+        ws['!cols'] = anchos.map(function(w){ return { wch: w }; });
+        Object.keys(ws).forEach(function(k){ if (k[0] !== '!' && ws[k].t === 'n') ws[k].z = '#,##0'; });
+        XLSX.utils.book_append_sheet(wb, ws, h.n.replace(/[\\\/?*\[\]:]/g, '').slice(0, 31));
+      });
+      XLSX.writeFile(wb, nombre + '.xlsx');
+    });
+  }
+  function expNombre(base){ return base + '-' + new Date().toISOString().slice(0, 10); }
+  function exportarReporte(formato){
+    if (!esPro()) { alert('Exportar es una función PRO de tu cuenta. Actívala para poder descargar tus reportes.'); return; }
+    var hojas = expHojas();
+    if (!hojas.length) { alert('Marca al menos un reporte para exportar.'); return; }
+    var nombre = expNombre((torneoData.nombre || 'torneo').replace(/[^\w\-]+/g, '-') + '-reportes');
+    if (formato === 'csv') { expCSV(hojas, nombre); cerrarRepExport(); return; }
+    var b = byId('btnRepExpXlsx'); b.disabled = true;
+    expXLSX(hojas, nombre).then(function(){ cerrarRepExport(); }).catch(function(e){ alert(e.message || 'No se pudo crear el Excel.'); }).then(function(){ b.disabled = false; });
+  }
+  byId('btnRepExpCsv').addEventListener('click', function(){ exportarReporte('csv'); });
+  byId('btnRepExpXlsx').addEventListener('click', function(){ exportarReporte('xlsx'); });
+  byId('btnExportarJugadores').addEventListener('click', function(){
+    if (!jugadoresListos || !jugadoresGlobal.length) { alert('Aún no hay jugadores para exportar.'); return; }
+    var f = [['Nombre', 'Teléfono', 'Categorías habituales', 'Torneos jugados']];
+    jugadoresGlobal.slice().sort(function(a, b){ return (a.nombre || '').localeCompare(b.nombre || ''); }).forEach(function(j){
+      f.push([j.nombre || '', j.telefono || '', (j.categorias || []).join(', '), historialDeJugador(j).length]);
+    });
+    var nombre = expNombre('jugadores-courtos'), h = [{ n: 'Jugadores', f: f }];
+    expXLSX(h, nombre).catch(function(){ expCSV(h, nombre); flashBarra('Sin conexión al lector de Excel: se descargó en CSV'); });
+  });
+  function irPestanaRep(k){
+    document.querySelectorAll('#repTabs button').forEach(function(b){ b.classList.toggle('on', b.dataset.repGo === k); });
+    document.querySelectorAll('#view-reportes [data-rep-tab], [data-view="reportes"] [data-rep-tab]').forEach(function(el){ el.classList.toggle('tab-off', el.dataset.repTab !== k); });
+  }
+  document.querySelectorAll('#repTabs button').forEach(function(b){ b.addEventListener('click', function(){ irPestanaRep(b.dataset.repGo); }); });
+  irPestanaRep('estado');
 
   // Reporte General del Torneo (Configuración, solo cuando ya está
   // FINALIZADA): reutiliza toda la pantalla de Reportes — quita el filtro
@@ -4108,11 +4329,13 @@
   document.querySelectorAll('[data-report-toggle]').forEach(function(cb){
     cb.addEventListener('change', aplicarSeleccionReporte);
   });
-  byId('btnRepTodos').addEventListener('click', function(){
+  byId('btnRepTodos').addEventListener('click', function(e){
+    e.preventDefault();
     document.querySelectorAll('[data-report-toggle]').forEach(function(cb){ cb.checked = true; });
     aplicarSeleccionReporte();
   });
-  byId('btnRepNinguno').addEventListener('click', function(){
+  byId('btnRepNinguno').addEventListener('click', function(e){
+    e.preventDefault();
     document.querySelectorAll('[data-report-toggle]').forEach(function(cb){ cb.checked = false; });
     aplicarSeleccionReporte();
   });
@@ -4320,41 +4543,59 @@
   byId('btnCalcularViabilidad').addEventListener('click', calcularViabilidad);
 
   // ---------- render: configuración ----------
-  function renderConfiguracion(){
+  var ESTADOS_TORNEO = [['PLANIFICADA', 'Planificada'], ['ABIERTA', 'Abierta'], ['EN_CURSO', 'En curso'], ['FINALIZADA', 'Finalizada']];
+  function textoDeporte(){ return torneoDeporte() === 'TENIS' ? ('Tenis — ' + (torneoEsAmbas() ? 'Dobles y sencillos' : (torneoEsIndividual() ? 'Individual' : 'Dobles'))) : 'Pádel'; }
+  function etiquetaCupos(){ return torneoEsAmbas() ? 'Cupos totales (inscritos)' : (torneoEsIndividual() ? 'Cupos totales (jugadores)' : 'Cupos totales (parejas)'); }
+  function cargarFormDatos(){
     byId('cfg_nombre').value = torneoData.nombre || '';
-    byId('cfg_deporte').value = torneoDeporte() === 'TENIS' ? ('Tenis — ' + (torneoEsAmbas() ? 'Dobles y sencillos' : (torneoEsIndividual() ? 'Individual' : 'Dobles'))) : 'Pádel';
-    byId('cfg_cuposLabel').textContent = torneoEsAmbas() ? 'Cupos totales (inscritos)' : (torneoEsIndividual() ? 'Cupos totales (jugadores)' : 'Cupos totales (parejas)');
+    byId('cfg_deporte').value = textoDeporte();
+    byId('cfg_cuposLabel').textContent = etiquetaCupos();
     byId('cfg_ciudad').value = torneoData.ciudad || '';
     byId('cfg_club').value = torneoData.club || '';
     byId('cfg_fechaInicio').value = torneoData.fechaInicio || '';
     byId('cfg_fechaFin').value = torneoData.fechaFin || '';
     byId('cfg_cupos').value = torneoData.cuposTotales || 0;
     byId('cfg_estado').value = torneoData.estado || 'PLANIFICADA';
-    // Resumen de solo lectura (cuando el modo administrador está apagado)
-    var ESTADOS = { PLANIFICADA: 'Planificada', ABIERTA: 'Abierta', EN_CURSO: 'En curso', FINALIZADA: 'Finalizada' };
+    byId('cfg_estado').dispatchEvent(new Event('change'));
+  }
+  function renderConfiguracion(){
+    if (!torneoRef) return;
     function fch(f){ if (!f) return '—'; var d = new Date(f + 'T12:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }); }
-    var fila = function(k, v){ return '<div><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>'; };
-    byId('cfgResumen').innerHTML = fila('Nombre', torneoData.nombre) + fila('Deporte', byId('cfg_deporte').value) + fila('Ciudad', torneoData.ciudad) + fila('Club / Sede', torneoData.club)
-      + fila('Fecha inicio', fch(torneoData.fechaInicio)) + fila('Fecha fin', fch(torneoData.fechaFin)) + fila(byId('cfg_cuposLabel').textContent, String(torneoData.cuposTotales || 0)) + fila('Estado', ESTADOS[torneoData.estado || 'PLANIFICADA']);
+    var est = torneoData.estado || 'PLANIFICADA';
+    var estadoTxt = (ESTADOS_TORNEO.filter(function(e){ return e[0] === est; })[0] || ['', '—'])[1];
+    byId('cfgMark').textContent = (torneoData.nombre || 'T').trim().charAt(0).toUpperCase();
+    byId('cfgNombre').textContent = torneoData.nombre || 'Torneo';
+    byId('cfgMeta').textContent = textoDeporte();
+    byId('cfgEstadoChip').innerHTML = '<span class="chip" style="background:' + (est === 'FINALIZADA' ? 'var(--gray-200);color:var(--gray-700)' : (est === 'EN_CURSO' ? 'var(--green-bg);color:var(--green-tx)' : 'var(--accent-bg);color:var(--accent)')) + ';">' + estadoTxt + '</span>';
+    var fechas = '—';
+    if (torneoData.fechaInicio) {
+      var d1 = new Date(torneoData.fechaInicio + 'T12:00:00'), d2 = torneoData.fechaFin ? new Date(torneoData.fechaFin + 'T12:00:00') : null;
+      if (d2 && !isNaN(d1) && !isNaN(d2) && torneoData.fechaFin !== torneoData.fechaInicio) {
+        var mm = function(d){ return d.toLocaleDateString('es-CO', { month: 'short' }).replace('.', ''); };
+        fechas = d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear() ? d1.getDate() + ' – ' + d2.getDate() + ' ' + mm(d2) + ' ' + d2.getFullYear() : fch(torneoData.fechaInicio) + ' – ' + fch(torneoData.fechaFin);
+      } else fechas = fch(torneoData.fechaInicio);
+    }
+    function dato(k, v){ return '<div><div class="k">' + k + '</div><div class="v">' + esc(v || '—') + '</div></div>'; }
+    var unidad = torneoEsAmbas() ? 'inscritos' : (torneoEsIndividual() ? 'jugadores' : 'parejas');
+    byId('cfgDatos').innerHTML = dato('Club / Sede', torneoData.club) + dato('Ciudad', torneoData.ciudad) + dato('Fechas', fechas) + dato('Cupos', torneoData.cuposTotales ? torneoData.cuposTotales + ' ' + unidad : '');
+    byId('btnEditarDatos').style.display = isAdminMode ? '' : 'none';
+    if (!isAdminMode) byId('datosModal').classList.remove('show');
 
     if (isAdminMode) {
-      byId('adminBannerTitulo').textContent = 'Modo Administrador activo';
+      byId('adminBannerTitulo').innerHTML = 'Modo administrador <span class="chip" style="background:var(--green-bg);color:var(--green-tx);margin-left:6px;">Activo</span>';
       byId('adminBannerSub').textContent = 'Puedes editar los datos del torneo y las categorías, y eliminar inscripciones, cuentas y jugadores. Ciérralo cuando termines.';
       byId('adminIcono').className = 'cfg-ico on'; byId('adminIcono').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.6"/></svg>';
       byId('btnToggleAdmin').textContent = 'Salir del modo admin';
       byId('btnCambiarPin').style.display = 'inline-block';
-      byId('formConfig').style.display = 'flex';
-      byId('configLockedMsg').style.display = 'none';
     } else {
-      byId('adminBannerTitulo').textContent = 'Modo Administrador';
-      byId('adminBannerSub').textContent = 'Protege la edición de los datos del torneo, categorías y la eliminación de inscripciones, cuentas y jugadores.';
+      byId('adminBannerTitulo').innerHTML = 'Modo administrador <span class="chip" style="background:var(--gray-200);color:var(--gray-700);margin-left:6px;">Apagado</span>';
+      byId('adminBannerSub').textContent = 'Con el modo administrador activo puedes editar, compartir y eliminar.';
       byId('adminIcono').className = 'cfg-ico'; byId('adminIcono').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
       byId('btnToggleAdmin').textContent = 'Activar con PIN';
       byId('btnCambiarPin').style.display = 'none';
-      byId('formConfig').style.display = 'none';
-      byId('configLockedMsg').style.display = 'block';
     }
 
+    byId('btnFinalizarTorneo').style.display = (isAdminMode && esDueno() && torneoData.estado !== 'FINALIZADA') ? 'inline-block' : 'none';
     byId('reporteGeneralCard').style.display = (torneoData.estado === 'FINALIZADA') ? 'flex' : 'none';
   }
 
@@ -4539,6 +4780,20 @@
     });
   });
 
+  byId('btnEditarDatos').addEventListener('click', function(){ if (!isAdminMode) return; cargarFormDatos(); byId('datosModal').classList.add('show'); setTimeout(function(){ byId('cfg_nombre').focus(); }, 50); });
+  function cerrarDatos(){ byId('datosModal').classList.remove('show'); }
+  byId('btnCancelarConfig').addEventListener('click', cerrarDatos);
+  byId('btnDatosCerrar').addEventListener('click', cerrarDatos);
+  byId('datosModal').addEventListener('click', function(e){ if (e.target === byId('datosModal')) cerrarDatos(); });
+  byId('btnFinalizarTorneo').addEventListener('click', function(){
+    if (!torneoRef || !esDueno() || !isAdminMode) return;
+    confirmar({ titulo: 'Finalizar torneo', texto: 'El torneo pasará a Finalizado y podrás generar el Reporte General. Puedes volver a cambiar el estado cuando quieras.', ok: 'Finalizar' }, function(){
+      torneoRef.set({ estado: 'FINALIZADA' }, { merge: true }).then(function(){
+        torneoData = Object.assign({}, torneoData, { estado: 'FINALIZADA' }); renderAll(); flashBarra('Torneo finalizado');
+      }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+    });
+  });
+  (function(){ var br = document.querySelector('#sidebar .brand'); if (br) br.addEventListener('click', function(){ if (torneoRef && esDueno()) { setView('configuracion'); closeSidebarMobile(); } }); })();
   byId('btnGuardarConfig').addEventListener('click', function(){
     if (!torneoRef) return;
     var nombre = byId('cfg_nombre').value.trim();
@@ -4554,8 +4809,10 @@
     };
     torneoRef.set(datos, { merge: true }).then(function(){
       torneoData = Object.assign({}, torneoData, datos);
+      byId('datosModal').classList.remove('show');
       applyBrand(torneoData.nombre);
       renderAll();
+      flashBarra('Datos guardados');
     }).catch(function(e){ alert('No se pudo guardar: ' + e.message); });
   });
 
@@ -6373,78 +6630,57 @@
       '3) Arriba te va a salir la invitación: toca "Aceptar".';
   }
   var compartirSig = null;
+  function resumenCorto(p){
+    var ed = MODULOS.filter(function(m){ return p && p[m.id] === 'EDITAR'; }).map(function(m){ return m.label; });
+    var ve = MODULOS.filter(function(m){ return p && p[m.id] === 'VER'; }).map(function(m){ return m.label; });
+    var partes = [];
+    if (ed.length) partes.push('Edita ' + ed.join(', '));
+    if (ve.length) partes.push('Solo ve ' + ve.join(', '));
+    return partes.join(' · ') || 'Sin acceso';
+  }
+  function iniciales(mail){ var t = String(mail || '?').split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim().split(/\s+/); return ((t[0] || '?').charAt(0) + (t[1] ? t[1].charAt(0) : (t[0] || '').charAt(1) || '')).toUpperCase(); }
+  var shEdUid = null;
   function renderCompartir(){
     var card = byId('compartirCard');
-    var visible = !!torneoRef && esDueno() && isAdminMode;
+    var visible = !!torneoRef && esDueno();
     card.style.display = visible ? 'flex' : 'none';
     if (!visible) { compartirSig = null; return; }
     var pro = esPro();
     byId('compartirLock').style.display = pro ? 'none' : 'block';
     byId('compartirContenido').style.display = pro ? 'flex' : 'none';
+    byId('btnAbrirInvitar').style.display = (pro && isAdminMode) ? '' : 'none';
     if (!pro) { byId('compartirLock').innerHTML = bloqueoProHtml('Comparte tus torneos con otras personas y decide qué puede ver y editar cada una. Actívalo con el plan PRO.'); return; }
-    if (!byId('sh_miNombre').value) { try { byId('sh_miNombre').value = localStorage.getItem('courtos_miNombre') || ''; } catch(e){} }
-    if (!byId('shn_inscripciones')) byId('sh_permisos').innerHTML = filasPermisosHtml('shn', byId('sh_rol').value, permisosPorDefecto(byId('sh_rol').value));
 
-    // La lista solo se vuelve a dibujar si cambió (para no borrar permisos que estés editando).
     var miembros = torneoData.miembros || {};
-    var sig = JSON.stringify([miembros, invitacionesTorneo.map(function(i){ return [i.id, i.estado, i.permisos]; })]);
+    var sig = JSON.stringify([isAdminMode, miembros, invitacionesTorneo.map(function(i){ return [i.id, i.estado, i.permisos]; })]);
     if (sig === compartirSig) return;
     compartirSig = sig;
     var html = '';
     var uids = Object.keys(miembros);
-    if (uids.length) {
-      html += '<div style="font-weight:700;font-size:13px;">Personas con acceso</div>';
-      html += uids.map(function(uid){
-        var m = miembros[uid];
-        return '<div class="share-member">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;">' + esc(m.email || uid) + '</span>' +
-          '<span class="chip" style="background:var(--accent-bg);color:var(--accent);">' + (m.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</span></div>' +
-          filasPermisosHtml('shm_' + uid, m.rol, m.permisos) +
-          '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
-          '<button class="btn btn-primary" data-sh-guardar="' + uid + '" style="padding:6px 12px;font-size:12.5px;">Guardar permisos</button>' +
-          '<button class="btn" data-sh-quitar="' + uid + '" style="padding:6px 12px;font-size:12.5px;">Quitar acceso</button></div>' +
-          '</div>';
-      }).join('');
-    }
+    html += uids.map(function(uid){
+      var m = miembros[uid];
+      return '<div class="sh-row"><div class="sh-av">' + esc(iniciales(m.email)) + '</div><div class="sh-info"><div class="sh-top"><span class="sh-mail">' + esc(m.email || 'Persona') + '</span>' +
+        '<span class="chip" style="background:var(--accent-bg);color:var(--accent);">' + (m.rol === 'EDITOR' ? 'Editor' : 'Lector') + '</span></div>' +
+        '<div class="sh-res">' + esc(resumenCorto(m.permisos)) + '</div></div>' +
+        (isAdminMode ? '<div class="sh-btns"><button class="btn" data-sh-edit="' + esc(uid) + '">Editar</button></div>' : '') + '</div>';
+    }).join('');
     var pend = invitacionesTorneo.filter(function(i){ return i.estado === 'PENDIENTE' || i.estado === 'RECHAZADA'; });
     if (pend.length) {
-      html += '<div style="font-weight:700;font-size:13px;">Invitaciones</div>';
+      html += '<div class="sh-sub">Invitaciones pendientes</div>';
       html += pend.map(function(i){
-        return '<div class="share-member" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">' +
-          '<div style="min-width:0;"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;">' + esc(i.emailInvitado) + '</div>' +
-          '<div class="muted" style="font-size:12px;">' + (i.estado === 'RECHAZADA' ? 'Rechazó la invitación' : 'Pendiente — la verá al entrar a CourtOS con ese correo') + ' · ' + esc(resumenPermisos(i.permisos)) + '</div></div>' +
-          '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">' +
-          (i.estado === 'PENDIENTE' ? '<button class="btn btn-primary" data-sh-wa="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">WhatsApp</button>' +
-            '<button class="btn" data-sh-copiar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">Copiar mensaje</button>' : '') +
-          '<button class="btn" data-sh-cancelar="' + esc(i.id) + '" style="padding:6px 12px;font-size:12.5px;">' + (i.estado === 'RECHAZADA' ? 'Quitar' : 'Cancelar') + '</button></div></div>';
+        return '<div class="sh-row"><div class="sh-av">' + esc(iniciales(i.emailInvitado)) + '</div><div class="sh-info"><div class="sh-top"><span class="sh-mail">' + esc(i.emailInvitado) + '</span>' +
+          '<span class="chip" style="background:var(--amber-bg);color:var(--amber-tx);">' + (i.estado === 'RECHAZADA' ? 'Rechazó' : 'Pendiente') + '</span></div>' +
+          '<div class="sh-res">' + esc(resumenCorto(i.permisos)) + (i.estado === 'PENDIENTE' ? ' · la verá al entrar con ese correo' : '') + '</div></div>' +
+          (isAdminMode ? '<div class="sh-btns">' +
+          (i.estado === 'PENDIENTE' ? '<button class="btn" data-sh-wa="' + esc(i.id) + '">WhatsApp</button><button class="btn" data-sh-copiar="' + esc(i.id) + '">Copiar mensaje</button>' : '') +
+          '<button class="btn" data-sh-cancelar="' + esc(i.id) + '">' + (i.estado === 'RECHAZADA' ? 'Quitar' : 'Cancelar') + '</button></div>' : '') + '</div>';
       }).join('');
     }
-    if (!html) html = '<div class="muted" style="font-size:12.5px;">Aún no has compartido este torneo con nadie.</div>';
+    if (!html) html = '<div class="muted" style="font-size:13px;padding:6px 0;">Aún no has compartido este torneo con nadie.</div>';
     byId('sh_lista').innerHTML = html;
 
-    byId('sh_lista').querySelectorAll('[data-sh-guardar]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var uid = b.dataset.shGuardar, m = (torneoData.miembros || {})[uid];
-        if (!m) return;
-        var permisos = leerPermisos('shm_' + uid);
-        if (MODULOS.every(function(x){ return permisos[x.id] === 'NO'; })) { alert('Si no va a ver nada, mejor usa "Quitar acceso".'); return; }
-        var upd = {}; upd['miembros.' + uid + '.permisos'] = permisos; upd['miembros.' + uid + '.rol'] = rolDesdePermisos(permisos);
-        torneoRef.update(upd).then(function(){ flashBarra('Permisos guardados'); })
-          .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
-      });
-    });
-    byId('sh_lista').querySelectorAll('[data-sh-quitar]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var uid = b.dataset.shQuitar, m = (torneoData.miembros || {})[uid];
-        if (!m) return;
-        confirmar({ titulo: '¿Quitar el acceso?', texto: (m.email || 'Esta persona') + ' dejará de ver el torneo de inmediato.', ok: 'Quitar acceso', peligro: true }, function(){
-        var upd = {}; upd['miembros.' + uid] = firebase.firestore.FieldValue.delete();
-        torneoRef.update(upd).then(function(){
-          if (m.email) return fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + String(m.email).toLowerCase()).delete().catch(function(){});
-        }).then(function(){ flashBarra('Acceso quitado'); })
-          .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
-        });
-      });
+    byId('sh_lista').querySelectorAll('[data-sh-edit]').forEach(function(b){
+      b.addEventListener('click', function(){ abrirEditarPersona(b.dataset.shEdit); });
     });
     function invPorId(id){ return invitacionesTorneo.find(function(x){ return x.id === id; }); }
     byId('sh_lista').querySelectorAll('[data-sh-wa]').forEach(function(b){
@@ -6468,7 +6704,72 @@
           .catch(function(e){ alert('No se pudo cancelar: ' + e.message); });
       });
     });
+    // si la persona que se está editando ya no existe, cierra la ventana
+    if (shEdUid && !miembros[shEdUid]) cerrarEditarPersona();
   }
+
+  // ---- ventana: permisos de una persona
+  function pintarPermisosEd(rol, permisos){
+    byId('shEdPermisos').innerHTML = filasPermisosHtml('shm_' + shEdUid, rol, permisos);
+  }
+  function abrirEditarPersona(uid){
+    if (!isAdminMode) return;
+    var m = (torneoData.miembros || {})[uid]; if (!m) return;
+    shEdUid = uid;
+    byId('shEdTitulo').textContent = 'Permisos de ' + (m.email || 'esta persona');
+    byId('shEdBody').innerHTML = '<div class="field"><label>Rol</label><select id="shEdRol"><option value="LECTOR">Lector — solo puede ver</option><option value="EDITOR">Editor — puede editar lo que tú elijas</option></select></div>' +
+      '<div class="ins-lab">Qué puede hacer en cada parte</div><div id="shEdPermisos"></div>';
+    byId('shEdRol').value = m.rol === 'EDITOR' ? 'EDITOR' : 'LECTOR';
+    pintarPermisosEd(byId('shEdRol').value, m.permisos);
+    byId('shEdRol').addEventListener('change', function(){
+      var actual = leerPermisos('shm_' + shEdUid);
+      var rolNuevo = byId('shEdRol').value;
+      if (rolNuevo !== 'EDITOR') Object.keys(actual).forEach(function(k){ if (actual[k] === 'EDITAR') actual[k] = 'VER'; });
+      pintarPermisosEd(rolNuevo, actual);
+    });
+    byId('shEdModal').classList.add('show');
+  }
+  function cerrarEditarPersona(){ byId('shEdModal').classList.remove('show'); shEdUid = null; }
+  byId('btnShEdCerrar').addEventListener('click', cerrarEditarPersona);
+  byId('btnShEdCancelar').addEventListener('click', cerrarEditarPersona);
+  byId('shEdModal').addEventListener('click', function(e){ if (e.target === byId('shEdModal')) cerrarEditarPersona(); });
+  byId('btnShEdGuardar').addEventListener('click', function(){
+    var uid = shEdUid, m = (torneoData.miembros || {})[uid];
+    if (!m || !esDueno()) return;
+    var permisos = leerPermisos('shm_' + uid);
+    if (MODULOS.every(function(x){ return permisos[x.id] === 'NO'; })) { alert('Si no va a ver nada, mejor usa "Quitar acceso".'); return; }
+    var upd = {}; upd['miembros.' + uid + '.permisos'] = permisos; upd['miembros.' + uid + '.rol'] = rolDesdePermisos(permisos);
+    torneoRef.update(upd).then(function(){ cerrarEditarPersona(); flashBarra('Permisos guardados'); })
+      .catch(function(e){ alert('No se pudo guardar: ' + e.message); });
+  });
+  byId('btnShEdQuitar').addEventListener('click', function(){
+    var uid = shEdUid, m = (torneoData.miembros || {})[uid];
+    if (!m || !esDueno()) return;
+    confirmar({ titulo: '¿Quitar el acceso?', texto: (m.email || 'Esta persona') + ' dejará de ver el torneo de inmediato.', ok: 'Quitar acceso', peligro: true }, function(){
+      var upd = {}; upd['miembros.' + uid] = firebase.firestore.FieldValue.delete();
+      torneoRef.update(upd).then(function(){
+        if (m.email) return fsdb.collection('invitaciones').doc(currentUid + '_' + torneoId + '_' + String(m.email).toLowerCase()).delete().catch(function(){});
+      }).then(function(){ cerrarEditarPersona(); flashBarra('Acceso quitado'); })
+        .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
+    });
+  });
+
+  // ---- ventana: invitar persona
+  function abrirInvitar(){
+    if (!isAdminMode) return;
+    if (!esPro()) { alert('Compartir torneos es una función PRO.'); return; }
+    byId('sh_email').value = '';
+    if (!byId('sh_miNombre').value) { try { byId('sh_miNombre').value = localStorage.getItem('courtos_miNombre') || ''; } catch(e){} }
+    byId('sh_rol').value = 'LECTOR';
+    byId('sh_permisos').innerHTML = filasPermisosHtml('shn', 'LECTOR', permisosPorDefecto('LECTOR'));
+    byId('shInvModal').classList.add('show');
+    setTimeout(function(){ byId('sh_email').focus(); }, 50);
+  }
+  function cerrarInvitar(){ byId('shInvModal').classList.remove('show'); }
+  byId('btnAbrirInvitar').addEventListener('click', abrirInvitar);
+  byId('btnShInvCerrar').addEventListener('click', cerrarInvitar);
+  byId('btnShInvCancelar').addEventListener('click', cerrarInvitar);
+  byId('shInvModal').addEventListener('click', function(e){ if (e.target === byId('shInvModal')) cerrarInvitar(); });
   byId('sh_rol').addEventListener('change', function(){
     var rol = byId('sh_rol').value;
     byId('sh_permisos').innerHTML = filasPermisosHtml('shn', rol, permisosPorDefecto(rol));
@@ -6482,7 +6783,7 @@
     if (email === (currentUserEmail || '').toLowerCase()) { alert('Ese es tu propio correo.'); return; }
     var miembros = torneoData.miembros || {};
     var yaTiene = Object.keys(miembros).some(function(u){ return String(miembros[u].email || '').toLowerCase() === email; });
-    if (yaTiene) { alert('Esa persona ya tiene acceso. Cambia sus permisos en la lista de abajo.'); return; }
+    if (yaTiene) { alert('Esa persona ya tiene acceso. Cambia sus permisos con el botón Editar de la lista.'); return; }
     var permisos = leerPermisos('shn');
     if (MODULOS.every(function(m){ return permisos[m.id] === 'NO'; })) { alert('Elige al menos una parte que pueda ver.'); return; }
     var btn = byId('btnInvitar'); btn.disabled = true;
@@ -6493,6 +6794,7 @@
       emailInvitado: email, rol: rolDesdePermisos(permisos), permisos: permisos, estado: 'PENDIENTE', creadoEn: Date.now()
     }).then(function(){
       byId('sh_email').value = '';
+      cerrarInvitar();
       flashBarra('Invitación guardada. Ahora mándale el mensaje por WhatsApp.');
     }).catch(function(e){ alert('No se pudo enviar la invitación: ' + e.message); })
       .then(function(){ btn.disabled = false; });
