@@ -256,7 +256,31 @@
   .money input::-webkit-outer-spin-button, .money input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .money input[type=number] { -moz-appearance: textfield; }
   /* Más opciones (inscripción) */
-  #formInscripcion.centrado.open { width: min(900px, calc(100vw - 24px)); }
+  #formInscripcion { max-width: none; scroll-margin-top: 16px; }
+  #formPago.enfila { max-width: none; border: none; border-radius: 0; box-shadow: none; background: #F8F8F5; padding: 18px 24px 20px; border-left: 3px solid var(--accent); animation: none; }
+  #insBody tr.cobrando > td { background: #EEF4FB; }
+  #insBody tr.cobro-fila:hover > td { background: transparent; }
+  .pg-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: end; }
+  .cort-chips button.pg-mas { border-style: dashed; margin-left: auto; color: var(--gray-500); }
+  @media (max-width: 900px) { .pg-row { grid-template-columns: 1fr 1fr; } }
+  #formInscripcion .ins2 { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); gap: 28px; }
+  .ins2-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .ins2-sep { background: #EFEEE9; }
+  .ins-lab { font-size: 11px; font-weight: 700; color: var(--gray-500); letter-spacing: 0.6px; text-transform: uppercase; }
+  .ins-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .seg { display: flex; gap: 4px; background: var(--gray-200); border-radius: 10px; padding: 4px; height: 46px; box-sizing: border-box; }
+  .seg button { flex: 1; border: none; background: none; border-radius: 7px; font: inherit; font-size: 13px; font-weight: 600; color: var(--gray-500); cursor: pointer; transition: background 120ms, color 120ms; }
+  .seg button:hover { color: var(--ink); }
+  .seg button.on { background: #fff; color: var(--ink); font-weight: 700; box-shadow: 0 1px 3px rgba(24,24,15,0.12); }
+  .cort-box { background: #F8F8F5; border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .cort-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cort-chips button { border: 1px solid #DAD8D1; background: #fff; color: var(--gray-700); border-radius: 99px; padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cort-chips button:hover { border-color: #B9B7AE; }
+  .cort-chips button.on { background: #E3EEF9; border-color: #BCD5EE; color: var(--accent); font-weight: 700; }
+  .ins-res { background: #F8F8F5; border: 1px solid #EFEEE9; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+  .ins-res > div { display: flex; justify-content: space-between; gap: 10px; }
+  .ins-res .k { color: var(--gray-500); }
+  .ins-res .tot { border-top: 1px solid var(--border); padding-top: 6px; }
   #formInscripcion .ins-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px; }
   .mas-opc-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
   .mas-opc-btn .mas-sub { font-weight: 500; color: var(--gray-500); }
@@ -568,7 +592,8 @@
     .kpi { padding: 16px; }
     .kpi-val { font-size: 18px; }
     .panels, .two-col { grid-template-columns: 1fr !important; }
-    .formgrid, #formInscripcion .ins-grid, .mas-opc-box { grid-template-columns: 1fr !important; }
+    .formgrid, #formInscripcion .ins-grid, .mas-opc-box, #formInscripcion .ins2 { grid-template-columns: 1fr !important; }
+    .ins2-sep { display: none; }
     .strip { flex-direction: column; }
     .strip > div + div { border-left: none; border-top: 1px solid var(--border); }
     .table-wrap { -webkit-overflow-scrolling: touch; }
@@ -1242,49 +1267,63 @@
       </div>
 
       <div class="formpanel" id="formInscripcion">
-        <div class="panel-title">Nueva Inscripción</div>
-        <div class="formgrid ins-grid">
-          <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
-          <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
-          <datalist id="jugadoresSuggestions"></datalist>
-          <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
-          <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
-          <div class="field"><label>Valor</label><div class="money"><span class="pre">$</span><input id="i_valor" class="con-auto" type="number" min="0" step="1000"><span class="auto-tag" id="i_autoTag">auto</span></div><div class="muted" id="i_valorHint" style="font-size:11.5px;"></div></div>
-          <div class="field"><label>Estado del pago</label>
-            <select id="i_estadoPago">
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="PARCIAL">Parcial (abono)</option>
-              <option value="APROBADO" selected>Aprobado (pagó todo)</option>
-            </select>
-          </div>
-          <div class="field"><label>Monto pagado ahora</label><div class="money"><span class="pre">$</span><input id="i_pagado" type="number" value="0"></div></div>
-          <div class="field"><label>Cuenta</label><select id="i_cuenta"></select></div>
-          <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
-            <select id="i_quien">
-              <option value="J1">Jugador 1</option>
-              <option value="J2">Jugador 2</option>
-              <option value="AMBOS">Los dos (mitad y mitad)</option>
-            </select>
-            <div class="muted" id="i_quienHint" style="font-size:11.5px;"></div>
-          </div>
+        <div>
+          <div class="panel-title">Nueva Inscripción</div>
+          <div class="muted" style="font-size:13px;margin-top:2px;">El valor y la tarifa se calculan solos según la categoría.</div>
         </div>
-        <div class="mas-opc-bar">
-          <button type="button" class="mas-opc-btn" id="btnMasOpc" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Más opciones</span><span class="mas-sub">método de pago, cortesía y motivo</span></button>
-        </div>
-        <div class="mas-opc-box" id="i_masOpc" style="display:none;">
-          <div class="field"><label>Método de pago</label>
-            <select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
+        <div class="ins2">
+          <div class="ins2-col">
+            <div class="ins-lab">Pareja</div>
+            <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
+            <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+            <datalist id="jugadoresSuggestions"></datalist>
+            <div class="ins-row2">
+              <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
+              <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
+            </div>
+            <div class="mas-opc-bar" style="border-top:none;padding-top:2px;">
+              <button type="button" class="mas-opc-btn" id="btnMasOpc" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span>Cortesía</span><span class="mas-sub" id="i_cortSub">opcional</span></button>
+            </div>
+            <div class="cort-box" id="i_masOpc" style="display:none;">
+              <div class="cort-chips" id="i_cortChips">
+                <button type="button" data-ct="J1" id="i_ctJ1">Mitad de Jugador 1</button>
+                <button type="button" data-ct="J2" id="i_ctJ2">Mitad de Jugador 2</button>
+                <button type="button" data-ct="AMBOS" id="i_ctAmbos">Toda la inscripción</button>
+                <button type="button" data-ct="MONTO">Otro monto</button>
+              </div>
+              <div class="ins-row2" id="i_cmontos" style="display:none;">
+                <div class="field"><label id="i_cmLbl1">Cortesía a Jugador 1</label><div class="money"><span class="pre">$</span><input id="i_cmonto1" type="number" min="0" step="1000" placeholder="0"></div></div>
+                <div class="field" id="i_cmWrap2"><label id="i_cmLbl2">Cortesía a Jugador 2</label><div class="money"><span class="pre">$</span><input id="i_cmonto2" type="number" min="0" step="1000" placeholder="0"></div></div>
+              </div>
+              <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
+              <input type="hidden" id="i_cortesia" value="NINGUNA">
+            </div>
           </div>
-          <div class="field"><label>Cortesía</label>
-            <select id="i_cortesia">
-              <option value="NINGUNA">Sin cortesía</option>
-              <option value="J1">La mitad de Jugador 1</option>
-              <option value="J2">La mitad de Jugador 2</option>
-              <option value="AMBOS">Toda la inscripción</option>
-            </select>
+          <div class="ins2-sep"></div>
+          <div class="ins2-col">
+            <div class="ins-lab">Pago</div>
+            <div class="field"><label>Estado del pago</label>
+              <div class="seg" id="i_estSeg"><button type="button" data-est="PENDIENTE">Pendiente</button><button type="button" data-est="PARCIAL">Abono</button><button type="button" data-est="APROBADO">Pagó todo</button></div>
+              <div style="display:none;"><select id="i_estadoPago"><option value="PENDIENTE">Pendiente</option><option value="PARCIAL">Parcial (abono)</option><option value="APROBADO" selected>Aprobado (pagó todo)</option></select></div>
+            </div>
+            <div class="ins-row2">
+              <div class="field"><label>Valor</label><div class="money"><span class="pre">$</span><input id="i_valor" class="con-auto" type="number" min="0" step="1000"><span class="auto-tag" id="i_autoTag">auto</span></div><div class="muted" id="i_valorHint" style="font-size:11.5px;"></div></div>
+              <div class="field"><label>Monto pagado ahora</label><div class="money"><span class="pre">$</span><input id="i_pagado" type="number" value="0"></div></div>
+            </div>
+            <div class="ins-row2">
+              <div class="field"><label>Cuenta</label><select id="i_cuenta"></select></div>
+              <div class="field"><label>Método</label><select id="i_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select></div>
+            </div>
+            <div class="field" id="i_quienWrap" style="display:none;"><label>¿Quién pagó?</label>
+              <select id="i_quien">
+                <option value="J1">Jugador 1</option>
+                <option value="J2">Jugador 2</option>
+                <option value="AMBOS">Los dos (mitad y mitad)</option>
+              </select>
+              <div class="muted" id="i_quienHint" style="font-size:11.5px;"></div>
+            </div>
+            <div class="ins-res" id="i_resumen"></div>
           </div>
-          <div class="field" id="i_motivoWrap" style="display:none;"><label>Motivo de la cortesía</label><input id="i_motivo" placeholder="Ej: patrocinador, invitado, premio"></div>
-          <div class="mas-resumen" id="i_cortesiaResumen" style="display:none;grid-column:1 / -1;"></div>
         </div>
         <div class="form-actions">
           <button class="btn" data-close-form="inscripcion">Cancelar</button>
@@ -1293,22 +1332,33 @@
       </div>
 
       <div class="formpanel" id="formPago">
-        <div class="panel-title">Confirmar Pago</div>
         <div id="pg_resumen" class="muted" style="font-size:13px;"></div>
-        <div class="formgrid">
-          <div class="field"><label>¿Quién paga?</label><select id="pg_quien"></select></div>
-          <div class="field"><label>Monto a pagar ahora</label><input id="pg_monto" type="number"><div id="pg_hint" class="muted" style="font-size:11.5px;display:none;margin-top:2px;"></div></div>
-          <div class="field"><label>Cuenta de ingreso</label><select id="pg_cuenta"></select></div>
-          <div class="field"><label>Método de pago</label>
+        <div class="pg-row">
+          <div class="field" id="pg_quienWrap"><label>¿Quién paga?</label><div class="seg" id="pg_seg"></div><div style="display:none;"><select id="pg_quien"></select></div></div>
+          <div class="field"><label>Monto a cobrar</label><div class="money"><span class="pre">$</span><input id="pg_monto" type="number"></div></div>
+          <div class="field"><label>Cuenta</label><select id="pg_cuenta"></select></div>
+          <div class="field"><label>Método</label>
             <select id="pg_metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select>
           </div>
+        </div>
+        <div id="pg_hint" class="muted" style="font-size:11.5px;display:none;"></div>
+        <div class="cort-chips" id="pg_chips">
+          <button type="button" id="pg_chSaldo"></button>
+          <button type="button" id="pg_chMitad"></button>
+          <button type="button" id="pg_chOtro">Otro monto</button>
+          <button type="button" class="pg-mas" id="pg_btnExtra">Fecha y nota</button>
+        </div>
+        <div class="ins-row2" id="pg_extra" style="display:none;">
           <div class="field"><label>Fecha</label><input id="pg_fecha" type="date"></div>
           <div class="field"><label>Observación (opcional)</label><input id="pg_obs" placeholder="Ej: pagó en cancha"></div>
         </div>
         <input type="hidden" id="pg_inscripcionId">
-        <div class="form-actions">
-          <button class="btn" data-close-form="pago">Cancelar</button>
-          <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+        <div class="form-actions" style="justify-content:space-between;">
+          <button class="btn" id="btnPagoCortesia" style="background:var(--gray-200);">Cortesía</button>
+          <div style="display:flex;gap:10px;">
+            <button class="btn" data-close-form="pago">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarPago">Registrar Pago</button>
+          </div>
         </div>
       </div>
 
@@ -1796,7 +1846,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.3.2';
+  var APP_VERSION = '1.3.4';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -2680,7 +2730,7 @@
       muts.forEach(function(m){ m.addedNodes.forEach(function(n){ if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') mejorar(n); else todos(n); }); });
     }).observe(document.body, { childList: true, subtree: true });
   })();
-  var FORMS_CENTRADOS = ['formInscripcion', 'formPago', 'formCortesia', 'formValor', 'formJugador'];
+  var FORMS_CENTRADOS = ['formCortesia', 'formValor', 'formJugador'];
   (function(){
     var bd = document.createElement('div'); bd.id = 'formBackdrop'; document.body.appendChild(bd);
     function sync(){ bd.classList.toggle('show', FORMS_CENTRADOS.some(function(id){ var e = byId(id); return e && e.classList.contains('open'); })); }
@@ -2691,8 +2741,8 @@
     bd.addEventListener('click', function(){ FORMS_CENTRADOS.forEach(function(id){ var e = byId(id); if (e) e.classList.remove('open'); }); });
     document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape' && bd.classList.contains('show') && !document.querySelector('#dlgModal.show')) bd.click(); });
   })();
-  function openForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.add('open'); }
-  function closeForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.remove('open'); }
+  function openForm(name){ var el = byId('form' + cap(name)); if (!el) return; el.classList.add('open'); if (name === 'inscripcion') { if (typeof sincronizarFormIns === 'function') sincronizarFormIns(); setTimeout(function(){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); } }
+  function closeForm(name){ var el = byId('form' + cap(name)); if (el) el.classList.remove('open'); if (name === 'pago' && typeof quitarFilaCobro === 'function') quitarFilaCobro(); }
   function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
   document.querySelectorAll('[data-toggle-form]').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -2700,6 +2750,7 @@
       if (name === 'inscripcion') actualizarFormInscripcionSegunCategoria();
       var el = byId('form' + cap(name));
       el.classList.toggle('open');
+      if (name === 'inscripcion' && el.classList.contains('open')) { sincronizarFormIns(); setTimeout(function(){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
     });
   });
 
@@ -2770,45 +2821,84 @@
     if (ind) return { j1: c === 'AMBOS', j2: false };
     return { j1: c === 'J1' || c === 'AMBOS', j2: c === 'J2' || c === 'AMBOS' };
   }
+  // Cortesía por monto: cuánto se descuenta de la parte de cada jugador (nunca más que esa parte).
+  function montosForm(){
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
+    var valor = parseFloat(byId('i_valor').value) || 0, parte = ind ? valor : valor / 2;
+    if (byId('i_cortesia').value !== 'MONTO') return { m1: 0, m2: 0, p1: 0, p2: 0, parte: parte };
+    var a = Math.max(0, parseFloat(byId('i_cmonto1').value) || 0), b = ind ? 0 : Math.max(0, parseFloat(byId('i_cmonto2').value) || 0);
+    return { m1: Math.min(a, parte), m2: Math.min(b, parte), p1: a, p2: b, parte: parte };
+  }
   function cobrableForm(){
     var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
-    var valor = parseFloat(byId('i_valor').value) || 0, ex = exencionesForm();
-    if (ind) return ex.j1 ? 0 : valor;
-    return (ex.j1 ? 0 : valor / 2) + (ex.j2 ? 0 : valor / 2);
+    var valor = parseFloat(byId('i_valor').value) || 0, ex = exencionesForm(), m = montosForm();
+    if (ind) return ex.j1 ? 0 : Math.max(0, valor - m.m1);
+    return (ex.j1 ? 0 : Math.max(0, valor / 2 - m.m1)) + (ex.j2 ? 0 : Math.max(0, valor / 2 - m.m2));
+  }
+  function nombreCorto(n, def){ n = (n || '').trim(); return n ? n.split(/\s+/)[0] : def; }
+  function setCortTipo(t){
+    byId('i_cortesia').value = t;
+    document.querySelectorAll('#i_cortChips button').forEach(function(b){ b.classList.toggle('on', b.dataset.ct === t); });
+    byId('i_cmontos').style.display = t === 'MONTO' ? '' : 'none';
+    byId('i_motivoWrap').style.display = t === 'NINGUNA' ? 'none' : '';
+    var sub = byId('i_cortSub');
+    if (sub) sub.textContent = t === 'NINGUNA' ? 'opcional' : (t === 'AMBOS' ? 'toda la inscripción' : (t === 'MONTO' ? 'otro monto' : 'mitad de un jugador'));
+  }
+  function sincronizarEstadoSeg(){
+    var v = byId('i_estadoPago').value;
+    document.querySelectorAll('#i_estSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.est === v); });
   }
   function actualizarCortesiaForm(){
     var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
-    var sel = byId('i_cortesia');
     var j1 = byId('i_j1').value.trim(), j2 = byId('i_j2').value.trim();
-    sel.options[1].textContent = 'La mitad de ' + (j1 || 'Jugador 1');
-    sel.options[2].textContent = 'La mitad de ' + (j2 || 'Jugador 2');
-    sel.options[3].textContent = 'Toda la inscripción';
-    [1, 2].forEach(function(k){ sel.options[k].hidden = ind; sel.options[k].disabled = ind; });
-    if (ind && (sel.value === 'J1' || sel.value === 'J2')) sel.value = 'NINGUNA';
-    byId('i_motivoWrap').style.display = sel.value === 'NINGUNA' ? 'none' : '';
+    byId('i_ctJ1').textContent = 'Mitad de ' + nombreCorto(j1, 'Jugador 1');
+    byId('i_ctJ2').textContent = 'Mitad de ' + nombreCorto(j2, 'Jugador 2');
+    byId('i_ctJ1').style.display = byId('i_ctJ2').style.display = ind ? 'none' : '';
+    byId('i_cmWrap2').style.display = ind ? 'none' : '';
+    byId('i_cmLbl1').textContent = ind ? 'Monto de cortesía' : 'Cortesía a ' + nombreCorto(j1, 'Jugador 1');
+    byId('i_cmLbl2').textContent = 'Cortesía a ' + nombreCorto(j2, 'Jugador 2');
+    var tipo = byId('i_cortesia').value;
+    if (ind && (tipo === 'J1' || tipo === 'J2')) tipo = 'NINGUNA';
+    setCortTipo(tipo);
     var cobrable = cobrableForm();
-    if (cobrable <= 0 && sel.value !== 'NINGUNA') { byId('i_estadoPago').value = 'APROBADO'; byId('i_pagado').value = 0; }
+    if (cobrable <= 0 && tipo !== 'NINGUNA' && (tipo !== 'MONTO' || montosForm().m1 + montosForm().m2 > 0)) { byId('i_estadoPago').value = 'APROBADO'; byId('i_pagado').value = 0; }
     else if (byId('i_estadoPago').value === 'APROBADO') byId('i_pagado').value = cobrable;
     actualizarQuienPago();
     pintarResumenCortesia();
   }
   function pintarResumenCortesia(){
-    var rs = byId('i_cortesiaResumen'); if (!rs) return;
-    var sel = byId('i_cortesia');
-    if (sel.value === 'NINGUNA') { rs.style.display = 'none'; return; }
-    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat), ex = exencionesForm();
-    var j1 = esc(byId('i_j1').value.trim() || 'Jugador 1'), j2 = esc(byId('i_j2').value.trim() || 'Jugador 2');
-    var v = parseFloat(byId('i_valor').value) || 0, m = v / 2, a = ex.j1 ? 0 : m, b = ex.j2 ? 0 : m;
-    rs.innerHTML = ind ? (j1 + ' no pagará. Total a cobrar: <b>' + money(0) + '</b>') : (j1 + ' pagará <b>' + money(a) + '</b> y ' + j2 + ' <b>' + money(b) + '</b>. Total a cobrar: <b>' + money(a + b) + '</b>');
-    rs.style.display = '';
+    var rs = byId('i_resumen'); if (!rs) return;
+    sincronizarEstadoSeg();
+    var valor = parseFloat(byId('i_valor').value) || 0, m = montosForm(), ex = exencionesForm();
+    var cat = categoriaById(byId('i_categoria').value), ind = categoriaEsIndividual(cat);
+    var cobrable = cobrableForm(), cort = Math.max(0, valor - cobrable);
+    var pagado = Math.max(0, parseFloat(byId('i_pagado').value) || 0), saldo = Math.max(0, cobrable - pagado);
+    rs.innerHTML = '<div><span class="k">Valor</span><b>' + money(valor) + '</b></div>' +
+      (cort > 0 ? '<div><span class="k">Cortesía</span><b style="color:#2F7C31;">− ' + money(cort) + '</b></div>' : '') +
+      '<div class="tot"><span class="k">Total a pagar</span><b>' + money(cobrable) + '</b></div>' +
+      '<div><span class="k">Paga ahora</span><b>' + money(pagado) + '</b></div>' +
+      '<div><span class="k">Saldo</span><b style="color:' + (saldo > 0 ? '#9F6702' : '#2F7C31') + ';">' + money(saldo) + '</b></div>';
   }
+  function sincronizarFormIns(){ actualizarCortesiaForm(); }
+  document.querySelectorAll('#i_cortChips button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.dataset.ct;
+      setCortTipo(byId('i_cortesia').value === t ? 'NINGUNA' : t);
+      actualizarCortesiaForm();
+    });
+  });
+  document.querySelectorAll('#i_estSeg button').forEach(function(b){
+    b.addEventListener('click', function(){ byId('i_estadoPago').value = b.dataset.est; byId('i_estadoPago').dispatchEvent(new Event('change')); sincronizarEstadoSeg(); });
+  });
+  ['i_cmonto1', 'i_cmonto2'].forEach(function(id){ byId(id).addEventListener('input', actualizarCortesiaForm); });
+  ['i_pagado'].forEach(function(id){ byId(id).addEventListener('input', pintarResumenCortesia); });
+  byId('i_estadoPago').addEventListener('change', pintarResumenCortesia);
   byId('i_valor').addEventListener('input', pintarResumenCortesia);
   (function(){
     var bt = byId('btnMasOpc'), box = byId('i_masOpc');
     window.__masOpc = function(abrir){ box.style.display = abrir ? '' : 'none'; bt.classList.toggle('open', abrir); bt.setAttribute('aria-expanded', abrir ? 'true' : 'false'); };
     bt.addEventListener('click', function(){ window.__masOpc(box.style.display === 'none'); });
   })();
-  byId('i_cortesia').addEventListener('change', actualizarCortesiaForm);
   ['i_j1', 'i_j2'].forEach(function(id){ byId(id).addEventListener('input', actualizarCortesiaForm); });
 
   function updateValorInscripcion(){
@@ -3130,6 +3220,7 @@
   function pagadoTotalIns(i){ return (i.pagadoJ1||0) + (i.pagadoJ2||0); }
 
   function renderInscripciones(){
+    if (typeof quitarFilaCobro === 'function') quitarFilaCobro(true);
     if (insDetId) renderDetalleIns();
     byId('btnAbrirCategorias').style.display = isAdminMode ? 'inline-block' : 'none';
     if (isAdminMode) renderCategoriasAdmin();
@@ -3181,6 +3272,7 @@
     document.querySelectorAll('[data-cortesia]').forEach(function(btn){
       btn.addEventListener('click', function(){ abrirFormCortesia(btn.dataset.cortesia); });
     });
+    if (pagoInsActual && byId('formPago').classList.contains('open')) colocarFormPago(pagoInsActual.id);
     document.querySelectorAll('#insBody tr[data-ins-det]').forEach(function(tr){
       tr.addEventListener('click', function(e){ if (e.target.closest('button, a, input, select')) return; abrirDetalleIns(tr.dataset.insDet); });
     });
@@ -4760,10 +4852,17 @@
     var valor = parseFloat(byId('i_valor').value);
     if (!(valor > 0)) { alert('El valor de la inscripción debe ser mayor a 0.'); return; }
     var ex = exencionesForm();
+    var mc = montosForm();
+    if (byId('i_cortesia').value === 'MONTO') {
+      if (mc.m1 + mc.m2 <= 0) { alert('Escribe cuánto de cortesía das, o quita la cortesía.'); return; }
+      if (mc.p1 > mc.parte + 0.5) { alert('La cortesía' + (individual ? '' : ' a ' + j1) + ' no puede pasar de ' + money(mc.parte) + '. Si quieres regalarle todo, elige "Toda la inscripción".'); return; }
+      if (!individual && mc.p2 > mc.parte + 0.5) { alert('La cortesía a ' + (j2 || 'Jugador 2') + ' no puede pasar de ' + money(mc.parte) + '.'); return; }
+    }
+    var tieneCort = ex.j1 || ex.j2 || mc.m1 > 0 || mc.m2 > 0;
     var cobrable = cobrableForm();
     if (pagado > cobrable) { alert('El monto pagado ('+money(pagado)+') supera lo que se cobra en esta inscripción ('+money(cobrable)+').'); return; }
     var mitad = mitadDe({ valor: valor, individual: individual });
-    var mJ1 = ex.j1 ? 0 : mitad, mJ2 = (individual || ex.j2) ? 0 : mitad;
+    var mJ1 = ex.j1 ? 0 : Math.max(0, mitad - mc.m1), mJ2 = (individual || ex.j2) ? 0 : Math.max(0, mitad - mc.m2);
     if (cobrable <= 0) estadoPago = 'APROBADO';
     // El monto pagado al crear no distingue jugador todavía: se reparte
     // primero a Jugador 1 hasta completar su mitad, y el resto a Jugador 2
@@ -4792,7 +4891,7 @@
       categoriaId: categoriaId, categoriaNombre: cat.nombre,
       j1Nombre: j1, j2Nombre: j2, individual: individual,
       valor: valor, pagadoJ1: pagadoJ1, pagadoJ2: pagadoJ2,
-      exentoJ1: ex.j1, exentoJ2: ex.j2, motivoExencion: (ex.j1 || ex.j2) ? byId('i_motivo').value.trim() : '',
+      exentoJ1: ex.j1, exentoJ2: ex.j2, cortesiaMontoJ1: mc.m1, cortesiaMontoJ2: mc.m2, motivoExencion: tieneCort ? byId('i_motivo').value.trim() : '', cortesiaFecha: tieneCort ? Date.now() : 0,
       tarifaId: tarifaId, tarifaNombre: tarifa.nombre, valorLista: valorLista, precioAjustado: valor !== valorLista,
       estadoPago: estadoPago, estadoIns: estadoIns,
       cuentaId: cuentaId, metodoPago: byId('i_metodo').value,
@@ -4816,7 +4915,7 @@
     }).then(function(){
       ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
       byId('i_pagado').value = 0;
-      byId('i_cortesia').value = 'NINGUNA'; byId('i_motivo').value = '';
+      byId('i_cortesia').value = 'NINGUNA'; byId('i_motivo').value = ''; byId('i_cmonto1').value = ''; byId('i_cmonto2').value = ''; setCortTipo('NINGUNA');
       valorManual = false;
       byId('i_quien').value = 'J1';
       fillTarifaSelect();
@@ -4997,12 +5096,69 @@
     if (i.j2Nombre && saldoJ2 > 0) opciones += '<option value="J2">'+esc(i.j2Nombre)+' — debe '+money(saldoJ2)+'</option>';
     if (i.j2Nombre && saldoJ1 > 0 && saldoJ2 > 0) opciones += '<option value="AMBOS">Ambos (pago conjunto) — debe '+money(saldoJ1+saldoJ2)+'</option>';
     byId('pg_quien').innerHTML = opciones;
+    var segOps = [];
+    if (saldoJ1 > 0) segOps.push(['J1', nombreCorto(i.j1Nombre, 'Jugador 1'), i.j1Nombre]);
+    if (i.j2Nombre && saldoJ2 > 0) segOps.push(['J2', nombreCorto(i.j2Nombre, 'Jugador 2'), i.j2Nombre]);
+    if (i.j2Nombre && saldoJ1 > 0 && saldoJ2 > 0) segOps.push(['AMBOS', 'Los dos', 'Pago conjunto']);
+    byId('pg_seg').innerHTML = segOps.map(function(o){ return '<button type="button" data-pq="'+o[0]+'" title="'+esc(o[2])+'">'+esc(o[1])+'</button>'; }).join('');
+    byId('pg_quienWrap').style.display = segOps.length > 1 ? '' : 'none';
+    var ult = null; try { ult = JSON.parse(localStorage.getItem('courtos_ultCobro') || 'null'); } catch(e) {}
+    if (ult && ult.cuenta && cuentas.some(function(c){ return c.id === ult.cuenta; })) byId('pg_cuenta').value = ult.cuenta;
+    if (ult && ult.metodo) byId('pg_metodo').value = ult.metodo;
+    byId('pg_extra').style.display = 'none';
 
     byId('pg_fecha').value = dayKeyLocal(Date.now());  // fecha local (toISOString daba el día siguiente después de las 7 p. m. en Colombia)
     byId('pg_obs').value = '';
     actualizarMontoPago();
     openForm('pago');
+    colocarFormPago(insId);
   }
+  // El cobro se abre dentro de la tabla, justo debajo de la fila de la pareja. Si la fila no está a la vista, queda arriba.
+  var formPagoHome = byId('formPago').parentNode;
+  function quitarFilaCobro(mantener){
+    var fp = byId('formPago'), nr = byId('insCobroRow');
+    if (fp && fp.parentNode !== formPagoHome) formPagoHome.appendChild(fp);
+    if (fp) fp.classList.remove('enfila');
+    if (nr && nr.parentNode) nr.parentNode.removeChild(nr);
+    document.querySelectorAll('#insBody tr.cobrando').forEach(function(t){ t.classList.remove('cobrando'); });
+  }
+  function colocarFormPago(insId){
+    var fp = byId('formPago'); quitarFilaCobro();
+    var tr = document.querySelector('#insBody tr[data-ins-det="' + insId + '"]');
+    if (!tr) { setTimeout(function(){ fp.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); return; }
+    var nr = document.createElement('tr'); nr.id = 'insCobroRow'; nr.className = 'cobro-fila';
+    var td = document.createElement('td'); td.colSpan = 6; td.style.padding = '0'; nr.appendChild(td);
+    tr.parentNode.insertBefore(nr, tr.nextSibling);
+    td.appendChild(fp); fp.classList.add('enfila'); tr.classList.add('cobrando');
+    setTimeout(function(){ nr.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 30);
+  }
+  function saldoPagoSel(){
+    var i = pagoInsActual; if (!i) return 0;
+    var s1 = Math.max(0, mitadJ(i, 1) - (i.pagadoJ1||0)), s2 = i.j2Nombre ? Math.max(0, mitadJ(i, 2) - (i.pagadoJ2||0)) : 0;
+    var q = byId('pg_quien').value;
+    return q === 'J1' ? s1 : q === 'J2' ? s2 : q === 'AMBOS' ? s1 + s2 : 0;
+  }
+  function sincronizarPagoUI(){
+    var q = byId('pg_quien').value, saldo = Math.round(saldoPagoSel()), mitad = Math.round(saldo / 2), v = Math.round(parseFloat(byId('pg_monto').value) || 0);
+    document.querySelectorAll('#pg_seg button').forEach(function(b){ b.classList.toggle('on', b.dataset.pq === q); });
+    byId('pg_chSaldo').textContent = 'Pagar saldo · ' + money(saldo);
+    byId('pg_chMitad').textContent = 'Mitad · ' + money(mitad);
+    byId('pg_chMitad').style.display = saldo >= 2 ? '' : 'none';
+    byId('pg_chSaldo').classList.toggle('on', v === saldo);
+    byId('pg_chMitad').classList.toggle('on', v === mitad && v !== saldo);
+    byId('pg_chOtro').classList.toggle('on', v !== saldo && v !== mitad);
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('#pg_seg button'); if (!b) return;
+    byId('pg_quien').value = b.dataset.pq; byId('pg_quien').dispatchEvent(new Event('change'));
+  });
+  function fijarMontoPago(v){ byId('pg_monto').value = Math.round(v); byId('pg_monto').dispatchEvent(new Event('input')); sincronizarPagoUI(); }
+  byId('pg_chSaldo').addEventListener('click', function(){ fijarMontoPago(saldoPagoSel()); });
+  byId('pg_chMitad').addEventListener('click', function(){ fijarMontoPago(saldoPagoSel() / 2); });
+  byId('pg_chOtro').addEventListener('click', function(){ var m = byId('pg_monto'); m.focus(); m.select(); });
+  byId('pg_monto').addEventListener('input', sincronizarPagoUI);
+  byId('pg_btnExtra').addEventListener('click', function(){ var x = byId('pg_extra'); x.style.display = x.style.display === 'none' ? '' : 'none'; });
+  byId('btnPagoCortesia').addEventListener('click', function(){ var id = pagoInsActual && pagoInsActual.id; closeForm('pago'); if (id) abrirFormCortesia(id); });
   byId('pg_quien').addEventListener('change', actualizarMontoPago);
   function actualizarMontoPago(){
     if (!pagoInsActual) return;
@@ -5016,6 +5172,7 @@
     var hint = byId('pg_hint');
     if (quien === 'AMBOS') { hint.style.display = 'block'; hint.textContent = 'Puedes cambiarlo si abonaron menos. Se reparte entre los dos en proporción a lo que debe cada uno.'; }
     else hint.style.display = 'none';
+    sincronizarPagoUI();
   }
   byId('pg_monto').addEventListener('input', function(){
     if (byId('pg_quien').value !== 'AMBOS' || !pagoInsActual) return;
@@ -5072,7 +5229,7 @@
     torneoRef.collection('movimientos').add({
       tipo: 'INGRESO',
       concepto: 'Pago inscripción — ' + quienTexto + ' (' + i.j1Nombre + (i.j2Nombre ? ' / ' + i.j2Nombre : '') + ')',
-      categoria: 'Inscripciones', valor: monto, cuentaId: cuentaId,
+      categoria: 'Inscripciones', valor: monto, cuentaId: cuentaId, metodoPago: byId('pg_metodo').value,
       sourceType: 'INSCRIPCION', sourceId: insId, observacion: obs || '',
       attribJ1: deltaJ1, attribJ2: deltaJ2,
       estado: 'ACTIVO', fecha: fechaTs, fechaManual: fechaManual,
@@ -5083,6 +5240,7 @@
       if (deltaJ2 > 0) update.pagadoJ2 = firebase.firestore.FieldValue.increment(deltaJ2);
       return torneoRef.collection('inscripciones').doc(insId).update(update);
     }).then(function(){
+      try { localStorage.setItem('courtos_ultCobro', JSON.stringify({ cuenta: cuentaId, metodo: byId('pg_metodo').value })); } catch(e) {}
       pagoInsActual = null;
       closeForm('pago');
     }).catch(function(e){ alert('No se pudo registrar el pago: ' + e.message); });
