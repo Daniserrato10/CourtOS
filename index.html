@@ -849,6 +849,7 @@
   .tp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber-dot); display: inline-block; margin-right: 9px; }
   .tp-comp b { color: var(--amber-dot); opacity: 1; font-weight: 800; }
   .tp-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+  .tp-ver { font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; padding-top: 8px; }
   .tp-link { display: flex; align-items: center; gap: 10px; border: none; background: transparent; color: rgba(255,255,255,0.7); font-size: 13.5px; font-weight: 500; text-align: left; padding: 7px 0; transition: color 150ms ease; }
   .tp-link:hover { color: #fff; }
   .tp-user { display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; padding-top: 14px; }
@@ -1385,6 +1386,7 @@
       <button class="tp-link inst-btn" id="btnInstalarTorneos" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Instalar app</button>
       <button class="tp-link" id="btnIrAdmin" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Admin</button>
       <div class="tp-user"><div class="tp-avatar" id="torneoUserAvatar">U</div><div class="tp-user-t"><span id="torneoUserEmail">—</span><button id="btnLogoutFromTorneos">Cerrar sesión</button></div></div>
+      <div id="tpVersion" class="tp-ver"></div>
     </div>
   </aside>
   <main id="torneoMain">
@@ -2260,7 +2262,7 @@
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
   var APP_VERSION = '1.5.1';
-  (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
+  (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
 
