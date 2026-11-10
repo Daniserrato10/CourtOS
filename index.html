@@ -674,6 +674,7 @@
     #neLista{display:flex;flex-direction:column;width:300px;flex-shrink:0;border-right:1px solid var(--border);background:#fff;min-height:0}
     #neHoja{max-width:none;border-radius:0;box-shadow:none;flex:1;min-width:0}
     #neBarra{padding:12px 20px}
+    #neCerrar{display:none}
     #neCuerpo{padding:22px 0 60px;display:flex;flex-direction:column;align-items:stretch}
     #neCuerpo>*{width:min(720px,100% - 80px);margin-left:auto!important;margin-right:auto!important}
     #neAgregar{text-align:left;padding-left:26px}
@@ -682,6 +683,7 @@
   }
   .nl-h{display:flex;align-items:center;justify-content:space-between;padding:20px 18px 10px}.nl-h b{font-size:22px;font-weight:800;letter-spacing:-.02em}
   .nl-plus{width:32px;height:32px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-size:20px;line-height:1;cursor:pointer;transition:transform 120ms var(--ease-out)}.nl-plus:active{transform:scale(.95)}
+  .nl-seg{margin:0 14px 10px;display:flex}.nl-seg button{flex:1;padding:6px 4px;font-size:12.5px}
   .nl-s{padding:0 14px 8px}.nl-s input{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;outline:0}.nl-s input:focus{border-color:var(--accent)}
   #neItems{overflow-y:auto;padding:0 10px 20px;flex:1}
   .nl-sec{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-500);padding:12px 8px 6px}
@@ -1029,6 +1031,7 @@
 <div id="notaEditor" role="dialog" aria-modal="true" aria-label="Editar nota">
   <aside id="neLista" aria-label="Todas las notas">
     <div class="nl-h"><b>Notas</b><button id="neNueva" class="nl-plus" aria-label="Nueva nota">+</button></div>
+    <div class="seg nl-seg" id="neSeg"><button data-nf="TODAS" class="on">Todas</button><button data-nf="TORNEO">Del torneo</button><button data-nf="YO">Solo yo</button></div>
     <div class="nl-s"><input id="neBuscarL" type="text" placeholder="Buscar" aria-label="Buscar notas"></div>
     <div id="neItems"></div>
   </aside>
@@ -2261,7 +2264,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.5.1';
+  var APP_VERSION = '1.5.2';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3059,6 +3062,16 @@
     if (!v) return;
     document.querySelectorAll('.view').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
     document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
+    if (v !== 'notas' && typeof edNota !== 'undefined' && edNota) cerrarNota();
+    if (v === 'notas') { notasAutoPend = true; autoAbrirNota(); }
+  }
+  var notasAutoPend = false;
+  function autoAbrirNota(){
+    if (!notasAutoPend || edNota || !window.matchMedia('(min-width: 901px)').matches) return;
+    var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
+    if (!base.length) return;
+    base.sort(function(a, b){ return (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) || (b.editadoEn || b.creadoEn || 0) - (a.editadoEn || a.creadoEn || 0); });
+    notasAutoPend = false; abrirNota(base[0].id, base[0]._p);
   }
   document.querySelectorAll('.navitem').forEach(function(btn){
     btn.addEventListener('click', function(){ if (!btn.dataset.view) return; setView(btn.dataset.view); closeSidebarMobile(); });
@@ -5527,7 +5540,7 @@
     byId('notasGrid').innerHTML =
       (fij.length ? '<div class="notas-sec" style="margin-top:14px;">Fijadas</div><div class="notas-grid">' + fij.map(tarjeta).join('') + '</div>' : '') +
       (otras.length ? (fij.length ? '<div class="notas-sec">Otras notas</div>' : '') + '<div class="notas-grid"' + (fij.length ? '' : ' style="margin-top:14px;"') + '>' + otras.map(tarjeta).join('') + '</div>' : '');
-    if (edNota) pintarListaEd();
+    if (edNota) pintarListaEd(); else autoAbrirNota();
     document.querySelectorAll('[data-nota-abrir]').forEach(function(c){
       c.addEventListener('click', function(){ abrirNota(c.dataset.notaAbrir, c.dataset.pers === '1'); });
       c.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirNota(c.dataset.notaAbrir, c.dataset.pers === '1'); } });
@@ -5553,6 +5566,8 @@
   function pintarListaEd(){
     var box = byId('neItems'); if (!box || !edNota) return;
     var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
+    if (notaFiltro === 'TORNEO') base = base.filter(function(n){ return !n._p; }); else if (notaFiltro === 'YO') base = base.filter(function(n){ return n._p; });
+    document.querySelectorAll('#neSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.nf === notaFiltro); });
     var q = impNorm(edBusq);
     var lista = base.filter(function(n){ return !q || impNorm((n.titulo || '') + ' ' + bloquesDe(n).map(function(b){ return b.texto || ''; }).join(' ')).indexOf(q) >= 0; })
       .sort(function(a, b){ return (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) || (b.editadoEn || b.creadoEn || 0) - (a.editadoEn || a.creadoEn || 0); });
@@ -5574,6 +5589,7 @@
       abrirNota(id, pers);
     });
   });
+  byId('neSeg').addEventListener('click', function(e){ var b = e.target.closest('[data-nf]'); if (!b) return; notaFiltro = b.dataset.nf; pintarListaEd(); });
   byId('neBuscarL').addEventListener('input', function(){ edBusq = this.value; pintarListaEd(); });
   byId('neNueva').addEventListener('click', function(){
     var cur = edNota;
