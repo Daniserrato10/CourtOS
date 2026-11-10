@@ -944,6 +944,217 @@
   td.pag-cell small { display: block; font-size: 11.5px; font-weight: 500; color: var(--gray-500); }
   @media (max-width: 860px) { .ins-band { flex-wrap: wrap; gap: 16px 24px; } .ib-bar { flex-basis: 100%; } }
   @media (prefers-reduced-motion: reduce) { .ib-track i { transition: none; } }
+
+  /* ================= CELULAR v1.6: barra inferior, hoja "Más" y botón "+" ================= */
+  #mobTab, #mobFab, #masSheet, #masBack, #fabMenu, #fabBack { display: none; }
+  .mob-only { display: none; }
+  .trow-mas { display: none; }
+  @media (max-width: 860px) {
+    #btnOpenSidebar { display: none; }
+    .mob-only { display: block; }
+    .jug-call.mob-only { display: flex; }
+    #mobTab { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 120; background: #fff; border-top: 1px solid var(--border); padding: 6px 6px calc(6px + var(--sab)); }
+    #mobTab button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; color: var(--gray-500); font: inherit; font-size: 10.5px; font-weight: 600; padding: 6px 0; -webkit-tap-highlight-color: transparent; transition: transform 120ms var(--ease-out), color 150ms ease; }
+    #mobTab button.on { color: var(--accent); }
+    #mobTab button:active { transform: scale(0.94); }
+    #appShell.mob-sin-tab #mobTab, #appShell.mob-sin-tab #mobFab { display: none; }
+    .view { padding-bottom: calc(96px + var(--sab)); }
+    #saveToast, #undoToast { bottom: calc(76px + var(--sab)); }
+    #adminMarco { bottom: calc(60px + var(--sab)); }
+    #adminTab { bottom: calc(66px + var(--sab)); border-bottom: 2px solid #EBC468; border-radius: 999px; }
+    #mobFab { display: flex; position: fixed; right: 16px; bottom: calc(76px + var(--sab)); width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; align-items: center; justify-content: center; z-index: 110; box-shadow: 0 6px 18px rgba(42,93,149,.4); transition: transform 150ms var(--ease-out), opacity 150ms ease; -webkit-tap-highlight-color: transparent; }
+    #mobFab:active { transform: scale(0.94); }
+    #mobFab.off { display: none; }
+    body:has(.formpanel.open) #mobFab { display: none; }
+    #masBack, #fabBack { display: block; position: fixed; inset: 0; z-index: 125; background: rgba(24,24,15,.45); opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
+    #masBack.show, #fabBack.show { opacity: 1; pointer-events: auto; }
+    #masSheet, #fabMenu { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 130; background: #fff; border-radius: 22px 22px 0 0; padding: 10px 20px calc(18px + var(--sab)); max-height: 82vh; overflow-y: auto; transform: translateY(100%); transition: transform 240ms cubic-bezier(.23,1,.32,1); }
+    #masSheet.show, #fabMenu.show { transform: translateY(0); }
+    .ms-grip { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 4px; }
+    .ms-lab { font-size: 11px; font-weight: 700; letter-spacing: .07em; color: var(--gray-500); text-transform: uppercase; margin: 12px 4px 2px; }
+    .ms-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 4px; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); text-align: left; -webkit-tap-highlight-color: transparent; }
+    .ms-row svg { color: var(--gray-500); flex-shrink: 0; }
+    .ms-row.peligro { color: var(--red-tx); }
+    .ms-row.peligro svg { color: var(--red-tx); }
+    .ms-pro { font-size: 9.5px; font-weight: 700; background: var(--accent-bg); color: var(--accent); padding: 2px 7px; border-radius: 5px; margin-left: auto; }
+    .ms-sep { border-top: 1px solid var(--border); margin-top: 8px; }
+    .ms-act { display: flex; align-items: center; gap: 13px; width: 100%; padding: 11px 4px; border: 0; background: none; font: inherit; text-align: left; }
+    .ms-act .ic { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ms-act b { display: block; font-size: 15px; font-weight: 700; color: var(--ink); }
+    .ms-act span.s { display: block; font-size: 12px; color: var(--gray-500); font-weight: 500; }
+    #btnDashNuevaIns { display: none; }
+    .av-item { flex-wrap: nowrap; padding: 12px 14px; gap: 11px; }
+    .av-tx { flex: 1 1 auto; }
+    .av-item .dash-link { order: 0; flex-basis: auto; margin-left: 0; white-space: nowrap; }
+
+    /* ---- celular: tablas a tarjetas, franjas compactas ---- */
+    .view[data-view="inscripciones"] .table-wrap, .view[data-view="financiero"] .table-wrap, .view[data-view="jugadores"] .table-wrap { border: 0; background: none; box-shadow: none; overflow: visible; border-radius: 0; }
+    #insBody, #finBody, #jugadoresBody { display: block; }
+    .view[data-view="inscripciones"] table.datatable, .view[data-view="financiero"] table.datatable, .view[data-view="jugadores"] table.datatable { display: block; min-width: 0; width: 100%; }
+    .view[data-view="inscripciones"] table.datatable thead, .view[data-view="financiero"] table.datatable thead, .view[data-view="jugadores"] table.datatable thead { display: none; }
+    /* Inscripciones: pareja + pagado arriba; categoría, estado y Cobrar en la misma fila */
+    #insBody tr[data-ins-det] { display: grid; grid-template-columns: auto auto 1fr auto; column-gap: 8px; row-gap: 8px; align-items: center; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 13px 14px; margin-bottom: 9px; }
+    #insBody tr[data-ins-det] > td { display: block; padding: 0; border: 0; background: none; text-align: left; }
+    #insBody tr[data-ins-det] > td:nth-child(1) { grid-column: 1 / 4; grid-row: 1; font-size: 14.5px; line-height: 1.25; }
+    #insBody tr[data-ins-det] > td:nth-child(3) { display: none; }
+    #insBody tr[data-ins-det] > td:nth-child(4) { grid-column: 4; grid-row: 1; text-align: right; font-size: 14px; white-space: nowrap; line-height: 1.2; }
+    #insBody tr[data-ins-det] > td:nth-child(4) small { display: block; font-weight: 500; font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+    #insBody tr[data-ins-det] > td:nth-child(2) { grid-column: 1; grid-row: 2; font-size: 12.5px; }
+    #insBody tr[data-ins-det] > td:nth-child(5) { grid-column: 2; grid-row: 2; }
+    #insBody tr[data-ins-det] > td:nth-child(6) { grid-column: 4; grid-row: 2; min-height: 30px; }
+    #insBody tr.cobro-fila { display: block; }
+    #insBody tr.cobro-fila > td { display: block; }
+    /* Movimientos: concepto + valor arriba; fecha y cuenta debajo */
+    #finBody tr[data-mov-row] { display: grid; grid-template-columns: auto 1fr auto; column-gap: 8px; row-gap: 4px; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+    #finBody tr[data-mov-row] > td { display: block; padding: 0; border: 0; background: none; }
+    #finBody tr[data-mov-row] > td:nth-child(2) { grid-column: 1 / 3; grid-row: 1; }
+    #finBody tr[data-mov-row] > td:nth-child(4) { grid-column: 3; grid-row: 1; text-align: right; font-size: 14.5px; white-space: nowrap; }
+    #finBody tr[data-mov-row] > td:nth-child(1) { grid-column: 1; grid-row: 2; font-size: 12px; }
+    #finBody tr[data-mov-row] > td:nth-child(1) div { display: inline; margin: 0 0 0 5px; }
+    #finBody tr[data-mov-row] > td:nth-child(3) { grid-column: 2; grid-row: 2; font-size: 12px; }
+    #finBody tr[data-mov-row] > td:nth-child(3):not(:empty)::before { content: "· "; }
+    #finBody tr[data-mov-row] > td:nth-child(5) { grid-column: 3; grid-row: 2; text-align: right; }
+    /* Jugadores: nombre, categorías y llamar / WhatsApp */
+    #jugadoresBody tr[data-sel-jugador] { display: flex; align-items: center; gap: 10px; padding: 11px 2px; border-bottom: 1px solid var(--border); }
+    #jugadoresBody tr[data-sel-jugador] > td { display: block; padding: 0; border: 0; background: none; }
+    #jugadoresBody tr[data-sel-jugador] > td:nth-child(1) { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+    #jugadoresBody tr[data-sel-jugador] > td:nth-child(1) > div { flex: 1; min-width: 0; }
+    #jugadoresBody tr[data-sel-jugador] > td:nth-child(2), #jugadoresBody tr[data-sel-jugador] > td:nth-child(3) { display: none; }
+    .jug-sub { display: block; font-size: 12px; color: var(--gray-500); font-weight: 500; margin-top: 1px; }
+    .jug-call { display: flex; gap: 8px; flex-shrink: 0; }
+    .jug-call a { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--accent); background: #fff; }
+    .jug-call a.wa { color: var(--green-tx); }
+    /* franjas de cifras: dos columnas y el resultado debajo */
+    .eq-band { grid-template-columns: 1fr 1fr; margin-bottom: 16px; }
+    .eq-cell { padding: 13px 14px; border-top: 0; border-left: 1px solid var(--border); }
+    .eq-cell:first-child { border-left: 0; }
+    .eq-cell.res { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+    .eq-ic, .eq-op { display: none; }
+    .eq-h { margin-bottom: 4px; font-size: 10.5px; }
+    .eq-v { font-size: 20px; }
+    .eq-s { margin: 3px 0 8px; font-size: 12px; }
+    #finStats .eq-cell.res { order: -1; }
+    #finStats .eq-cell.res .eq-v { font-size: 26px; }
+    .eq-acc { gap: 0; padding: 10px 4px; flex-wrap: nowrap; }
+    .eq-acc-k, .eq-acc-t { display: none; }
+    .eq-acc-i { flex: 1; min-width: 0; text-align: center; font-size: 11.5px; color: var(--gray-500); border-left: 1px solid var(--border); padding: 0 4px; }
+    .eq-acc-i:first-of-type { border-left: 0; }
+    .eq-acc-k + .eq-acc-i { border-left: 0; }
+    .eq-acc-i b { display: block; margin: 1px 0 0; font-size: 14px; color: var(--ink); }
+    /* filtros: bajan de línea en vez de cortarse */
+    .seg { flex-wrap: wrap; max-width: 100%; }
+    .tabs { display: flex; flex-wrap: wrap; width: auto; max-width: 100%; box-sizing: border-box; }
+    .tabs > * { flex: 1 1 auto; white-space: nowrap; text-align: center; }
+    #insBody tr[data-ins-det] > td:nth-child(2) { white-space: nowrap; }
+    /* Presupuesto: cada concepto es una tarjeta con lo presupuestado arriba */
+    .pres-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+    #presSeg { display: flex; width: 100%; box-sizing: border-box; }
+    #presSeg button { flex: 1; padding: 6px 4px; }
+    .view[data-view="presupuesto"] .table-wrap { border: 0; background: none; box-shadow: none; overflow: visible; border-radius: 0; }
+    table.datatable.pres-table, .pres-table tbody { display: block; min-width: 0; width: 100%; }
+    .pres-table thead { display: none; }
+    #presBody tr.pres-sec, #presBody tr.pres-add { display: block; }
+    #presBody tr.pres-sec > td { display: block; background: none; padding: 14px 2px 4px; border: 0; }
+    #presBody tr.pres-add > td { display: block; padding: 6px 2px 10px; border: 0; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) { display: grid; grid-template-columns: 1fr auto auto; column-gap: 6px; row-gap: 3px; align-items: center; padding: 11px 2px; border-bottom: 1px solid var(--border); }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td { display: block; padding: 0; border: 0; background: none; text-align: left; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(1) { grid-column: 1; grid-row: 1; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(2) { grid-column: 2; grid-row: 1; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(5) { grid-column: 3; grid-row: 1; width: auto !important; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(3) { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--gray-500); }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(4) { grid-column: 2 / 4; grid-row: 2; font-size: 12px; text-align: right; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(3)::before { content: "Ejecutado "; }
+    #presBody tr:not(.pres-sec):not(.pres-add):not(.pres-tot) > td:nth-child(4)::before { content: "Pendiente "; }
+    .pres-input { margin-right: 0; width: 118px; border-color: var(--border); }
+    #presBody tr.pres-tot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 8px; padding: 11px 12px; margin: 4px 0 6px; background: var(--gray-100, #F4F3EE); border-radius: 12px; }
+    #presBody tr.pres-tot > td { display: block; padding: 0; border: 0; background: none; text-align: left; font-size: 13px; }
+    #presBody tr.pres-tot > td:nth-child(1) { grid-column: 1 / -1; font-size: 13.5px; }
+    #presBody tr.pres-tot > td:nth-child(5) { display: none; }
+    #presBody tr.pres-tot > td:nth-child(2)::before { content: "Presupuestado"; }
+    #presBody tr.pres-tot > td:nth-child(3)::before { content: "Ejecutado"; }
+    #presBody tr.pres-tot > td:nth-child(4)::before { content: "Pendiente"; }
+    #presBody tr.pres-tot > td:nth-child(n+2)::before { display: block; font-size: 10.5px; font-weight: 600; color: var(--gray-500); }
+    .pres-table tr .logout-btn { opacity: 1; }
+    /* Reportes: tablas como tarjetas (la etiqueta de cada dato viene del encabezado) */
+    .rep-tabs { flex-wrap: wrap; width: auto; max-width: 100%; box-sizing: border-box; }
+    .rep-tabs > * { flex: 1 1 auto; white-space: nowrap; text-align: center; }
+    [data-view="reportes"] table.datatable { min-width: 0; width: 100%; }
+    [data-view="reportes"] .panel { overflow: visible; }
+    [data-view="reportes"] .panel:not([data-rep-tab="estado"]) { border: 0; box-shadow: none; padding: 0; background: none; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl), [data-view="reportes"] table.datatable:not(.rep-tbl) tbody, [data-view="reportes"] table.datatable:not(.rep-tbl) tr { display: block; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) thead { display: none; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) tbody tr { border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; margin-bottom: 8px; background: #fff; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 3px 0; border: 0; text-align: right; background: none; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) td::before { content: attr(data-l); color: var(--gray-500); font-size: 12px; font-weight: 500; text-align: left; flex-shrink: 0; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) td:first-child { font-weight: 700; font-size: 14px; justify-content: flex-start; text-align: left; padding-bottom: 5px; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) td:first-child::before, [data-view="reportes"] table.datatable:not(.rep-tbl) td:not([data-l])::before { display: none; }
+    [data-view="reportes"] table.datatable:not(.rep-tbl) tr.rep-sec, [data-view="reportes"] table.datatable:not(.rep-tbl) tfoot { display: block; }
+    .rep-tbl td { padding: 10px 14px; }
+    /* Viabilidad: resultado primero, disponibilidad recogida, categorías como filas */
+    .viab-top { gap: 12px; }
+    .viab-res { order: -1; }
+    .viab-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px; flex: none; }
+    .viab-kpis .kpi { padding: 12px 12px; }
+    .viab-kpis .kpi-val { font-size: 19px; }
+    .viab-disp { padding: 14px 16px; }
+    .viab-disp .viab-sec { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .viab-disp .viab-sec::after { content: "Editar"; color: var(--accent); text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 700; }
+    .viab-disp.abierta .viab-sec::after { content: "Cerrar"; }
+    .viab-disp:not(.abierta) > :not(.viab-sec):not(.viab-sum) { display: none; }
+    .viab-disp.abierta .viab-sum { display: none; }
+    .viab-sum { font-size: 12.5px; color: var(--gray-500); margin-top: -4px; }
+    .view[data-view="viabilidad"] .viab-tabla { border: 0; background: none; box-shadow: none; overflow: visible; }
+    .viab-tabla table.datatable, .viab-tabla tbody { display: block; min-width: 0; width: 100%; }
+    .viab-tabla thead { display: none; }
+    #v_catBody tr:not(.empty-row) { display: grid; grid-template-columns: 1fr auto; gap: 8px 10px; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+    #v_catBody tr:not(.empty-row) > td { display: block; padding: 0; border: 0; background: none; width: auto !important; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(1) { grid-column: 1; grid-row: 1; font-size: 15px; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right !important; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(3) { grid-column: 1 / 3; grid-row: 2; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(4) { grid-column: 1; grid-row: 3; font-size: 12.5px; color: var(--gray-500); text-align: left !important; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(5) { grid-column: 2; grid-row: 3; font-size: 12.5px; color: var(--gray-500); text-align: right; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(4) > div { display: inline; text-align: left !important; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(4)::before { content: "Partidos "; }
+    #v_catBody tr:not(.empty-row) > td:nth-child(5)::before { content: "Horas "; }
+    #v_catBody tr[style] { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 12px; margin-top: 8px; }
+    #v_catBody tr[style] > td { display: block; padding: 0; border: 0; width: auto !important; text-align: left !important; }
+    #v_catBody tr[style] > td:empty { display: none; }
+    .viab-sel { width: 100%; }
+    /* Mis torneos: cabecera compacta, filtros en fichas y nombres completos */
+    #torneoPanel { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 10px; padding: calc(16px + var(--sat)) 18px 16px; }
+    #torneoPanel > *:not(.tp-brand):not(.tp-nuevo) { grid-column: 1 / -1; }
+    #torneoPanel .tp-brand { margin-bottom: 0; }
+    .tp-nuevo { height: 34px; padding: 0 14px; }
+    .tp-filtros { flex-wrap: wrap; overflow: visible; margin-top: 0; }
+    .tp-filtro { padding: 6px 12px; font-size: 13px; gap: 8px; border: 1px solid rgba(255,255,255,0.16); }
+    .tp-foot { gap: 2px 16px; }
+    .trow { flex-wrap: nowrap; }
+    .trow-main { flex-basis: auto; gap: 12px; padding: 12px 6px 12px 14px; align-items: flex-start; }
+    .trow-n, .trow-m { white-space: normal; overflow: visible; text-overflow: clip; }
+    .trow-r { flex-direction: column; align-items: flex-end; gap: 4px; }
+    .trow-r svg { display: none; }
+    .trow-acc { display: none; }
+    .trow-mas { display: flex; align-self: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: 6px; border: 0; background: none; color: var(--gray-500); font-size: 20px; line-height: 1; align-items: center; justify-content: center; border-radius: 10px; }
+    .trow-mas:active { background: var(--gray-200); }
+    /* formularios: una columna, nada se sale de la pantalla */
+    .formpanel { max-width: 100%; box-sizing: border-box; }
+    .formpanel .pg-row, .formpanel .ins4, .formpanel .ins5, .formpanel .cort-grid, .formpanel .ins-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .formpanel .field, .formpanel .field > * { min-width: 0; max-width: 100%; }
+    .formpanel .seg, #pg_seg { display: flex; width: 100%; box-sizing: border-box; }
+    .formpanel .seg button { flex: 1; padding: 6px 4px; }
+    .form-actions, .ins-foot { flex-wrap: wrap; }
+    .ins-foot-btns { flex: 1 1 100%; }
+    .ins-foot-btns .btn, .form-actions .btn { flex: 1 1 auto; }
+    #btnNuevoJugador, #btnNuevaNota { display: none !important; }
+    .view [style*="max-width:280px"], .view [style*="max-width:300px"] { max-width: none !important; flex: 1 1 100% !important; }
+    /* el "+" flotante reemplaza el botón principal de estas pantallas */
+    .view[data-view="inscripciones"] .page-head .actions > .btn-primary,
+    .view[data-view="financiero"] .page-head .actions > .btn-primary,
+    .view[data-view="jugadores"] .page-head .actions > .btn-primary,
+    .view[data-view="notas"] .page-head .actions > .btn-primary { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { #masSheet, #fabMenu, #masBack, #fabBack, #mobFab { transition: none; } }
+  @media print { #mobTab, #mobFab, #masSheet, #masBack, #fabMenu, #fabBack { display: none !important; } }
 </style>
 </head>
 <body>
@@ -1580,6 +1791,15 @@
     <div style="font-weight:700;font-size:14px;" id="mobileBrandName">Mi Torneo</div>
     <button id="btnDeshacerTop" aria-label="Deshacer" title="Deshacer" style="display:none;margin-left:auto;background:none;border:0;padding:8px;color:inherit;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   </div>
+  <nav id="mobTab" aria-label="Navegación principal">
+    <button type="button" data-mt="dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Resumen</button>
+    <button type="button" data-mt="inscripciones"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Inscripciones</button>
+    <button type="button" data-mt="financiero"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Movimientos</button>
+    <button type="button" data-mt="mas"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Más</button>
+  </nav>
+  <button type="button" id="mobFab" class="off" aria-label="Crear"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div id="masBack"></div><div id="masSheet" role="dialog" aria-label="Más opciones"></div>
+  <div id="fabBack"></div><div id="fabMenu" role="dialog" aria-label="Crear"></div>
   <div id="sidebarOverlay"></div>
 
   <div id="sidebar">
@@ -2103,7 +2323,8 @@
 
       <div class="viab-top">
         <div class="card viab-disp">
-          <div class="viab-sec">Disponibilidad</div>
+          <div class="viab-sec" id="v_dispTog">Disponibilidad</div>
+          <div class="viab-sum mob-only" id="v_dispSum"></div>
           <div class="formgrid" style="grid-template-columns:1fr 1fr;">
             <div class="field"><label>Canchas disponibles</label><input id="v_canchas" type="number" value="3"></div>
             <div class="field"><label>Min. por partido</label><input id="v_duracion" type="number" value="75"></div>
@@ -2273,7 +2494,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.5.4';
+  var APP_VERSION = '1.6.0';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3073,7 +3294,120 @@
     document.querySelectorAll('.navitem').forEach(function(el){ el.classList.toggle('active', el.dataset.view === v); });
     if (v !== 'notas' && typeof edNota !== 'undefined' && edNota) cerrarNota();
     if (v === 'notas') { notasAutoPend = true; autoAbrirNota(); }
+    if (typeof mobSync === 'function') mobSync(v);
   }
+
+  // ---------- celular: barra inferior, hoja "Más" y botón "+" ----------
+  var MT_VISTAS = { dashboard:1, inscripciones:1, financiero:1 };
+  var MOB_IC = {
+    presupuesto:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', cfg:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+    x:'<path d="M6 6l12 12M18 6L6 18"/>', chev:'<path d="M7 16V4M7 4 3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/>', ayuda:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.6-2.4 2-2.4 3.5M12 17h.01"/>',
+    ins:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>', mov:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', jug:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17 4.5a3.3 3.3 0 0 1 0 6.3M19 14.3c1.7.8 2.8 2.7 2.8 5.1"/>'
+  };
+  function mobSvg(d, sz){ return '<svg width="'+(sz||20)+'" height="'+(sz||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>'; }
+  function mobAbrir(el, back){ byId(el).classList.add('show'); byId(back).classList.add('show'); }
+  function mobCerrar(){ ['masSheet','masBack','fabMenu','fabBack'].forEach(function(id){ byId(id).classList.remove('show'); }); }
+  function mobVistaActual(){ var a = document.querySelector('.view.active'); return a ? a.dataset.view : 'dashboard'; }
+  var FAB_DESTINO = { inscripciones:'.view[data-view="inscripciones"] [data-toggle-form="inscripcion"]', financiero:'.view[data-view="financiero"] [data-toggle-form="movimiento"]', jugadores:'#btnNuevoJugador', notas:'#btnNuevaNota' };
+  function mobBtnOk(b){ return !!b && !b.classList.contains('perm-hide') && b.style.display !== 'none'; }
+  function mobSync(v){
+    v = v || mobVistaActual();
+    document.querySelectorAll('#mobTab button').forEach(function(b){ b.classList.toggle('on', b.dataset.mt === (MT_VISTAS[v] ? v : 'mas')); });
+    var fab = byId('mobFab'), ok = false;
+    if (v === 'dashboard') ok = mobAccionesCrear().length > 0;
+    else if (FAB_DESTINO[v]) ok = mobBtnOk(document.querySelector(FAB_DESTINO[v]));
+    fab.classList.toggle('off', !ok);
+    mobCerrar();
+  }
+  function mobAccionesCrear(){
+    var a = [];
+    if (puedeEditar('inscripciones')) a.push({ ic:'ins', t:'Nueva inscripción', s:'Pareja, categoría y pago', fn:function(){ setView('inscripciones'); openForm('inscripcion'); } });
+    if (puedeEditar('financiero')) a.push({ ic:'mov', t:'Nuevo movimiento', s:'Ingreso o gasto', fn:function(){ setView('financiero'); openForm('movimiento'); } });
+    if (mobBtnOk(byId('btnNuevoJugador'))) a.push({ ic:'jug', t:'Nuevo jugador', s:'Datos de contacto', fn:function(){ setView('jugadores'); byId('btnNuevoJugador').click(); } });
+    return a;
+  }
+  byId('mobFab').addEventListener('click', function(){
+    var v = mobVistaActual();
+    if (v === 'dashboard') {
+      var acc = mobAccionesCrear();
+      byId('fabMenu').innerHTML = '<div class="ms-grip"></div><div class="ms-lab">Crear</div>' + acc.map(function(x, k){ return '<button type="button" class="ms-act" data-fa="'+k+'"><span class="ic">'+mobSvg(MOB_IC[x.ic], 20)+'</span><span><b>'+esc(x.t)+'</b><span class="s">'+esc(x.s)+'</span></span></button>'; }).join('');
+      byId('fabMenu').onclick = function(e){ var b = e.target.closest('[data-fa]'); if (!b) return; mobCerrar(); acc[+b.dataset.fa].fn(); };
+      mobAbrir('fabMenu', 'fabBack');
+    } else if (FAB_DESTINO[v]) { var b = document.querySelector(FAB_DESTINO[v]); if (mobBtnOk(b)) b.click(); }
+  });
+  function mobEtiquetar(root){
+    root.querySelectorAll('table.datatable').forEach(function(t){
+      var ths = [].map.call(t.querySelectorAll('thead th'), function(h){ return h.textContent.trim(); });
+      if (!ths.length) return;
+      [].forEach.call(t.querySelectorAll('tbody tr'), function(tr){
+        if (tr.dataset.lab) return; tr.dataset.lab = '1';
+        [].forEach.call(tr.cells, function(td, i){ if (!td.hasAttribute('colspan') && ths[i]) td.setAttribute('data-l', ths[i]); });
+      });
+    });
+  }
+  (function(){
+    var vr = document.querySelector('.view[data-view="reportes"]'), t = null;
+    if (!vr || !window.MutationObserver) return;
+    new MutationObserver(function(){ clearTimeout(t); t = setTimeout(function(){ mobEtiquetar(vr); }, 30); }).observe(vr, { childList: true, subtree: true });
+  })();
+  function viabSumMob(){
+    var el = byId('v_dispSum'); if (!el) return;
+    var cfg = (torneoData && torneoData.viabDias) || {}, dias = DIAS_SEMANA.filter(function(d){ return (cfg[d.key] || {}).activo; }).map(function(d){ return d.label.slice(0, 3); });
+    el.textContent = (byId('v_canchas').value || 0) + ' canchas · ' + (byId('v_duracion').value || 0) + ' min por partido · ' + (dias.length ? dias.join(', ') : 'sin días elegidos');
+    var box = el.closest('.viab-disp');
+    if (!dias.length && !box.dataset.tocado) box.classList.add('abierta');
+  }
+  byId('v_dispTog').addEventListener('click', function(){ var b = this.closest('.viab-disp'); b.dataset.tocado = '1'; b.classList.toggle('abierta'); });
+  byId('torneoLista').addEventListener('click', function(e){
+    var m = e.target.closest('[data-trow-mas]'); if (!m) return;
+    e.stopPropagation();
+    var items = [].map.call(m.closest('.trow').querySelectorAll('.trow-acc button'), function(b){
+      var eli = b.hasAttribute('data-eliminar-torneo');
+      return { t: b.hasAttribute('data-finalizar-torneo') ? 'Finalizar' : (eli ? 'Eliminar torneo' : 'Salir'), peligro: eli, fn: function(){ b.click(); } };
+    });
+    if (items.length) miniMenu(m, items);
+  });
+  byId('fabBack').addEventListener('click', mobCerrar);
+  byId('masBack').addEventListener('click', mobCerrar);
+  function mobAbrirMas(){
+    var h = '<div class="ms-grip"></div>', pend = '', hay = false, filas = [];
+    var items = [];
+    Array.prototype.forEach.call(byId('navlist').children, function(el){
+      if (el.classList.contains('navgroup-label')) { if (!el.classList.contains('perm-hide')) items.push({ lab: el.textContent.trim() }); return; }
+      if (el.classList.contains('navitem') && el.dataset.view && !MT_VISTAS[el.dataset.view] && !el.classList.contains('perm-hide') && getComputedStyle(el).display !== 'none') {
+        var svg = el.querySelector('svg'), pro = el.querySelector('span');
+        var txt = Array.prototype.filter.call(el.childNodes, function(n){ return n.nodeType === 3; }).map(function(n){ return n.textContent; }).join('').trim();
+        items.push({ view: el.dataset.view, t: txt, pro: !!pro, svg: svg ? svg.outerHTML.replace(/width="\d+"/, 'width="20"').replace(/height="\d+"/, 'height="20"') : '' });
+      }
+    });
+    var out = '', lab = null;
+    items.forEach(function(it){
+      if (it.lab !== undefined) { lab = it.lab; return; }
+      if (lab !== null) { out += '<div class="ms-lab">' + esc(lab) + '</div>'; lab = null; }
+      out += '<button type="button" class="ms-row" data-mv="' + it.view + '">' + it.svg + esc(it.t) + (it.pro ? '<span class="ms-pro">PRO</span>' : '') + '</button>';
+    });
+    h += out + '<div class="ms-sep"></div>';
+    h += '<button type="button" class="ms-row" data-mx="cfg">' + mobSvg(MOB_IC.cfg) + 'Configuración</button>';
+    h += '<button type="button" class="ms-row" data-mx="torneo">' + mobSvg(MOB_IC.chev) + 'Cambiar de torneo</button>';
+    h += '<button type="button" class="ms-row" data-mx="ayuda">' + mobSvg(MOB_IC.ayuda) + 'Ayuda</button>';
+    h += '<button type="button" class="ms-row peligro" data-mx="salir">' + mobSvg(MOB_IC.x) + 'Cerrar sesión</button>';
+    var sh = byId('masSheet'); sh.innerHTML = h;
+    sh.onclick = function(e){
+      var b = e.target.closest('button'); if (!b) return;
+      mobCerrar();
+      if (b.dataset.mv) setView(b.dataset.mv);
+      else if (b.dataset.mx === 'cfg') setView('configuracion');
+      else if (b.dataset.mx === 'torneo') byId('btnCambiarTorneo').click();
+      else if (b.dataset.mx === 'ayuda') ayudaAbrir();
+      else if (b.dataset.mx === 'salir') byId('btnLogout').click();
+    };
+    mobAbrir('masSheet', 'masBack');
+  }
+  byId('mobTab').addEventListener('click', function(e){
+    var b = e.target.closest('[data-mt]'); if (!b) return;
+    if (b.dataset.mt === 'mas') { if (byId('masSheet').classList.contains('show')) mobCerrar(); else mobAbrirMas(); }
+    else { mobCerrar(); setView(b.dataset.mt); }
+  });
   var notasAutoPend = false;
   function autoAbrirNota(excluir){
     if (!notasAutoPend || edNota || !window.matchMedia('(min-width: 901px)').matches) return;
@@ -4380,12 +4714,12 @@
     var pIng = Math.max(0, ingProy - ingReal), pGas = Math.max(0, gasProy - gasReal);
     var ico = function(c, bg, t){ return '<span class="eq-ic" style="background:'+bg+';color:'+c+';">'+t+'</span>'; };
     byId('presKpis').innerHTML =
-      '<div class="eq-cell"><div class="eq-h">'+ico('var(--green-tx)','var(--green-bg)','↗')+'Ingresos</div><div class="eq-v">'+money(ingReal)+'</div><div class="eq-s">de '+money(ingProy)+' presupuestados</div>' +
+      '<div class="eq-cell"><div class="eq-h">'+ico('var(--green-tx)','var(--green-bg)','↗')+'Ingresos presupuestados</div><div class="eq-v">'+money(ingProy)+'</div><div class="eq-s">Ejecutado a hoy '+money(ingReal)+'</div>' +
         '<span class="eq-pill" style="background:var(--amber-bg);color:var(--amber-tx);">Pendiente '+money(pIng)+'</span><span class="eq-op">−</span></div>' +
-      '<div class="eq-cell"><div class="eq-h">'+ico('var(--red-tx)','var(--red-bg)','↙')+'Gastos</div><div class="eq-v">'+money(gasReal)+'</div><div class="eq-s">de '+money(gasProy)+' presupuestados</div>' +
+      '<div class="eq-cell"><div class="eq-h">'+ico('var(--red-tx)','var(--red-bg)','↙')+'Gastos presupuestados</div><div class="eq-v">'+money(gasProy)+'</div><div class="eq-s">Ejecutado a hoy '+money(gasReal)+'</div>' +
         '<span class="eq-pill" style="background:var(--amber-bg);color:var(--amber-tx);">Pendiente '+money(pGas)+'</span><span class="eq-op">=</span></div>' +
-      '<div class="eq-cell res"><div class="eq-h">'+ico('var(--accent)','var(--accent-bg)','▭')+'Resultado a hoy</div><div class="eq-v" style="color:'+(resHoy>=0?'var(--green-tx)':'var(--red-tx)')+';">'+money(resHoy)+'</div><div class="eq-s">Presupuestado '+money(utilProy)+'</div>' +
-        '<span class="eq-pill" style="background:'+(dif>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(dif>=0?'var(--green-tx)':'var(--red-tx)')+';">'+money(Math.abs(dif))+(dif>=0?' sobre':' bajo')+' el presupuestado</span></div>';
+      '<div class="eq-cell res"><div class="eq-h">'+ico('var(--accent)','var(--accent-bg)','▭')+'Resultado presupuestado</div><div class="eq-v" style="color:'+(utilProy>=0?'var(--green-tx)':'var(--red-tx)')+';">'+money(utilProy)+'</div><div class="eq-s">A hoy '+money(resHoy)+'</div>' +
+        '<span class="eq-pill" style="background:'+(dif>=0?'var(--green-bg)':'var(--red-bg)')+';color:'+(dif>=0?'var(--green-tx)':'var(--red-tx)')+';">'+money(Math.abs(dif))+(dif>=0?' sobre':' bajo')+' lo previsto</span></div>';
 
     document.querySelectorAll('#presSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.pf === presFiltro); });
 
@@ -4918,6 +5252,7 @@
   }
 
   function calcularViabilidad(){
+    if (typeof viabSumMob === 'function') viabSumMob();
     var canchas = parseFloat(byId('v_canchas').value) || 0;
     var duracionMin = parseFloat(byId('v_duracion').value) || 0;
     var cats = categoriasParaViabilidad();
@@ -5247,6 +5582,13 @@
   // ---------- render: jugadores (nivel de cuenta) ----------
   function historialDeJugador(j){ return j.historial || []; }
   var jugadoresListos = false;
+  function jugLlamar(j){
+    var d = String(j.telefono || '').replace(/\D/g, '');
+    if (d.length < 7) return '';
+    var wa = d.length === 10 ? '57' + d : d;
+    return '<span class="jug-call mob-only"><a href="tel:+' + (d.length === 10 ? '57' + d : d) + '" aria-label="Llamar a ' + esc(j.nombre) + '"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a>' +
+      '<a class="wa" href="https://wa.me/' + wa + '" target="_blank" rel="noopener" aria-label="WhatsApp a ' + esc(j.nombre) + '"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></a></span>';
+  }
   function renderJugadores(){
     if (!jugadoresListos) { byId('jugadoresBody').innerHTML = vacioFila(5, '<div class="muted" style="padding:28px 0;text-align:center;">Cargando jugadores…</div>'); return; }
     var q = normalizaTexto(byId('jug_buscar').value);
@@ -5274,7 +5616,7 @@
       var cats = (j.categorias || []).join(', ') || '—';
       var hist = historialDeJugador(j);
       return '<tr data-sel-jugador="'+j.id+'"'+(j.id === jugSel ? ' class="sel"' : '')+'>' +
-        '<td><div style="display:flex;align-items:center;gap:12px;"><span class="jug-av sm">'+esc(inicialesNombre(j.nombre))+'</span><b style="font-weight:600;">'+esc(j.nombre)+'</b></div></td>' +
+        '<td><div style="display:flex;align-items:center;gap:12px;"><span class="jug-av sm">'+esc(inicialesNombre(j.nombre))+'</span><div style="min-width:0;"><b style="font-weight:600;">'+esc(j.nombre)+'</b><span class="jug-sub mob-only">'+esc(cats !== '—' ? cats + ' · ' : '')+hist.length+' torneo'+(hist.length===1?'':'s')+'</span></div></div>'+jugLlamar(j)+'</td>' +
         '<td class="muted">'+esc(cats)+'</td>' +
         '<td class="num">'+hist.length+'</td></tr>';
     }).join('');
@@ -5282,7 +5624,7 @@
     pintarFichaJugador();
     if (editandoJugadorId) pintarHistJugador();
     document.querySelectorAll('[data-sel-jugador]').forEach(function(tr){
-      tr.addEventListener('click', function(){ jugSel = tr.dataset.selJugador; renderJugadores(); });
+      tr.addEventListener('click', function(e){ if (e.target.closest('.jug-call')) return; jugSel = tr.dataset.selJugador; renderJugadores(); });
     });
   }
   var jugSel = null;
@@ -6686,7 +7028,7 @@
         '<div class="trow-m">' + esc(t.ciudad || '—') + fechas + cupos + dueno + '</div></div>' +
         '<div class="trow-r">' + (falt ? '<span class="faltan">' + esc(falt.toLowerCase()) + '</span>' : '') + rol + chip(ESTADO_TORNEO, t.estado) +
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>' +
-      '</button><div class="trow-acc">' + acc + '</div></div>';
+      '</button><button type="button" class="trow-mas" data-trow-mas aria-label="Más opciones" aria-haspopup="menu">⋯</button><div class="trow-acc">' + acc + '</div></div>';
   }
   function tpAplicar(){
     var act = function(t){ return t.estado !== 'FINALIZADA'; };
