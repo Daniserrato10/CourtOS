@@ -683,6 +683,14 @@
   }
   .nl-h{display:flex;align-items:center;justify-content:space-between;padding:20px 18px 10px}.nl-h b{font-size:22px;font-weight:800;letter-spacing:-.02em}
   .nl-plus{width:32px;height:32px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-size:20px;line-height:1;cursor:pointer;transition:transform 120ms var(--ease-out)}.nl-plus:active{transform:scale(.95)}
+  .carp-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .carp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;color:var(--gray-700);cursor:pointer;transition:background-color 150ms ease,border-color 150ms ease}
+  .carp:hover{border-color:var(--accent)}.carp.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .carp.nueva{border-style:dashed;color:var(--accent)}
+  .carp-mas{background:none;border:0;color:inherit;opacity:.7;padding:0 0 0 2px;font-size:14px;cursor:pointer;line-height:1}
+  .carp-in{border:1px solid var(--accent);border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;outline:0;width:130px}
+  .nl-carp{margin:0 14px 10px}
+  #neCarpeta{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;background:#fff;max-width:150px}
   .nl-seg{margin:0 14px 10px;display:flex}.nl-seg button{flex:1;padding:6px 4px;font-size:12.5px}
   .nl-s{padding:0 14px 8px}.nl-s input{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;outline:0}.nl-s input:focus{border-color:var(--accent)}
   #neItems{overflow-y:auto;padding:0 10px 20px;flex:1}
@@ -1031,7 +1039,7 @@
 <div id="notaEditor" role="dialog" aria-modal="true" aria-label="Editar nota">
   <aside id="neLista" aria-label="Todas las notas">
     <div class="nl-h"><b>Notas</b><button id="neNueva" class="nl-plus" aria-label="Nueva nota">+</button></div>
-    <div class="seg nl-seg" id="neSeg"><button data-nf="TODAS" class="on">Todas</button><button data-nf="TORNEO">Del torneo</button><button data-nf="YO">Solo yo</button></div>
+    <div class="carp-bar nl-carp" id="neSeg"></div>
     <div class="nl-s"><input id="neBuscarL" type="text" placeholder="Buscar" aria-label="Buscar notas"></div>
     <div id="neItems"></div>
   </aside>
@@ -1039,6 +1047,7 @@
     <div id="neBarra">
       <button class="logout-btn" id="neCerrar" title="Cerrar" aria-label="Cerrar" style="font-size:15px;padding:6px 10px;">← Notas</button>
       <div style="flex:1;"></div>
+      <select id="neCarpeta" aria-label="Carpeta de la nota" title="Carpeta"></select>
       <span id="neEstado" class="muted" style="font-size:12px;"></span>
       <button class="logout-btn" id="neVis" style="font-size:12.5px;padding:6px 10px;" title="Quién ve esta nota"></button>
       <button class="logout-btn" id="nePin" title="Fijar arriba" aria-label="Fijar arriba"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3l7 7-3 1-3.5 3.5.5 4.5-1.5 1.5-4-5-5 5-1-1 5-5-5-4L8 8l4.5.5L16 5z"/></svg></button>
@@ -2179,7 +2188,7 @@
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
 
         <div style="position:relative;flex:1;min-width:180px;max-width:280px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-500);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="notaBuscar" type="text" class="buscador" placeholder="Buscar en las notas" aria-label="Buscar en las notas" autocomplete="off"></div>
-        <div class="seg" id="notaSeg"><button data-nf="TODAS" class="on">Todas</button><button data-nf="TORNEO">Del torneo</button><button data-nf="YO">Solo yo</button></div>
+        <div class="carp-bar" id="notaSeg"></div>
       </div>
 
       <div id="notasGrid"></div>
@@ -2264,7 +2273,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.5.2';
+  var APP_VERSION = '1.5.4';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3066,9 +3075,10 @@
     if (v === 'notas') { notasAutoPend = true; autoAbrirNota(); }
   }
   var notasAutoPend = false;
-  function autoAbrirNota(){
+  function autoAbrirNota(excluir){
     if (!notasAutoPend || edNota || !window.matchMedia('(min-width: 901px)').matches) return;
     var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
+    if (excluir) base = base.filter(function(n){ return n.id !== excluir; });
     if (!base.length) return;
     base.sort(function(a, b){ return (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) || (b.editadoEn || b.creadoEn || 0) - (a.editadoEn || a.creadoEn || 0); });
     notasAutoPend = false; abrirNota(base[0].id, base[0]._p);
@@ -5482,7 +5492,7 @@
   // ---------- notas: editor tipo Notion (se guarda solo) ----------
   // Dos tipos: "Del torneo" (las ve quien tenga acceso a Notas) y "Mías" (solo tú, en tu cuenta).
   // Cada nota es un título + bloques: texto, título, pendiente (casilla), viñeta y separador.
-  var notasPers = [], notaTab = 'torneo', notaBusq = '', notaFiltro = 'TODAS';
+  var notasPers = [], notaTab = 'torneo', notaBusq = '', notaFiltro = '';
   var NOTA_COLORES = null;
   var edNota = null;       // nota abierta en el editor: { id, pers, titulo, bloques, fijada, recordatorio, lectura }
   var edTimer = null, edSucia = false, edGuardando = false;
@@ -5504,8 +5514,8 @@
   byId('finBuscar').addEventListener('input', function(){ finBusq = impNorm(this.value); renderFinanciero(); });
   function renderNotas(){
     var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
-    if (notaFiltro === 'TORNEO') base = base.filter(function(n){ return !n._p; }); else if (notaFiltro === 'YO') base = base.filter(function(n){ return n._p; });
-    document.querySelectorAll('#notaSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.nf === notaFiltro); });
+    if (notaFiltro) base = base.filter(function(n){ return n.carpeta === notaFiltro; });
+    pintarCarpetas();
     var q = impNorm(notaBusq);
     var lista = base.filter(function(n){
       if (!q) return true;
@@ -5550,7 +5560,57 @@
   document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-vacio="nota-nueva"]'); if (b) nuevaNota(); });
   byId('btnNuevaNota').addEventListener('click', nuevaNota);
 
-  byId('notaSeg').addEventListener('click', function(e){ var b = e.target.closest('[data-nf]'); if (!b) return; notaFiltro = b.dataset.nf; renderNotas(); });
+  // ---------- carpetas de notas ----------
+  var carpEditando = null;   // 'nueva' | id de carpeta en renombre
+  function carpetasNotas(){ return (torneoData.notasCarpetas || []).slice(); }
+  function guardarCarpetas(lista){
+    if (!torneoRef) return Promise.resolve();
+    torneoData = Object.assign({}, torneoData, { notasCarpetas: lista });
+    return torneoRef.set({ notasCarpetas: lista }, { merge: true }).catch(function(e){ alert('No se pudo guardar la carpeta: ' + e.message); });
+  }
+  function pintarCarpetas(){
+    var cs = carpetasNotas(), puede = puedeEditar('notas');
+    var html = '<button class="carp' + (!notaFiltro ? ' on' : '') + '" data-carp="">Todas</button>' + cs.map(function(c){
+      if (carpEditando === c.id) return '<input class="carp-in" data-carp-in="' + c.id + '" value="' + esc(c.nombre) + '" maxlength="30">';
+      var on = notaFiltro === c.id;
+      return '<button class="carp' + (on ? ' on' : '') + '" data-carp="' + c.id + '">' + esc(c.nombre) + (on && puede ? ' <span class="carp-mas" data-carp-mas="' + c.id + '" role="button" aria-label="Opciones de carpeta">⋯</span>' : '') + '</button>';
+    }).join('');
+    if (puede) html += carpEditando === 'nueva' ? '<input class="carp-in" data-carp-in="nueva" placeholder="Nombre" maxlength="30">' : '<button class="carp nueva" data-carp-nueva="1">+ Carpeta</button>';
+    ['notaSeg', 'neSeg'].forEach(function(id){ var el = byId(id); if (el) el.innerHTML = html; });
+    var foco = document.querySelector('.carp-in'); if (foco && carpEditando) { foco.focus(); foco.select(); }
+    var sel = byId('neCarpeta');
+    if (sel){ sel.innerHTML = '<option value="">Sin carpeta</option>' + cs.map(function(c){ return '<option value="' + c.id + '"' + (edNota && edNota.carpeta === c.id ? ' selected' : '') + '>' + esc(c.nombre) + '</option>'; }).join(''); sel.style.display = cs.length && edNota ? '' : 'none'; sel.disabled = !!(edNota && edNota.lectura); }
+  }
+  function terminarCarpeta(inp, guardar){
+    var id = inp.dataset.carpIn, nombre = inp.value.trim(); carpEditando = null;
+    if (guardar && nombre){
+      var cs = carpetasNotas();
+      if (id === 'nueva'){ var nid = 'f' + Math.random().toString(36).slice(2, 8); cs.push({ id: nid, nombre: nombre }); notaFiltro = nid; }
+      else cs.forEach(function(c){ if (c.id === id) c.nombre = nombre; });
+      guardarCarpetas(cs);
+    }
+    renderNotas();
+  }
+  function eliminarCarpeta(id){
+    var c = carpetasNotas().find(function(x){ return x.id === id; }); if (!c) return;
+    confirmar({ titulo: '¿Eliminar la carpeta "' + c.nombre + '"?', texto: 'Las notas no se borran: pasan a "Sin carpeta".', ok: 'Eliminar', peligro: true }, function(){
+      notas.concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); })).filter(function(n){ return n.carpeta === id; }).forEach(function(n){ notaRef(n.id, !!n._p).update({ carpeta: '' }).catch(function(){}); });
+      if (notaFiltro === id) notaFiltro = '';
+      if (edNota && edNota.carpeta === id) edNota.carpeta = '';
+      guardarCarpetas(carpetasNotas().filter(function(x){ return x.id !== id; })).then(function(){ renderNotas(); });
+    });
+  }
+  document.addEventListener('click', function(e){
+    var barra = e.target.closest && e.target.closest('.carp-bar'); if (!barra) return;
+    var mas = e.target.closest('[data-carp-mas]');
+    if (mas){ e.stopPropagation(); var id = mas.dataset.carpMas; miniMenu(mas, [{ t: 'Renombrar', fn: function(){ carpEditando = id; pintarCarpetas(); } }, { t: 'Eliminar carpeta', peligro: true, fn: function(){ eliminarCarpeta(id); } }]); return; }
+    if (e.target.closest('[data-carp-nueva]')){ carpEditando = 'nueva'; pintarCarpetas(); return; }
+    var b = e.target.closest('[data-carp]'); if (!b) return;
+    notaFiltro = b.dataset.carp; renderNotas();
+  });
+  document.addEventListener('keydown', function(e){ var inp = e.target.closest && e.target.closest('.carp-in'); if (!inp) return; if (e.key === 'Enter'){ e.preventDefault(); terminarCarpeta(inp, true); } else if (e.key === 'Escape'){ e.stopPropagation(); terminarCarpeta(inp, false); } });
+  document.addEventListener('focusout', function(e){ var inp = e.target.closest && e.target.closest('.carp-in'); if (inp && carpEditando) terminarCarpeta(inp, true); });
+  byId('neCarpeta').addEventListener('change', function(){ if (!edNota || edNota.lectura) return; edNota.carpeta = this.value; programarGuardado(); });
   var edBusq = '';
   function notaPreview(n){
     var bl = bloquesDe(n).filter(function(b){ return b.tipo !== 'separador' && (b.texto || '').trim(); });
@@ -5566,8 +5626,8 @@
   function pintarListaEd(){
     var box = byId('neItems'); if (!box || !edNota) return;
     var base = notas.map(function(n){ return Object.assign({}, n, { _p: false }); }).concat(notasPers.map(function(n){ return Object.assign({}, n, { _p: true }); }));
-    if (notaFiltro === 'TORNEO') base = base.filter(function(n){ return !n._p; }); else if (notaFiltro === 'YO') base = base.filter(function(n){ return n._p; });
-    document.querySelectorAll('#neSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.nf === notaFiltro); });
+    if (notaFiltro) base = base.filter(function(n){ return n.carpeta === notaFiltro; });
+    pintarCarpetas();
     var q = impNorm(edBusq);
     var lista = base.filter(function(n){ return !q || impNorm((n.titulo || '') + ' ' + bloquesDe(n).map(function(b){ return b.texto || ''; }).join(' ')).indexOf(q) >= 0; })
       .sort(function(a, b){ return (b.fijada ? 1 : 0) - (a.fijada ? 1 : 0) || (b.editadoEn || b.creadoEn || 0) - (a.editadoEn || a.creadoEn || 0); });
@@ -5589,7 +5649,6 @@
       abrirNota(id, pers);
     });
   });
-  byId('neSeg').addEventListener('click', function(e){ var b = e.target.closest('[data-nf]'); if (!b) return; notaFiltro = b.dataset.nf; pintarListaEd(); });
   byId('neBuscarL').addEventListener('input', function(){ edBusq = this.value; pintarListaEd(); });
   byId('neNueva').addEventListener('click', function(){
     var cur = edNota;
@@ -5602,18 +5661,18 @@
     if (!torneoRef) return;
     var pers = !puedeEditar('notas');
     var ahora = Date.now();
-    var data = { titulo: '', bloques: [{ id: notaUid(), tipo: 'texto', texto: '' }], fijada: false, recordatorio: '', creadoEn: ahora, editadoEn: ahora };
+    var data = { titulo: '', bloques: [{ id: notaUid(), tipo: 'texto', texto: '' }], fijada: false, recordatorio: '', carpeta: notaFiltro || '', creadoEn: ahora, editadoEn: ahora };
     if (pers) data.torneoKey = notaClave();
     var ref = pers ? userRef.collection('notasPersonales').doc() : torneoRef.collection('notas').doc();
     ref.set(data).catch(function(e){ alert('No se pudo crear la nota: ' + e.message); });
-    edNota = { id: ref.id, pers: pers, titulo: '', bloques: data.bloques, fijada: false, recordatorio: '', lectura: false, nueva: true };
+    edNota = { id: ref.id, pers: pers, titulo: '', bloques: data.bloques, carpeta: notaFiltro || '', fijada: false, recordatorio: '', lectura: false, nueva: true };
     pintarEditor(true);
     byId('notaEditor').classList.add('show'); document.body.style.overflow = 'hidden';
     setTimeout(function(){ byId('neTitulo').focus(); }, 60);
   }
   function abrirNota(id, pers){
     var n = (pers ? notasPers : notas).find(function(x){ return x.id === id; }); if (!n) return;
-    edNota = { id: n.id, pers: pers, titulo: n.titulo || '', bloques: bloquesDe(n), fijada: !!n.fijada, recordatorio: n.recordatorio || '', lectura: !pers && !puedeEditar('notas') };
+    edNota = { id: n.id, pers: pers, titulo: n.titulo || '', bloques: bloquesDe(n), carpeta: n.carpeta || '', fijada: !!n.fijada, recordatorio: n.recordatorio || '', lectura: !pers && !puedeEditar('notas') };
     pintarEditor(true);
     byId('notaEditor').classList.add('show'); document.body.style.overflow = 'hidden';
   }
@@ -5631,7 +5690,7 @@
     edSucia = false;
     var e = edNota;
     var upd = { titulo: e.titulo, bloques: e.bloques.map(function(b){ var o = { id: b.id, tipo: b.tipo, texto: b.texto || '' }; if (b.tipo === 'pendiente') o.hecho = !!b.hecho; return o; }),
-      fijada: e.fijada, recordatorio: e.recordatorio || '', editadoEn: Date.now(),
+      fijada: e.fijada, carpeta: e.carpeta || '', recordatorio: e.recordatorio || '', editadoEn: Date.now(),
       contenido: firebase.firestore.FieldValue.delete(), items: firebase.firestore.FieldValue.delete() };
     return notaRef(e.id, e.pers).update(upd).then(function(){ if (!edSucia) estadoGuardado('Guardado'); })
       .catch(function(err){ edSucia = true; estadoGuardado('No se pudo guardar'); console.error(err); });
@@ -5649,7 +5708,7 @@
     if (edSucia) guardarNotaAhora().then(fin); else fin();
   }
   byId('neCerrar').addEventListener('click', cerrarNota);
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && edNota && !dlgActual && byId('neMenu').style.display !== 'block') cerrarNota(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && edNota && !window.matchMedia('(min-width: 901px)').matches && !dlgActual && byId('neMenu').style.display !== 'block') cerrarNota(); });
   window.addEventListener('beforeunload', function(){ if (edNota && edSucia) guardarNotaAhora(); });
 
   // --- barra superior del editor ---
@@ -5662,7 +5721,7 @@
     var e = edNota; edSucia = true;
     guardarNotaAhora().then(function(){
       var viejo = notaRef(e.id, e.pers), nuevoPers = !e.pers, nuevo = notaRef(e.id, nuevoPers);
-      var data = { titulo: e.titulo, bloques: e.bloques.map(function(b){ var o = { id: b.id, tipo: b.tipo, texto: b.texto || '' }; if (b.tipo === 'pendiente') o.hecho = !!b.hecho; return o; }), fijada: e.fijada, recordatorio: e.recordatorio || '', creadoEn: Date.now(), editadoEn: Date.now() };
+      var data = { titulo: e.titulo, bloques: e.bloques.map(function(b){ var o = { id: b.id, tipo: b.tipo, texto: b.texto || '' }; if (b.tipo === 'pendiente') o.hecho = !!b.hecho; return o; }), fijada: e.fijada, carpeta: e.carpeta || '', recordatorio: e.recordatorio || '', creadoEn: Date.now(), editadoEn: Date.now() };
       if (nuevoPers) data.torneoKey = notaClave();
       nuevo.set(data).then(function(){ return viejo.delete(); }).then(function(){ e.pers = nuevoPers; if (edNota === e) pintarEditor(); }).catch(function(err){ alert('No se pudo cambiar: ' + err.message); });
     });
@@ -5674,6 +5733,7 @@
       edSucia = false; clearTimeout(edTimer);
       edNota = null; byId('notaEditor').classList.remove('show'); document.body.style.overflow = '';
       eliminarConDeshacer(notaRef(e.id, e.pers), 'Nota eliminada');
+      notasAutoPend = true; autoAbrirNota(e.id);
     });
   });
 
