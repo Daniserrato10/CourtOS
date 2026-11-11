@@ -2502,7 +2502,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.6.1';
+  var APP_VERSION = '1.6.2';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3880,7 +3880,7 @@
       return '<div class="dc-row"><div><b>'+esc(i.j1Nombre + (i.j2Nombre ? ' / '+i.j2Nombre : ''))+'</b><small>'+esc(i.categoriaNombre||'')+'</small></div>' +
         '<div style="display:flex;align-items:center;gap:12px;"><span class="dc-amt" style="color:var(--amber-tx);">'+money(valorCobrable(i)-pagadoTotalIns(i))+'</span>' +
         (canC ? '<button class="btn" data-dash-cobrar="'+i.id+'">Cobrar</button>' : '') + '</div></div>';
-    }).join('') : '<div class="dc-empty">Nada por cobrar. 🎉</div>';
+    }).join('') : '<div class="dc-empty">Nada por cobrar.</div>';
 
     var recientes = !finOk ? [] : movimientos.filter(movActivo).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); }).slice(0,3);
     byId('dashActividad').innerHTML = recientes.length ? recientes.map(function(m){
@@ -8402,6 +8402,8 @@
         userRef = fsdb.collection('users').doc(user.uid);
         currentUid = user.uid;
         byId('authScreen').style.display = 'none';
+        // Vacía los formularios de acceso para que Chrome no pida "actualizar contraseña" cada vez
+        ['formLogin','formSignup'].forEach(function(id){ var f = byId(id); if (f) f.reset(); });
         byId('userEmail').textContent = user.email || '';
         byId('torneoUserEmail').textContent = user.email || '';
         byId('torneoUserAvatar').textContent = (user.email || 'U').charAt(0).toUpperCase();
