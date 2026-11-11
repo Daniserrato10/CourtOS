@@ -964,6 +964,14 @@
     #adminTab { bottom: calc(66px + var(--sab)); border-bottom: 2px solid #EBC468; border-radius: 999px; }
     #mobFab { display: flex; position: fixed; right: 16px; bottom: calc(76px + var(--sab)); width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; align-items: center; justify-content: center; z-index: 110; box-shadow: 0 6px 18px rgba(42,93,149,.4); transition: transform 150ms var(--ease-out), opacity 150ms ease; -webkit-tap-highlight-color: transparent; }
     #mobFab:active { transform: scale(0.94); }
+    /* PWA instalada (iOS): que el documento sea quien haga scroll, no #content con 100vh;
+       así la barra inferior y el + quedan pegados al borde real de la pantalla */
+    html, body { height: auto; min-height: 100%; }
+    #appShell.active { display: block; }
+    #content { height: auto; overflow: visible; }
+    #sidebar { height: auto; bottom: 0; }
+    #mobFab { transition: transform .2s var(--ease-out), opacity .2s var(--ease-out); }
+    #mobFab.ocul { transform: translateY(90px); opacity: 0; pointer-events: none; }
     #mobFab.off { display: none; }
     body:has(.formpanel.open) #mobFab { display: none; }
     #masBack, #fabBack { display: block; position: fixed; inset: 0; z-index: 125; background: rgba(24,24,15,.45); opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
@@ -2494,7 +2502,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.6.0';
+  var APP_VERSION = '1.6.1';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3310,7 +3318,7 @@
   function mobVistaActual(){ var a = document.querySelector('.view.active'); return a ? a.dataset.view : 'dashboard'; }
   var FAB_DESTINO = { inscripciones:'.view[data-view="inscripciones"] [data-toggle-form="inscripcion"]', financiero:'.view[data-view="financiero"] [data-toggle-form="movimiento"]', jugadores:'#btnNuevoJugador', notas:'#btnNuevaNota' };
   function mobBtnOk(b){ return !!b && !b.classList.contains('perm-hide') && b.style.display !== 'none'; }
-  function mobSync(v){
+  function mobSync(v){ var _f=byId('mobFab'); if(_f) _f.classList.remove('ocul');
     v = v || mobVistaActual();
     document.querySelectorAll('#mobTab button').forEach(function(b){ b.classList.toggle('on', b.dataset.mt === (MT_VISTAS[v] ? v : 'mas')); });
     var fab = byId('mobFab'), ok = false;
@@ -3408,6 +3416,14 @@
     if (b.dataset.mt === 'mas') { if (byId('masSheet').classList.contains('show')) mobCerrar(); else mobAbrirMas(); }
     else { mobCerrar(); setView(b.dataset.mt); }
   });
+  (function(){ var y=window.pageYOffset||0, f=null;
+    window.addEventListener('scroll', function(){
+      f=f||byId('mobFab'); if(!f) return;
+      var n=window.pageYOffset||0;
+      if(n>y+6 && n>80) f.classList.add('ocul'); else if(n<y-6 || n<=80) f.classList.remove('ocul');
+      y=n;
+    }, {passive:true});
+  })();
   var notasAutoPend = false;
   function autoAbrirNota(excluir){
     if (!notasAutoPend || edNota || !window.matchMedia('(min-width: 901px)').matches) return;
