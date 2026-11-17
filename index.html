@@ -2502,7 +2502,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.6.2';
+  var APP_VERSION = '1.6.3';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -6961,7 +6961,20 @@
   // SELECTOR DE TORNEOS
   // ============================================================
   var torneosCountCache = 0;
+  // Orden de la lista de torneos: el que empieza más pronto primero. Los sin fecha van
+  // después de los que tienen fecha y los finalizados al final; el resto por creación.
+  function ordenarTorneos(arr){
+    var big = '9999-99-99';
+    return arr.slice().sort(function(a, b){
+      var fa = a.estado === 'FINALIZADA' ? 1 : 0, fb = b.estado === 'FINALIZADA' ? 1 : 0;
+      if (fa !== fb) return fa - fb;
+      var da = a.fechaInicio || big, db = b.fechaInicio || big;
+      if (da !== db) return da < db ? -1 : 1;
+      return (a.creadoEn || 0) - (b.creadoEn || 0);
+    });
+  }
   function renderTorneoList(torneos){
+    torneos = ordenarTorneos(torneos);
     torneosCountCache = torneos.filter(function(t){ return t.estado !== 'FINALIZADA' && !t.demo; }).length;
     torneosTotal = torneos.length; torneosListos = true;
     tpPropios = torneos.slice();
@@ -7838,6 +7851,7 @@
   function renderCompartidos(lista){
     compartidosListo = true; evaluarIntro();
     var box = byId('compartidosBox');
+    lista = ordenarTorneos(lista);
     tpComp = lista.slice();
     byId('compartidosList').innerHTML = lista.map(function(t){ return filaTorneoHtml(t, true); }).join('');
     tpAplicar();
