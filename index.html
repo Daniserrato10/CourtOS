@@ -2975,8 +2975,8 @@
       .then(function(){
         // jugadores: uno por uno, sin repetir el mismo en la misma categoría
         return nuevos.reduce(function(p, n){
-          return p.then(function(){ return sincronizarJugador(n.f.j1, n.f.cat.nombre, n.id); })
-                  .then(function(){ if (n.f.j2) return sincronizarJugador(n.f.j2, n.f.cat.nombre, n.id); });
+          return p.then(function(){ return sincronizarJugador(n.f.j1, n.f.cat.nombre, n.id, true); })
+                  .then(function(){ if (n.f.j2) return sincronizarJugador(n.f.j2, n.f.cat.nombre, n.id, true); });
         }, Promise.resolve()).catch(function(){});
       })
       .then(function(){
@@ -5813,10 +5813,14 @@
         if (!h) return;
         var antes = (j.historial || []).slice(), catsAntes = (j.categorias || []).slice();
         hist2.splice(k, 1);
-        userRef.collection('jugadores').doc(j.id).update({ historial: hist2, categorias: recalcularCategorias(hist2) })
+        var jRef = userRef.collection('jugadores').doc(j.id);
+        var copia = JSON.parse(JSON.stringify(j));
+        var vaciado = !hist2.length;   // sin torneos: el jugador se borra solo
+        (vaciado ? jRef.delete() : jRef.update({ historial: hist2, categorias: recalcularCategorias(hist2) }))
           .then(function(){
-            ofrecerDeshacer('Quitado del historial de ' + j.nombre + ': ' + (h.categoria || '—'), function(){
-              return userRef.collection('jugadores').doc(j.id).update({ historial: antes, categorias: catsAntes });
+            if (vaciado && editandoJugadorId === j.id) { closeForm('jugador'); jugadorFormANuevo(); }
+            ofrecerDeshacer(vaciado ? 'Jugador eliminado por quedar sin torneos: ' + j.nombre : 'Quitado del historial de ' + j.nombre + ': ' + (h.categoria || '—'), function(){
+              return vaciado ? jRef.set(copia) : jRef.update({ historial: antes, categorias: catsAntes });
             });
           })
           .catch(function(e){ alert('No se pudo quitar: ' + e.message); });
@@ -5916,20 +5920,63 @@
   // registrados (o actualizados) en la base de datos de la CUENTA —
   // así el historial y las categorías habituales se arman solos, y
   // sobreviven aunque el torneo donde jugaron ya no exista.
-  function sincronizarJugador(nombre, categoriaNombre, insId){
+  // ¿Dos nombres parecen la misma persona? Ej.: "Miguel Jaimes" y "Miguel Andrés Jaimes".
+  // Todas las palabras del nombre más corto (mínimo 2) deben estar en el más largo,
+  // tolerando una letra de diferencia en palabras de 4+ letras (errores de tipeo).
+  function lev1(a, b){
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    var i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+    var c = a.length < b.length ? a : b, l = a.length < b.length ? b : a;
+    return c.slice(i) === l.slice(i + 1);
+  }
+  function nombresParecidos(a, b){
+    var ta = impNorm(a).split(' ').filter(Boolean), tb = impNorm(b).split(' ').filter(Boolean);
+    var c = ta.length <= tb.length ? ta : tb, l = ta.length <= tb.length ? tb : ta;
+    if (c.length < 2) return false;
+    var usadas = {};
+    return c.every(function(t){
+      var k = l.findIndex(function(u, n){ return !usadas[n] && (u === t || (t.length >= 4 && u.length >= 4 && lev1(t, u))); });
+      if (k < 0) return false;
+      usadas[k] = true; return true;
+    });
+  }
+  function buscarJugadorParecido(nombre){
+    var n = impNorm(nombre), mejor = null, dif = 1e9;
+    jugadoresGlobal.forEach(function(j){
+      if (impNorm(j.nombre) === n || !nombresParecidos(nombre, j.nombre)) return;
+      var d = Math.abs(impNorm(j.nombre).length - n.length);
+      if (d < dif) { dif = d; mejor = j; }
+    });
+    return mejor;
+  }
+  // sinPreguntar: para cargas masivas (importar Excel), donde no se interrumpe con una pregunta por fila.
+  function sincronizarJugador(nombre, categoriaNombre, insId, sinPreguntar){
     if (!nombre || !esDueno()) return Promise.resolve(); // la base de jugadores es de cada cuenta: lo que hace un invitado no se guarda en la del dueño
     var existente = jugadoresGlobal.find(function(j){ return normalizaTexto(j.nombre) === normalizaTexto(nombre); });
-    var entradaHistorial = { torneo: torneoData.nombre || 'Torneo', categoria: categoriaNombre, fecha: Date.now() };
+    var entradaHistorial = { torneo: torneoData.nombre || 'Torneo', categoria: categoriaNombre, fecha: Date.now(), nombreIns: nombre };
     if (insId) entradaHistorial.insId = insId;
-    if (existente) {
-      return userRef.collection('jugadores').doc(existente.id).update({
-        categorias: firebase.firestore.FieldValue.arrayUnion(categoriaNombre),
-        historial: firebase.firestore.FieldValue.arrayUnion(entradaHistorial)
+    function aplicar(ju){
+      if (ju) {
+        return userRef.collection('jugadores').doc(ju.id).update({
+          categorias: firebase.firestore.FieldValue.arrayUnion(categoriaNombre),
+          historial: firebase.firestore.FieldValue.arrayUnion(entradaHistorial)
+        });
+      }
+      return userRef.collection('jugadores').add({
+        nombre: nombre, telefono: '', categorias: [categoriaNombre], historial: [entradaHistorial], creadoEn: Date.now()
       });
     }
-    return userRef.collection('jugadores').add({
-      nombre: nombre, telefono: '', categorias: [categoriaNombre], historial: [entradaHistorial], creadoEn: Date.now()
-    });
+    if (existente || sinPreguntar) return aplicar(existente);
+    var parecido = buscarJugadorParecido(nombre);
+    if (!parecido) return aplicar(null);
+    var nT = (parecido.historial || []).length;
+    return confirmarP({
+      titulo: '¿Es la misma persona?',
+      texto: '"' + nombre + '" se parece a "' + parecido.nombre + '", que ya está en tu base de jugadores (' + nT + ' torneo' + (nT === 1 ? '' : 's') + ').\n\n¿Son la misma persona? Si dices que sí, no se crea un jugador repetido.',
+      ok: 'Sí, es el mismo', cancelar: 'No, es otro'
+    }).then(function(mismo){ return aplicar(mismo ? parecido : null); });
   }
 
   // Al eliminar una inscripción, se quita esa participación del historial
@@ -5944,9 +5991,11 @@
     var tNombre = torneoData.nombre || 'Torneo';
     var tareas = [ins.j1Nombre, ins.j2Nombre].filter(Boolean).map(function(nombre){
       var j = jugadoresGlobal.find(function(x){ return normalizaTexto(x.nombre) === normalizaTexto(nombre); });
+      // Si se vinculó a un jugador de nombre parecido, la participación quedó guardada con el nombre usado en la inscripción.
+      if (!j) j = jugadoresGlobal.find(function(x){ return (x.historial || []).some(function(h){ return h.insId === ins.id && h.nombreIns && impNorm(h.nombreIns) === impNorm(nombre); }); });
       if (!j) return null;
       var hist = (j.historial || []).slice();
-      var idx = hist.findIndex(function(h){ return h.insId === ins.id; });
+      var idx = hist.findIndex(function(h){ return h.insId === ins.id && (!h.nombreIns || impNorm(h.nombreIns) === impNorm(nombre) || normalizaTexto(j.nombre) === normalizaTexto(nombre)); });
       if (idx < 0) { // entradas antiguas sin insId: la más reciente del mismo torneo y categoría
         var mejor = -1;
         hist.forEach(function(h, k){
@@ -5956,6 +6005,8 @@
       }
       if (idx < 0) return null;
       hist.splice(idx, 1);
+      // Sin ningún torneo en su historial, el jugador ya no tiene razón de estar en la base de datos: se borra solo.
+      if (!hist.length) return userRef.collection('jugadores').doc(j.id).delete();
       return userRef.collection('jugadores').doc(j.id).update({ historial: hist, categorias: recalcularCategorias(hist) });
     }).filter(Boolean);
     return Promise.all(tareas);
