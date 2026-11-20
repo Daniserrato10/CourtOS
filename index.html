@@ -949,6 +949,25 @@
   #mobTab, #mobFab, #masSheet, #masBack, #fabMenu, #fabBack { display: none; }
   .mob-only { display: none; }
   .trow-mas { display: none; }
+
+  /* Autocompletado de jugadores (inscripciones): sugerencias de la base de datos */
+  .ja-box { position: fixed; z-index: 400; background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 14px 36px rgba(20,24,20,.16); padding: 6px; max-height: 300px; overflow-y: auto; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .14s var(--ease-out), transform .14s var(--ease-out); }
+  .ja-box.show { opacity: 1; transform: none; pointer-events: auto; }
+  .ja-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; }
+  .ja-item.on, .ja-item:hover { background: #F3F2EC; }
+  .ja-av { flex: none; width: 30px; height: 30px; border-radius: 50%; background: #E6EDF7; color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+  .ja-tx { flex: 1; min-width: 0; }
+  .ja-n { font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ja-n mark { background: none; color: var(--accent); font-weight: 800; }
+  .ja-s { font-size: 11.5px; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ja-tag { flex: none; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: #E3F3E8; color: #1F7A3E; }
+  .ja-tag.dud { background: #FBF0D5; color: #8A5A00; }
+  .ja-nuevo { font-size: 12.5px; color: var(--gray-500); padding: 9px 10px 6px; border-top: 1px solid var(--border); margin-top: 4px; }
+  .ja-hint { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--gray-500); }
+  .ja-hint.ok { color: #1F7A3E; font-weight: 600; }
+  .ja-hint.dud { color: #8A5A00; }
+  .ja-hint button { border: 0; background: #FBF0D5; color: #7A4B00; font: inherit; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  @media (prefers-reduced-motion: reduce) { .ja-box { transition: none; } }
   @media (max-width: 860px) {
     #btnOpenSidebar { display: none; }
     .mob-only { display: block; }
@@ -1335,7 +1354,7 @@
     <div style="padding:16px 22px 20px; font-size:13.5px; line-height:1.55;">
       <div class="muted" id="repInfo" style="margin-bottom:12px;"></div>
       <div class="field"><label>¿A quién reemplazas?</label><select id="repSlot"></select></div>
-      <div class="field" style="margin-top:10px;"><label>Jugador nuevo</label><input id="repNuevo" list="jugadoresSuggestions" placeholder="Busca en tus jugadores o escribe un nombre nuevo" autocomplete="off"></div>
+      <div class="field" style="margin-top:10px;"><label>Jugador nuevo</label><input id="repNuevo" data-jauto="1" autocomplete="off" placeholder="Busca en tus jugadores o escribe un nombre nuevo"></div>
       <div class="muted" style="font-size:12px;margin-top:10px;">Lo pagado, la cortesía y el valor se quedan en la inscripción: el jugador nuevo ocupa el mismo lugar. Si no está en tu lista de jugadores, se crea solo.</div>
       <div id="repAviso" style="display:none;margin-top:10px;padding:9px 11px;border-radius:8px;background:var(--amber-bg);color:var(--amber-tx);font-size:12.5px;"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
@@ -1963,8 +1982,8 @@
       <div class="formpanel compacto" id="formInscripcion">
         <div class="panel-title">Nueva Inscripción</div>
         <div class="ins4">
-          <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" list="jugadoresSuggestions" placeholder="Nombre completo"></div>
-          <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" list="jugadoresSuggestions" placeholder="Nombre completo (o vacío = por confirmar)"></div>
+          <div class="field"><label id="i_j1Label">Jugador 1</label><input id="i_j1" data-jauto="1" autocomplete="off" placeholder="Nombre completo"></div>
+          <div class="field" id="i_j2Wrap"><label>Jugador 2</label><input id="i_j2" data-jauto="1" autocomplete="off" placeholder="Nombre completo (o vacío = por confirmar)"></div>
           <datalist id="jugadoresSuggestions"></datalist>
           <div class="field"><label>Categoría</label><select id="i_categoria"></select></div>
           <div class="field"><label>Tarifa</label><select id="i_tarifa"></select></div>
@@ -2502,7 +2521,7 @@
 
 <script>
   // VERSIÓN DE LA APP — súbela cada vez que cambie el código (se muestra abajo en el menú lateral).
-  var APP_VERSION = '1.6.3';
+  var APP_VERSION = '1.7.0';
   (function(){ var v = document.getElementById('appVersion'); if (v) v.textContent = 'CourtOS · v' + APP_VERSION; var tv = document.getElementById('tpVersion'); if (tv) tv.textContent = 'CourtOS · v' + APP_VERSION; var c = document.getElementById('cfgVersion'); if (c) c.textContent = 'CourtOS v' + APP_VERSION; })();
 (function(){
   'use strict';
@@ -3424,6 +3443,101 @@
       y=n;
     }, {passive:true});
   })();
+
+  // ---------- autocompletado de jugadores ----------
+  // Sugiere desde la base de jugadores mientras se escribe y avisa si el nombre escrito
+  // parece ser alguien que ya existe (p. ej. "Miguel Jaimes" y "Miguel Ángel Jaimes Rodríguez").
+  var jaBox = null, jaInp = null, jaLista = [], jaAct = -1;
+  function jaNorm(x){ return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9ñ ]+/g,' ').trim().split(/\s+/).filter(Boolean); }
+  function jaTorneos(j){ var t = {}; (j.historial||[]).forEach(function(h){ if (h.torneo) t[h.torneo] = 1; }); return Object.keys(t).length; }
+  function jaBuscar(q){
+    var qt = jaNorm(q); if (!qt.length) return [];
+    var qExacto = normalizaTexto(q), out = [];
+    jugadoresGlobal.forEach(function(j){
+      var nt = jaNorm(j.nombre), ex = normalizaTexto(j.nombre) === qExacto, sc = 0, dud = false;
+      if (ex) sc = 100;
+      else if (nt.join(' ').indexOf(qt.join(' ')) === 0) sc = 80;
+      else if (qt.every(function(t, i){ return nt.some(function(n){ return i === qt.length-1 ? n.indexOf(t) === 0 : n === t; }); })) sc = 60;
+      else if (nt.length >= 2 && qt.length > nt.length && nt.every(function(n){ return qt.indexOf(n) >= 0; })) { sc = 50; dud = true; }
+      else if (nt.length >= 2 && qt.length >= 2 && nt.length > qt.length && qt.every(function(t){ return nt.indexOf(t) >= 0; })) { sc = 55; dud = true; }
+      if (sc) out.push({ j: j, sc: sc, ex: ex, dud: dud });
+    });
+    out.sort(function(a, b){ return b.sc - a.sc || String(a.j.nombre).localeCompare(String(b.j.nombre)); });
+    return out;
+  }
+  function jaResaltar(nombre, q){
+    var qt = jaNorm(q), partes = String(nombre).split(/(\s+)/);
+    return partes.map(function(w){ var n = jaNorm(w)[0]; var hit = n && qt.some(function(t){ return n.indexOf(t) === 0; }); return hit ? '<mark>' + esc(w) + '</mark>' : esc(w); }).join('');
+  }
+  function jaCerrar(){ if (jaBox) jaBox.classList.remove('show'); jaAct = -1; }
+  function jaPosicionar(){
+    if (!jaInp || !jaBox) return;
+    var r = jaInp.getBoundingClientRect(), alto = Math.min(300, jaBox.scrollHeight + 12);
+    var abajo = window.innerHeight - r.bottom, arriba = r.top;
+    var ancho = Math.min(Math.max(r.width, 320), window.innerWidth - 16), izq = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8));
+    jaBox.style.left = izq + 'px'; jaBox.style.width = ancho + 'px';
+    if (abajo < alto + 12 && arriba > abajo) { jaBox.style.top = 'auto'; jaBox.style.bottom = (window.innerHeight - r.top + 6) + 'px'; }
+    else { jaBox.style.bottom = 'auto'; jaBox.style.top = (r.bottom + 6) + 'px'; }
+  }
+  function jaPintar(inp){
+    if (!jaBox){ jaBox = document.createElement('div'); jaBox.className = 'ja-box'; jaBox.id = 'jaBox'; jaBox.setAttribute('role','listbox'); document.body.appendChild(jaBox); }
+    var q = inp.value; jaInp = inp;
+    jaLista = jaBuscar(q).slice(0, 6); jaAct = jaLista.length && jaLista[0].sc >= 80 ? 0 : -1;
+    if (!q.trim() || !jaLista.length){ jaCerrar(); return; }
+    jaBox.innerHTML = jaLista.map(function(m, i){
+      var j = m.j, cats = (j.categorias||[]).slice(-2).join(', '), nt = jaTorneos(j);
+      var sub = [cats, nt ? nt + (nt === 1 ? ' torneo' : ' torneos') : ''].filter(Boolean).join(' · ') || 'Sin torneos aún';
+      return '<div class="ja-item' + (i === jaAct ? ' on' : '') + '" role="option" data-ja="' + i + '">' +
+        '<div class="ja-av">' + esc((j.nombre||'?').charAt(0).toUpperCase()) + '</div>' +
+        '<div class="ja-tx"><div class="ja-n">' + jaResaltar(j.nombre, q) + '</div><div class="ja-s">' + esc(sub) + '</div></div>' +
+        (m.dud ? '<span class="ja-tag dud">¿Es el mismo?</span>' : '<span class="ja-tag">En tu base</span>') + '</div>';
+    }).join('') + (jaLista[0].ex ? '' : '<div class="ja-nuevo">Si no es ninguno, se guarda como jugador nuevo: <b>' + esc(q.trim()) + '</b></div>');
+    jaPosicionar(); jaBox.classList.add('show');
+  }
+  function jaHint(inp){
+    var h = inp.parentNode.querySelector('.ja-hint');
+    var q = inp.value.trim(), m = q ? jaBuscar(q) : [];
+    if (!q || !jugadoresGlobal.length || !m.length){ if (h) h.remove(); return; }
+    if (!h){ h = document.createElement('div'); h.className = 'ja-hint'; inp.parentNode.appendChild(h); }
+    var top = m[0];
+    if (top.ex){ var nt = jaTorneos(top.j); h.className = 'ja-hint ok'; h.textContent = '✓ Ya está en tu base' + (nt ? ' · ' + nt + (nt === 1 ? ' torneo' : ' torneos') : ''); return; }
+    var cand = m.filter(function(x){ return x.dud; })[0];
+    if (!cand){ if (h) h.remove(); return; }
+    h.className = 'ja-hint dud';
+    h.innerHTML = '<span>Se parece a <b>' + esc(cand.j.nombre) + '</b>. ¿Es la misma persona?</span><button type="button" data-ja-usar="' + esc(cand.j.id) + '">Sí, usar ese</button>';
+  }
+  function jaElegir(inp, nombre){
+    inp.value = nombre; jaCerrar();
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+    jaHint(inp);
+  }
+  document.addEventListener('input', function(e){
+    var t = e.target; if (!t || !t.matches || !t.matches('input[data-jauto]')) return;
+    if (!esDueno()) return;
+    jaPintar(t); jaHint(t);
+  });
+  document.addEventListener('focusin', function(e){ var t = e.target; if (t && t.matches && t.matches('input[data-jauto]') && esDueno() && t.value.trim()) jaPintar(t); });
+  document.addEventListener('focusout', function(e){ if (e.target && e.target.matches && e.target.matches('input[data-jauto]')) setTimeout(function(){ if (document.activeElement !== e.target) jaCerrar(); }, 120); });
+  document.addEventListener('mousedown', function(e){
+    var it = e.target.closest && e.target.closest('.ja-item');
+    if (it && jaInp){ e.preventDefault(); var m = jaLista[Number(it.dataset.ja)]; if (m) jaElegir(jaInp, m.j.nombre); return; }
+    if (e.target.closest && e.target.closest('.ja-box')) e.preventDefault();
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-ja-usar]'); if (!b) return;
+    var j = jugadoresGlobal.find(function(x){ return x.id === b.dataset.jaUsar; }), inp = b.parentNode.parentNode.querySelector('input[data-jauto]');
+    if (j && inp) jaElegir(inp, j.nombre);
+  });
+  document.addEventListener('keydown', function(e){
+    if (!jaBox || !jaBox.classList.contains('show') || !jaInp || e.target !== jaInp) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault(); var n = jaLista.length; jaAct = e.key === 'ArrowDown' ? (jaAct + 1) % n : (jaAct <= 0 ? n - 1 : jaAct - 1);
+      jaBox.querySelectorAll('.ja-item').forEach(function(el, i){ el.classList.toggle('on', i === jaAct); });
+    } else if (e.key === 'Enter' && jaAct >= 0){ e.preventDefault(); jaElegir(jaInp, jaLista[jaAct].j.nombre); }
+    else if (e.key === 'Escape'){ jaCerrar(); }
+  });
+  window.addEventListener('resize', jaCerrar);
+  window.addEventListener('scroll', function(){ if (jaBox && jaBox.classList.contains('show')) jaPosicionar(); }, { passive: true, capture: true });
   var notasAutoPend = false;
   function autoAbrirNota(excluir){
     if (!notasAutoPend || edNota || !window.matchMedia('(min-width: 901px)').matches) return;
@@ -4154,8 +4268,8 @@
     function nom(n){ return n === 1 ? (i.j1Nombre || 'Jugador 1') : (i.j2Nombre || 'Jugador 2'); }
     function corto(n){ return nombreCorto(nom(n), n === 1 ? 'Jugador 1' : 'Jugador 2'); }
     var h = '<div class="ins-lab">' + (ind ? 'Jugador' : 'Jugadores') + '</div>' +
-      '<div class="ins-row2"><div class="field"><label>' + (ind ? 'Jugador' : 'Jugador 1') + '</label><input id="ed_j1" list="jugadoresSuggestions" value="' + esc(i.j1Nombre || '') + '" autocomplete="off"></div>' +
-      (ind ? '' : '<div class="field"><label>Jugador 2</label><input id="ed_j2" list="jugadoresSuggestions" value="' + esc(i.j2Nombre || '') + '" placeholder="Por confirmar" autocomplete="off"></div>') + '</div>' +
+      '<div class="ins-row2"><div class="field"><label>' + (ind ? 'Jugador' : 'Jugador 1') + '</label><input id="ed_j1" data-jauto="1" autocomplete="off" value="' + esc(i.j1Nombre || '') + '"></div>' +
+      (ind ? '' : '<div class="field"><label>Jugador 2</label><input id="ed_j2" data-jauto="1" autocomplete="off" value="' + esc(i.j2Nombre || '') + '" placeholder="Por confirmar"></div>') + '</div>' +
       '<div class="muted" style="font-size:12px;">Cambiar un nombre reemplaza al jugador: lo pagado, la cortesía y el valor se quedan en la inscripción.</div>' +
       '<div class="ins-lab" style="margin-top:6px;">Valor' + (ind ? '' : ' por jugador') + '</div>' +
       '<div class="ins-row2"><div class="field"><label>' + (ind ? 'Tarifa' : esc(corto(1)) + ' · tarifa') + '</label><select id="ed_tar1">' + tarOpts() + '</select></div>' +
@@ -6346,7 +6460,7 @@
     }).then(function(){
       if (j2) return sincronizarJugador(j2, cat.nombre, nuevaInsId);
     }).then(function(){
-      ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; });
+      ['i_j1','i_j2'].forEach(function(id){ byId(id).value = ''; jaHint(byId(id)); });
       byId('i_pagado').value = 0;
       byId('i_cortesia').value = 'NINGUNA'; byId('i_motivo').value = ''; byId('i_cmonto1').value = ''; byId('i_cmonto2').value = ''; setCortTipo('NINGUNA');
       valorManual = false;
